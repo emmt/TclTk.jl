@@ -106,16 +106,6 @@ function _TclInterp()
         end
         status = @ccall libtcl.Tcl_Init(interp::Ptr{Tcl_Interp})::TclStatus
         status == TCL_OK || @warn "Unable to initialize Tcl interpreter: $(unsafe_string_result(interp))"
-
-        # Initialize Tcl interpreter to find Tk library scripts.
-        if isdefined(@__MODULE__, :Tk_jll)
-            tk_library = joinpath(dirname(dirname(Tk_jll.libtk_path)), "lib",
-                                  "tk$(TCL_MAJOR_VERSION).$(TCL_MINOR_VERSION)")
-            ptr = Tcl_SetVar(interp, "tk_library", tk_library, TCL_GLOBAL_ONLY|TCL_LEAVE_ERR_MSG)
-            isnull(ptr) && @warn "Unable to set `tk_library`: $(unsafe_string_result(interp))"
-        end
-        status = @ccall libtk.Tk_Init(interp::Ptr{Tcl_Interp})::TclStatus
-        status == TCL_OK || @warn "Unable to initialize Tk interpreter: $(unsafe_string(Tcl_GetStringResult(interp)))"
     catch
         Tcl_DeleteInterp(interp)
         rethrow()

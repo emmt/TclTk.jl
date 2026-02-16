@@ -392,11 +392,21 @@ Load Tk and Ttk packages in `interp` and start the event loop (for all interpret
 
 """
 function tk_start(interp::TclInterp = TclInterp()) :: TclInterp
-    local status::TclStatus
-    status = interp.eval(TclStatus, "package require Tk")
-    status == TCL_OK && (status = interp.eval(TclStatus, "package require Ttk"))
-    status == TCL_OK && (status = interp.eval(TclStatus, "wm withdraw ."))
-    status == TCL_OK || throw(TclError(interp))
+    if TclTk.eval(Int, interp, "lsearch -exact [package names] Tk") < 0
+        # Initialize Tcl interpreter to find Tk library scripts. NOTE this is the same as
+        # initializing global variable `tcl_library` before calling `Tcl_Init`.
+        if isdefined(@__MODULE__, :Tk_jll)
+            tk_library = joinpath(dirname(dirname(Tk_jll.libtk_path)), "lib",
+                                  "tk$(TCL_MAJOR_VERSION).$(TCL_MINOR_VERSION)")
+            ptr = Tcl_SetVar(interp, "tk_library", tk_library, TCL_GLOBAL_ONLY|TCL_LEAVE_ERR_MSG)
+            isnull(ptr) && @warn "Unable to set `tk_library`: $(unsafe_string_result(interp))"
+        end
+        # Load Tk and Ttk packages. It is not needed to explicitly load these packages, it
+        # is sufficient to call `Tk_Init`.
+        status = @ccall libtk.Tk_Init(interp::Ptr{Tcl_Interp})::TclStatus
+        status == TCL_OK || @warn "Unable to initialize Tk interpreter: $(unsafe_string(Tcl_GetStringResult(interp)))"
+        status == TCL_OK && TclTk.eval(Nothing, interp, "wm withdraw .")
+    end
     isrunning() || resume()
     return interp
 end
