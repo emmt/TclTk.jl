@@ -4,7 +4,7 @@
 [![Build Status](https://github.com/emmt/TclTk.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/emmt/TclTk.jl/actions/workflows/CI.yml?query=branch%3Amain)
 [![Coverage](https://codecov.io/gh/emmt/TclTk.jl/graph/badge.svg?token=2ZyJuZeh71)](https://codecov.io/gh/emmt/TclTk.jl)
 
-This package provides an optimized Julia interface to [Tcl/Tk](http://www.tcl.tk/).
+This package provides an optimized Julia interface to [Tcl/Tk](http://www.tcl-lang.org/).
 
 # Features
 
