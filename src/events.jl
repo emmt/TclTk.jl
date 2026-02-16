@@ -2,14 +2,14 @@
 # events when Tk is loaded.
 
 """
-    Tcl.isrunning() -> bool
+    TclTk.isrunning() -> bool
 
 Return whether the processing of Tcl/Tk events is running.
 
 # See also
 
-[`Tcl.suspend`](@ref), [`Tcl.resume`](@ref), and [`Tcl.do_one_event`](@ref), and
-[`Tcl.do_events`](@ref).
+[`TclTk.suspend`](@ref), [`TclTk.resume`](@ref), and [`TclTk.do_one_event`](@ref), and
+[`TclTk.do_events`](@ref).
 
 """
 isrunning() = (isdefined(runner, 1) && isopen(runner[]))
@@ -18,18 +18,18 @@ isrunning() = (isdefined(runner, 1) && isopen(runner[]))
 const runner = Ref{Timer}()
 
 """
-    Tcl.resume(delay=0.1, interval=0.05) -> nothing
+    TclTk.resume(delay=0.1, interval=0.05) -> nothing
 
 Resume or start the processing of Tcl/Tk events with a given `delay` and `interval` both in
-seconds. This manages to repeatedly call function [`Tcl.do_events`](@ref). The method
-[`Tcl.suspend`](@ref) can be called to suspend the processing of events.
+seconds. This manages to repeatedly call function [`TclTk.do_events`](@ref). The method
+[`TclTk.suspend`](@ref) can be called to suspend the processing of events.
 
-Calling `Tcl.resume` is mandatory when Tk extension is loaded. Thus, the recommended way to
+Calling `TclTk.resume` is mandatory when Tk extension is loaded. Thus, the recommended way to
 load the Tk package is:
 
 ```julia
-Tcl.eval(interp, "package require Tk")
-Tcl.resume()
+TclTk.eval(interp, "package require Tk")
+TclTk.resume()
 ```
 
 or alternatively:
@@ -54,10 +54,10 @@ function resume(delay::Real=0.1, interval::Real=0.05)
 end
 
 """
-    Tcl.suspend() -> nothing
+    TclTk.suspend() -> nothing
 
 Suspend the processing of Tcl/Tk events for all interpreters. The method
-[`Tcl.resume`](@ref) can be called to resume the processing of events.
+[`TclTk.resume`](@ref) can be called to resume the processing of events.
 
 """
 function suspend()
@@ -66,11 +66,11 @@ function suspend()
 end
 
 """
-    Tcl.do_events(flags = TCL_DONT_WAIT|TCL_ALL_EVENTS) -> num::Int
+    TclTk.do_events(flags = TCL_DONT_WAIT|TCL_ALL_EVENTS) -> num::Int
 
-Process Tcl/Tk events for all interpreters by calling [`Tcl.do_one_event(flags)`](@ref)
+Process Tcl/Tk events for all interpreters by calling [`TclTk.do_one_event(flags)`](@ref)
 until there are no events matching `flags` and return the number of processed events.
-Normally this is automatically called by the timer set by [`Tcl.resume`](@ref).
+Normally this is automatically called by the timer set by [`TclTk.resume`](@ref).
 
 """
 do_events(::Timer) = do_events()
@@ -88,10 +88,10 @@ end
 const default_event_flags = TCL_DONT_WAIT|TCL_ALL_EVENTS
 
 """
-    Tcl.do_one_event(flags = TCL_DONT_WAIT|TCL_ALL_EVENTS) -> bool
+    TclTk.do_one_event(flags = TCL_DONT_WAIT|TCL_ALL_EVENTS) -> bool
 
 Process at most one Tcl/Tk event for all interpreters matching `flags` and return whether
-one such event was processed. This function is called by [`Tcl.do_events`](@ref).
+one such event was processed. This function is called by [`TclTk.do_events`](@ref).
 
 """
 do_one_event(flags::Integer = default_event_flags) = !iszero(Tcl_DoOneEvent(flags))

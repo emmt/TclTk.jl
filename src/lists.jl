@@ -1,5 +1,5 @@
 """
-     Tcl.list(args...) -> lst
+     TclTk.list(args...) -> lst
      interp.list(args...) -> lst
 
 Build a list `lst` of Tcl objects such that each of `args...` is a single element of `lst`.
@@ -10,13 +10,13 @@ in case of failure.
 
 # See also
 
-[`Tcl.concat`](@ref), [`Tcl.eval`](@ref), [`TclObj`](@ref), and [`TclInterp`](@ref).
+[`TclTk.concat`](@ref), [`TclTk.eval`](@ref), [`TclObj`](@ref), and [`TclInterp`](@ref).
 
 """
 function list end
 
 """
-    Tcl.concat(args...) -> lst
+    TclTk.concat(args...) -> lst
     interp.concat(args...) -> lst
 
 Build a list of Tcl objects obtained by concatenating the elements of the arguments `arg...`
@@ -27,7 +27,7 @@ informative error message in case of error.
 
 # See also
 
-[`Tcl.list`](@ref), [`Tcl.eval`](@ref), [`TclObj`](@ref), and [`TclInterp`](@ref).
+[`TclTk.list`](@ref), [`TclTk.eval`](@ref), [`TclObj`](@ref), and [`TclInterp`](@ref).
 
 """
 function concat end
@@ -229,15 +229,15 @@ function unsafe_replace_list(interp::InterpPtr, list::ObjPtr, first::Integer,
 end
 
 """
-    Tcl.Impl.new_list() -> lstptr
+    TclTk.Impl.new_list() -> lstptr
 
 Return a pointer to a Tcl object storing an empty list.
 
-    Tcl.Impl.new_list(f, [interp,] args...) -> lstptr
+    TclTk.Impl.new_list(f, [interp,] args...) -> lstptr
 
 Return a pointer to a Tcl object storing a list built by calling `f(interp, list, arg)` for
-each `arg` in `args...`. Typically, `f` is [`Tcl.Impl.unsafe_append_element`](@ref) or
-[`Tcl.Impl.unsafe_append_list`](@ref).
+each `arg` in `args...`. Typically, `f` is [`TclTk.Impl.unsafe_append_element`](@ref) or
+[`TclTk.Impl.unsafe_append_list`](@ref).
 
 Optional argument `interp` is a Tcl interpreter that can be used to retrieve the error
 message in case of failure.
@@ -278,9 +278,9 @@ function new_list(f::Function, interp::TclInterp, objc::Integer, objv::Ptr{Ptr{T
 end
 
 """
-    Tcl.Impl.unsafe_new_list(f, interp, args...) -> lstptr
+    TclTk.Impl.unsafe_new_list(f, interp, args...) -> lstptr
 
-Unsafe method called by [`Tcl.Impl.new_list`](@ref) to build its result. Argument `interp` is a
+Unsafe method called by [`TclTk.Impl.new_list`](@ref) to build its result. Argument `interp` is a
 pointer to a Tcl interpreter. If `interp` is non-null, it is used to retrieve the error
 message in case of failure.
 
@@ -326,7 +326,7 @@ end
 # collected.
 
 """
-    Tcl.Impl.unsafe_append_element([interp,] list, item) -> nothing
+    TclTk.Impl.unsafe_append_element([interp,] list, item) -> nothing
 
 Private method to append `item` as a single element to the Tcl object `list`.
 
@@ -348,19 +348,19 @@ object).
 
 # See also
 
-[`Tcl.Impl.unsafe_append_list`](@ref) and [`Tcl.Impl.new_list`](@ref).
+[`TclTk.Impl.unsafe_append_list`](@ref) and [`TclTk.Impl.new_list`](@ref).
 
 """
 function unsafe_append_element end
 
 """
-    Tcl.Impl.unsafe_append_list([interp,] list, iter) -> nothing
+    TclTk.Impl.unsafe_append_list([interp,] list, iter) -> nothing
 
 Private method to concatenate the elements of `iter` to the end of the Tcl object `list`.
 
 # See also
 
-[`Tcl.Impl.unsafe_append_element`](@ref) and [`Tcl.Impl.new_list`](@ref).
+[`TclTk.Impl.unsafe_append_element`](@ref) and [`TclTk.Impl.new_list`](@ref).
 
 """
 function unsafe_append_list end

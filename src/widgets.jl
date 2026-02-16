@@ -215,7 +215,7 @@ function winfo_class(interp::TclInterp, path::Name)
 end
 
 """
-    Tcl.Impl.winfo_isroot(w) -> bool
+    TclTk.Impl.winfo_isroot(w) -> bool
 
 Return whether `w` is the Tk root widget of window path.
 
@@ -230,7 +230,7 @@ winfo_isroot(w::TkToplevel) = winfo_isroot(w.path)
 winfo_isroot(w::TkWidget) = false
 
 """
-   Tcl.Impl.widget_path(top, children...) -> path::String
+   TclTk.Impl.widget_path(top, children...) -> path::String
 
 Return a checked Tk window path.
 
@@ -388,7 +388,7 @@ Load Tk and Ttk packages in `interp` and start the event loop (for all interpret
 
 # See also
 
-[`Tcl.resume`](@ref), [`TclInterp`](@ref), and [`TkWidget`](@ref).
+[`TclTk.resume`](@ref), [`TclInterp`](@ref), and [`TkWidget`](@ref).
 
 """
 function tk_start(interp::TclInterp = TclInterp()) :: TclInterp
@@ -402,13 +402,13 @@ function tk_start(interp::TclInterp = TclInterp()) :: TclInterp
 end
 
 """
-    Tcl.configure(w)
+    TclTk.configure(w)
     w(:configure)
 
 Return all the options of Tk widget `w`.
 
 ---
-    Tcl.configure(w, opt1 => val1, opt2 => val2)
+    TclTk.configure(w, opt1 => val1, opt2 => val2)
     w(:configure, opt1 => val1, opt2 => val2)
 
 Change some options of widget `w`. Options names (`opt1`, `opt2`, ...) may be specified as
@@ -420,13 +420,13 @@ way to change the settings is:
 
 # See also
 
-[`Tcl.cget`](@ref) and [`TkWidget`](@ref).
+[`TclTk.cget`](@ref) and [`TkWidget`](@ref).
 
 """
 configure(w::TkWidget, pairs...) = exec(w, :configure, pairs...)
 
 """
-    Tcl.cget(w, opt)
+    TclTk.cget(w, opt)
 
 Return the value of the option `opt` for widget `w`. Option `opt` may be specified as a
 string or as a `Symbol` and shall corresponds to a Tk option name without the leading "-".
@@ -436,7 +436,7 @@ Another way to obtain an option value is:
 
 # See also
 
-[`Tcl.configure`](@ref) and [`TkWidget`](@ref).
+[`TclTk.configure`](@ref) and [`TkWidget`](@ref).
 
 """
 cget(w::TkWidget, opt::Name) = exec(w, :cget, "-"*string(opt))
@@ -453,23 +453,23 @@ function Base.setindex!(w::TkWidget, value, key::Name)
 end
 
 """
-    Tcl.grid(args...)
-    Tcl.pack(args...)
-    Tcl.place(args...)
+    TclTk.grid(args...)
+    TclTk.pack(args...)
+    TclTk.place(args...)
 
 Communicate with one of the Tk geometry manager. One of the arguments must be an instance of
 `TkWidget`. For example:
 
 ```julia
-using Tcl
+using TclTk
 tk_start()
 top = TkToplevel()
-Tcl.exec(:wm, :title, top, "A simple example")
+TclTk.exec(:wm, :title, top, "A simple example")
 btn = TkButton(top, :text => "Click me", :command => "puts \"ouch!\"")
-Tcl.pack(btn, :side => :bottom, :padx => 30, :pady => 5)
+TclTk.pack(btn, :side => :bottom, :padx => 30, :pady => 5)
 ```
 
-The call to `Tcl.list` (could also be `Tcl.quote_string` here) is to avoid that the words in
+The call to `TclTk.list` (could also be `TclTk.quote_string` here) is to avoid that the words in
 the title be split as separate arguments.
 
 """

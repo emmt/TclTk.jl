@@ -40,7 +40,7 @@ auto-loading. It is also given by the global variable `"tcl_library"` which can 
 by:
 
     interp[:tcl_library] -> dir
-    Tcl.getvar(String, interp = TclInterp(), :tcl_library) -> dir
+    TclTk.getvar(String, interp = TclInterp(), :tcl_library) -> dir
 
 """
 function tcl_library(; relative::Bool=false)
@@ -94,26 +94,26 @@ same_thread(interp::TclInterp) =
     "attempt to use a Tcl interpreter in a different thread"))
 
 """
-    Tcl.Impl.isnull(ptr) -> bool
+    TclTk.Impl.isnull(ptr) -> bool
 
 Return whether pointer `ptr` is null.
 
 # See also
 
-[`Tcl.Impl.null`](@ref).
+[`TclTk.Impl.null`](@ref).
 
 """
 isnull(ptr::Union{Ptr,Cstring}) = ptr === null(ptr)
 
 """
-    Tcl.Impl.null(ptr) -> nullptr
-    Tcl.Impl.null(typeof(ptr)) -> nullptr
+    TclTk.Impl.null(ptr) -> nullptr
+    TclTk.Impl.null(typeof(ptr)) -> nullptr
 
 Return a null-pointer of the same type as `ptr`.
 
 # See also
 
-[`Tcl.Impl.isnull`](@ref).
+[`TclTk.Impl.isnull`](@ref).
 
 """
 null(ptr::Union{Ptr,Cstring}) = null(typeof(ptr))
@@ -141,7 +141,7 @@ end
 #---------------------------------------------------------------------------- Quote string -
 
 """
-    Tcl.quote_string(str)
+    TclTk.quote_string(str)
 
 Return string `str` a valid Tcl string surrounded by double quotes that can be directly
 inserted in Tcl scripts.
@@ -190,13 +190,13 @@ end
 #-------------------------------------------------------------------------------- Booleans -
 
 """
-    Tcl.bool(x) -> t::Bool
+    TclTk.bool(x) -> t::Bool
 
 Convert `x` to a Boolean value according to Tcl rules.
 
 """
 bool(x::Bool) = x
-bool(x::Real) = !iszero(x)
+bool(x::Real) = !iszero(x) # this is what is assumed by Tcl
 bool(obj::TclObj) = convert(Bool, obj)
 bool(s::Symbol) = bool(String(s))
 function bool(s::AbstractString)
@@ -211,7 +211,7 @@ end
 #------------------------------------------------------------------------ Automatic names -
 
 """
-    Tcl.Impl.auto_name(pfx = "jl_auto_")
+    TclTk.Impl.auto_name(pfx = "jl_auto_")
 
 Return a unique name with given prefix. The result is a string of the form `pfx#` where `#`
 is a unique number.
@@ -230,7 +230,7 @@ const auto_name_dict = Dict{String,UInt64}()
 #-------------------------------------------------------------------------- Tcl type names -
 
 """
-    Tcl.Impl.unsafe_get_typename(ptr) -> sym::Symbol
+    TclTk.Impl.unsafe_get_typename(ptr) -> sym::Symbol
 
 Return the symbolic type name of Tcl object pointer `ptr`. The result can be:
 
@@ -285,7 +285,7 @@ end
 Base.showerror(io::IO, ex::TclError) = print(io, "Tcl/Tk error: ", ex.msg)
 
 """
-    get_error_message(ex)
+    TclTk.Impl.get_error_message(ex)
 
 Return the error message associated with exception `ex`.
 
@@ -304,7 +304,7 @@ get_error_message(ex::Exception) = sprint(io -> showerror(io, ex))
     throw(TclError("unexpected return status: $status"))
 
 """
-    Tcl.Impl.unsafe_error(interp)
+    TclTk.Impl.unsafe_error(interp)
 
 Throw a Tcl error with a message stored in the result of `interp`.
 
@@ -317,7 +317,7 @@ Throw a Tcl error with a message stored in the result of `interp`.
     throw(TclError(unsafe_string(Tcl_GetStringResult(interp))))
 
 """
-    Tcl.Impl.unsafe_error(interp, mesg)
+    TclTk.Impl.unsafe_error(interp, mesg)
 
 Throw a Tcl error. If `interp` is a non-null pointer to a Tcl interpreter, the error message
 is taken from interpreter's result; otherwise, the error message is `mesg`.
@@ -328,7 +328,7 @@ is taken from interpreter's result; otherwise, the error message is `mesg`.
 
 # See also
 
-[`Tcl.Impl.unsafe_get`](@ref).
+[`TclTk.Impl.unsafe_get`](@ref).
 
 """
 @noinline function unsafe_error(interp::InterpPtr, mesg::AbstractString)

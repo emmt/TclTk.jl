@@ -1,17 +1,17 @@
-baremodule Tcl
+baremodule TclTk
 
-# Tcl is a bare module because it implements its own `eval` function.
+# TclTk is a bare module because it implements its own `eval` function.
 function eval end
 using Base
 
 """
 
-`Tcl.Impl` module hosts the implementation of the `Tcl` package.
+`TclTk.Impl` module hosts the implementation of the `TclTk` package.
 
 """
 module Impl
 
-import ..Tcl
+import ..TclTk
 
 using CEnum
 using ColorTypes
@@ -49,7 +49,7 @@ function __init__()
     # Check that package was built with the same version as the dynamic library.
     version = tcl_version()
     TCL_VERSION == version || error(
-        "`Tcl` package was built for Tcl $(TCL_VERSION) while loaded library has version $(version)")
+        "`TclTk` package was built for Tcl $(TCL_VERSION) while loaded library has version $(version)")
 
     # Many things do not work properly (segmentation fault when freeing a Tcl object,
     # initialization of Tcl interpreters, etc.) if Tcl internals (encodings, sub-systems,
@@ -73,7 +73,7 @@ end
 end # module
 
 # Public symbols. Only those with recognizable prefixes (like "Tcl", "TCL_", "Tk", etc.)
-# are exported, the other must be explicitly imported or used with the `Tcl.` prefix.
+# are exported, the other must be explicitly imported or used with the `TclTk.` prefix.
 for sym in (
     # Types.
     :Callback,

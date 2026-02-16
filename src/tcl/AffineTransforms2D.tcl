@@ -1,7 +1,7 @@
 #
 # AffineTransforms2D.tcl --
 #
-# Implementation of 2D affine transforms in Tcl.
+# Implementation of 2D affine transforms in TclTk.
 #
 #------------------------------------------------------------------------------
 #
