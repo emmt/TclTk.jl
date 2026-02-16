@@ -185,11 +185,37 @@ Base.size(img::TkImage, i::Integer) =
     i ≥ 3 ? 1 : throw(BoundsError("out of bounds dimension index"))
 
 function Base.getindex(img::TkPhoto, ::Colon, ::Colon)
-    return read_image(Matrix{eltype(img)}, img)
+    GC.@preserve img begin
+        block = ImageBlock{UInt8,Int}(unsafe_photo_get_image(img))
+        return unsafe_load_pixels(Matrix{eltype(img)}, block)
+    end
 end
 
 function Base.getindex(img::TkPhoto, xrng::ViewRange, yrng::ViewRange)
-    return read_image(Matrix{eltype(img)}, img, xrng, yrng)
+    GC.@preserve img begin
+        block = ImageBlock{UInt8,Int}(unsafe_photo_get_image(img))
+        block = restrict_xrange(block, xrng)
+        block = restrict_yrange(block, yrng)
+        return unsafe_load_pixels(Matrix{eltype(img)}, block)
+    end
+end
+
+function Base.getindex(img::TkPhoto, x::Integer, yrng::ViewRange)
+    GC.@preserve img begin
+        block = ImageBlock{UInt8,Int}(unsafe_photo_get_image(img))
+        block = restrict_xrange(block, x)
+        block = restrict_yrange(block, yrng)
+        return unsafe_load_pixels(Vector{eltype(img)}, block)
+    end
+end
+
+function Base.getindex(img::TkPhoto, xrng::ViewRange, y::Integer)
+    GC.@preserve img begin
+        block = ImageBlock{UInt8,Int}(unsafe_photo_get_image(img))
+        block = restrict_xrange(block, xrng)
+        block = restrict_yrange(block, y)
+        return unsafe_load_pixels(Vector{eltype(img)}, block)
+    end
 end
 
 function Base.getindex(img::TkPhoto, x::Integer, y::Integer)
@@ -242,37 +268,12 @@ function photo_resize!(img::TkPhoto, width::Integer, height::Integer)
     return nothing
 end
 
-#------------------------------------------------------------------------ Read/write image -
-
-function read_image(::Type{Array{T,2}}, img::TkPhoto) where {T<:Colorant}
-    GC.@preserve img begin
-        block = unsafe_photo_get_image(img)
-        return unsafe_copy(Array{T,2}, block)
-    end
-end
-
-# TODO deal with any ordinal range.
-function read_image(::Type{Array{T,2}}, img::TkPhoto,
-                    xrng::ViewRange, yrng::ViewRange) where {T<:Colorant}
-    GC.@preserve img begin
-        block = ImageBlock{UInt8,Int}(unsafe_photo_get_image(img))
-        block = restrict_xrange(block, xrng)
-        block = restrict_yrange(block, yrng)
-        return unsafe_copy(Array{T,2}, block)
-    end
-end
-
-function read_image(::Type{T}, img::TkPhoto,
-                    xrng::Integer, yrng::Integer) where {T<:Colorant}
-    GC.@preserve img begin
-        block = unsafe_photo_get_image(img)
-        block = restrict_xrange(block, xrng)
-        block = restrict_yrange(block, yrng)
-        return unsafe_copy(Array{T,2}, block)
-    end
-end
+#----------------------------------------------------------------------------- Image block -
 
 restrict_xrange(block::ImageBlock, ::Colon) = block
+
+restrict_yrange(block::ImageBlock, ::Colon) = block
+
 function restrict_xrange(block::ImageBlock{T,I}, xrng::AbstractUnitRange) where {T,I}
     ptr = block.pointer
     if isempty(xrng)
@@ -285,13 +286,7 @@ function restrict_xrange(block::ImageBlock{T,I}, xrng::AbstractUnitRange) where 
     end
     return ImageBlock{T,I}(block; pointer = ptr, width = width)
 end
-function restrict_xrange(block::ImageBlock{T,I}, x::Integer) where {T,I}
-    (𝟙 ≤ x ≤ block.width) || error("out of bounds `x` index")
-    return ImageBlock{T,I}(block; width = one(I),
-                           pointer = block.pointer + block.step*(x - 𝟙))
-end
 
-restrict_yrange(block::ImageBlock, ::Colon) = block
 function restrict_yrange(block::ImageBlock{T,I}, yrng::AbstractUnitRange) where {T,I}
     ptr = block.pointer
     if isempty(yrng)
@@ -304,6 +299,13 @@ function restrict_yrange(block::ImageBlock{T,I}, yrng::AbstractUnitRange) where 
     end
     return ImageBlock{T,I}(block; pointer = ptr, height = height)
 end
+
+function restrict_xrange(block::ImageBlock{T,I}, x::Integer) where {T,I}
+    (𝟙 ≤ x ≤ block.width) || error("out of bounds `x` index")
+    return ImageBlock{T,I}(block; width = one(I),
+                           pointer = block.pointer + block.step*(x - 𝟙))
+end
+
 function restrict_yrange(block::ImageBlock{T,I}, y::Integer) where {T,I}
     (𝟙 ≤ y ≤ block.height) || error("out of bounds `y` index")
     return ImageBlock{T,I}(block; height = one(I),
@@ -366,6 +368,8 @@ function ImageBlock{T,I}(arr::DenseMatrix{E}) where {T,I,E<:Union{Colorant,UInt8
                            offset = offset_from_pixel_type(E))
 end
 
+#----------------------------------------------------------------------------- Load pixels -
+
 function unsafe_load_pixel(::Type{T}, block::ImageBlock,
                            x::Integer, y::Integer) where {T<:Colorant}
     (𝟙 ≤ x ≤ block.width) || error("out of bounds `x` index")
@@ -380,7 +384,7 @@ function unsafe_load_pixel(::Type{T}, block::ImageBlock,
             return convert(T, Gray(gray))
         else
             alpha = unsafe_load(ptr + alpha_off)
-            return convert(T, RGBA(gray, gray, gray, alpha))
+            return convert(T, GrayA(gray, alpha))
         end
     else
         red   = unsafe_load(ptr +   red_off)
@@ -395,17 +399,86 @@ function unsafe_load_pixel(::Type{T}, block::ImageBlock,
     end
 end
 
-function unsafe_copy(::Type{Array{T,2}}, block::ImageBlock) where {T<:Colorant}
+function unsafe_load_pixels(::Type{Vector{T}}, block::ImageBlock) where {T<:Colorant}
     # Pointer to first pixel in red channel (always N0f8 format for each component).
     ptr = Ptr{N0f8}(block.pointer) + block.offset[1]
-
-    # Don't have alpha channel?
-    no_alpha_channel = block.offset[4] < 0
 
     # Offset to other channels (relative to red).
     green_off = block.offset[2] - block.offset[1]
     blue_off  = block.offset[3] - block.offset[1]
-    alpha_off = no_alpha_channel ? 0 : block.offset[4] - block.offset[1]
+
+    # Other block parameters.
+    width  = Int(block.width )::Int
+    height = Int(block.height)::Int
+    number, step = if height == 𝟙
+        width, Int(block.step)::Int
+    elseif width == 𝟙
+        height, Int(block.pitch)::Int
+    else
+        argument_error("invalid block size for loading a row or a column of pixels")
+    end
+
+    # Allocate destination.
+    arr = Array{T}(undef, number)
+
+    # Copy image block according to its format.
+    gray_image = (green_off == blue_off == 0)
+    if  block.offset[4] < 0
+        # No alpha channel.
+        if gray_image
+            # Gray image (no alpha channel).
+            unsafe_load_pixels!(arr, Ptr{Gray{N0f8}}(ptr), number, step)
+        elseif green_off == 1 && blue_off == 2
+            # RGB storage order (no alpha channel).
+            unsafe_load_pixels!(arr, Ptr{RGB{N0f8}}(ptr), number, step)
+        elseif blue_off == -2 && green_off == -1
+            # BGR storage order (no alpha channel).
+            unsafe_load_pixels!(arr, Ptr{BGR{N0f8}}(ptr + blue_off), number, step)
+        else
+            # Generic color image without alpha channel.
+            unsafe_load_pixels!(arr, RGB, ptr, ptr + green_off, ptr + blue_off,
+                                number, step)
+        end
+    else
+        # Image with alpha channel.
+        alpha_off = block.offset[4] - block.offset[1]
+        if gray_image
+            # Gray image with alpha channel.
+            if alpha_off == 1
+                unsafe_load_pixels!(arr, Ptr{GrayA}(ptr), number, step)
+            elseif alpha_off == -1
+                unsafe_load_pixels!(arr, Ptr{AGray}(ptr + alpha_off), number, step)
+            else
+                unsafe_load_pixels!(arr, GrayA, ptr, ptr + alpha_off, number, step)
+            end
+        elseif green_off == 1 && blue_off == 2 && alpha_off == 3
+            # RGBA storage order.
+            unsafe_load_pixels!(arr, Ptr{RGBA{N0f8}}(ptr), number, step)
+        elseif alpha_off == -1 && green_off == 1 && blue_off == 2
+            # ARGB storage order.
+            unsafe_load_pixels!(arr, Ptr{ARGB{N0f8}}(ptr + alpha_off), number, step)
+        elseif blue_off == -2 && green_off == -1 && alpha_off == 1
+            # BGRA storage order.
+            unsafe_load_pixels!(arr, Ptr{BGRA{N0f8}}(ptr + blue_off), number, step)
+        elseif alpha_off == -3 && blue_off == -2 && green_off == -1
+            # ABGR storage order.
+            unsafe_load_pixels!(arr, Ptr{ABGR{N0f8}}(ptr + alpha_off), number, step)
+        else
+            # Generic 4-channel image.
+            unsafe_load_pixels!(arr, RGBA, ptr, ptr + green_off, ptr + blue_off,
+                                ptr + alpha_off, number, step)
+        end
+    end
+    return arr
+end
+
+function unsafe_load_pixels(::Type{Matrix{T}}, block::ImageBlock) where {T<:Colorant}
+    # Pointer to first pixel in red channel (always N0f8 format for each component).
+    ptr = Ptr{N0f8}(block.pointer) + block.offset[1]
+
+    # Offset to other channels (relative to red).
+    green_off = block.offset[2] - block.offset[1]
+    blue_off  = block.offset[3] - block.offset[1]
 
     # Other block parameters.
     width  = Int(block.width )::Int
@@ -417,65 +490,71 @@ function unsafe_copy(::Type{Array{T,2}}, block::ImageBlock) where {T<:Colorant}
     arr = Array{T}(undef, width, height)
 
     # Copy image block according to its format.
-    generic_rgba = false # 4-channel image in unspecific order?
-    if green_off == blue_off == 0
-        # Gray image.
-        if no_alpha_channel
+    gray_image = (green_off == blue_off == 0)
+    if  block.offset[4] < 0
+        # No alpha channel.
+        if gray_image
             # Gray image (no alpha channel).
-            unsafe_copy!(arr, Ptr{Gray{N0f8}}(ptr), width, height, pitch, step)
-        else
-            # Gray image with alpha channel.
-            unsafe_copy_gray_alpha!(arr, ptr, ptr + alpha_off, width, height, pitch, step)
-        end
-    elseif green_off == 1 && blue_off == 2
-        if no_alpha_channel
+            unsafe_load_pixels!(arr, Ptr{Gray{N0f8}}(ptr),
+                                width, height, pitch, step)
+        elseif green_off == 1 && blue_off == 2
             # RGB storage order (no alpha channel).
-            unsafe_copy!(arr, Ptr{RGB{N0f8}}(ptr), width, height, pitch, step)
-        elseif alpha_off == 3
-            # RGBA storage order.
-            unsafe_copy!(arr, Ptr{RGBA{N0f8}}(ptr), width, height, pitch, step)
-        elseif alpha_off == -1
-            # ARGB storage order.
-            unsafe_copy!(arr, Ptr{ARGB{N0f8}}(ptr + alpha_off),
-                         width, height, pitch, step)
-        else
-            # 4-channel image in unspecific order.
-            generic_rgba = true
-        end
-    elseif green_off == -1 && blue_off == -2
-        if no_alpha_channel
+            unsafe_load_pixels!(arr, Ptr{RGB{N0f8}}(ptr),
+                                width, height, pitch, step)
+        elseif blue_off == -2 && green_off == -1
             # BGR storage order (no alpha channel).
-            unsafe_copy!(arr, Ptr{BGR{N0f8}}(ptr + blue_off), width, height, pitch, step)
-        elseif alpha_off == 1
-            # BGRA storage order.
-            unsafe_copy!(arr, Ptr{BGRA{N0f8}}(ptr + blue_off), width, height, pitch, step)
-        elseif alpha_off == -3
-            # ABGR storage order.
-            unsafe_copy!(arr, Ptr{ABGR{N0f8}}(ptr + alpha_off), width, height, pitch, step)
+            unsafe_load_pixels!(arr, Ptr{BGR{N0f8}}(ptr + blue_off),
+                                width, height, pitch, step)
         else
-            # 4-channel image in unspecific order.
-            generic_rgba = true
+            # Generic color image without alpha channel.
+            unsafe_load_pixels!(arr, RGB, ptr, ptr + green_off, ptr + blue_off,
+                                width, height, pitch, step)
         end
-    elseif no_alpha_channel
-        # 3-channel image in unspecific order.
-        unsafe_copy_rgb!(arr, ptr, ptr + green_off, ptr + blue_off,
-                         width, height, pitch, step)
     else
-        # 4-channel image in unspecific order.
-        generic_rgba = true
-    end
-    if generic_rgba
-        # 4-channel image in unspecific order.
-        unsafe_copy_rgba!(arr, ptr, ptr + green_off, ptr + blue_off, ptr + alpha_off,
-                          width, height, pitch, step)
+        # Image with alpha channel.
+        alpha_off = block.offset[4] - block.offset[1]
+        if gray_image
+            # Gray image with alpha channel.
+            if alpha_off == 1
+                unsafe_load_pixels!(arr, Ptr{GrayA}(ptr),
+                                    width, height, pitch, step)
+            elseif alpha_off == -1
+                unsafe_load_pixels!(arr, Ptr{AGray}(ptr + alpha_off),
+                                    width, height, pitch, step)
+            else
+                unsafe_load_pixels!(arr, GrayA, ptr, ptr + alpha_off,
+                                    width, height, pitch, step)
+            end
+        elseif green_off == 1 && blue_off == 2 && alpha_off == 3
+            # RGBA storage order.
+            unsafe_load_pixels!(arr, Ptr{RGBA{N0f8}}(ptr),
+                                width, height, pitch, step)
+        elseif alpha_off == -1 && green_off == 1 && blue_off == 2
+            # ARGB storage order.
+            unsafe_load_pixels!(arr, Ptr{ARGB{N0f8}}(ptr + alpha_off),
+                                width, height, pitch, step)
+        elseif blue_off == -2 && green_off == -1 && alpha_off == 1
+            # BGRA storage order.
+            unsafe_load_pixels!(arr, Ptr{BGRA{N0f8}}(ptr + blue_off),
+                                width, height, pitch, step)
+        elseif alpha_off == -3 && blue_off == -2 && green_off == -1
+            # ABGR storage order.
+            unsafe_load_pixels!(arr, Ptr{ABGR{N0f8}}(ptr + alpha_off),
+                                width, height, pitch, step)
+        else
+            # Generic 4-channel image.
+            unsafe_load_pixels!(arr, RGBA, ptr, ptr + green_off, ptr + blue_off,
+                                ptr + alpha_off, width, height, pitch, step)
+        end
     end
     return arr
 end
 
-# Copy 4-channel image in unspecific order.
-function unsafe_copy_rgba!(arr::AbstractMatrix,
-                           red_ptr::Ptr, green_ptr::Ptr, blue_ptr::Ptr, alpha_ptr::Ptr,
-                           width::Int, height::Int, pitch::Int, step::Int)
+# Load a block of pixels from a 4-channel (red, green, blue, and alpha) image.
+function unsafe_load_pixels!(arr::AbstractMatrix, ::Type{C},
+                             red_ptr::Ptr, green_ptr::Ptr, blue_ptr::Ptr, alpha_ptr::Ptr,
+                             width::Int, height::Int,
+                             pitch::Int, step::Int) where {C<:Union{RGBA,ARGB,BGRA,ABGR}}
     @inbounds for y in 𝟙:height
         @simd for x in 𝟙:width
             off   = pitch*(y - 𝟙) + step*(x - 𝟙)
@@ -483,55 +562,144 @@ function unsafe_copy_rgba!(arr::AbstractMatrix,
             green = unsafe_load(green_ptr + off)
             blue  = unsafe_load( blue_ptr + off)
             alpha = unsafe_load(alpha_ptr + off)
-            arr[x,y] = RGBA(red, green, blue, alpha)
+            arr[x,y] = C(red, green, blue, alpha)
         end
     end
     return nothing
 end
 
-# Copy 3-channel image in unspecific order.
-function unsafe_copy_rgb!(arr::AbstractMatrix,
-                          red_ptr::Ptr, green_ptr::Ptr, blue_ptr::Ptr,
-                          width::Int, height::Int, pitch::Int, step::Int)
+function unsafe_load_pixels!(arr::AbstractVector, ::Type{C},
+                             red_ptr::Ptr, green_ptr::Ptr, blue_ptr::Ptr, alpha_ptr::Ptr,
+                             number::Int, step::Int) where {C<:Union{RGBA,ARGB,BGRA,ABGR}}
+    @inbounds @simd for i in 𝟙:number
+        off   = step*(i - 𝟙)
+        red   = unsafe_load(  red_ptr + off)
+        green = unsafe_load(green_ptr + off)
+        blue  = unsafe_load( blue_ptr + off)
+        alpha = unsafe_load(alpha_ptr + off)
+        arr[i] = C(red, green, blue, alpha)
+    end
+    return nothing
+end
+
+# Load a block of pixels from a 3-channel (red, green, and blue) image.
+function unsafe_load_pixels!(arr::AbstractMatrix, ::Type{C},
+                             red_ptr::Ptr, green_ptr::Ptr, blue_ptr::Ptr,
+                             width::Int, height::Int,
+                             pitch::Int, step::Int) where {C<:Union{RGB,BGR}}
     @inbounds for y in 𝟙:height
         @simd for x in 𝟙:width
             off   = pitch*(y - 𝟙) + step*(x - 𝟙)
             red   = unsafe_load(  red_ptr + off)
             green = unsafe_load(green_ptr + off)
             blue  = unsafe_load( blue_ptr + off)
-            arr[x,y] = RGB(red, green, blue)
+            arr[x,y] = C(red, green, blue)
         end
     end
     return nothing
 end
 
-# Copy 2-channel (gray + alpha) image in unspecific order.
-function unsafe_copy_gray_alpha!(arr::AbstractMatrix,
-                                 gray_ptr::Ptr, alpha_ptr::Ptr,
-                                 width::Int, height::Int, pitch::Int, step::Int)
+function unsafe_load_pixels!(arr::AbstractVector, ::Type{C},
+                             red_ptr::Ptr, green_ptr::Ptr, blue_ptr::Ptr,
+                             number::Int, step::Int) where {C<:Union{RGB,BGR}}
+    @inbounds @simd for i in 𝟙:number
+        off   = step*(i - 𝟙)
+        red   = unsafe_load(  red_ptr + off)
+        green = unsafe_load(green_ptr + off)
+        blue  = unsafe_load( blue_ptr + off)
+        arr[i] = C(red, green, blue)
+    end
+    return nothing
+end
+
+
+# Load block of pixels from a 2-channel (gray and alpha) image.
+function unsafe_load_pixels!(arr::AbstractMatrix, ::Type{C},
+                             gray_ptr::Ptr, alpha_ptr::Ptr,
+                             width::Int, height::Int,
+                             pitch::Int, step::Int) where {C<:Union{GrayA,AGray}}
     @inbounds for y in 𝟙:height
         @simd for x in 𝟙:width
             off   = pitch*(y - 𝟙) + step*(x - 𝟙)
             gray  = unsafe_load( gray_ptr + off)
             alpha = unsafe_load(alpha_ptr + off)
-            arr[x,y] = RGBA(gray, gray, gray, alpha)
+            arr[x,y] = C(gray, alpha)
         end
     end
     return nothing
 end
 
-# Copy pixels in packed format.
-function unsafe_copy!(arr::AbstractMatrix, ptr::Ptr,
-                      width::Int, height::Int, pitch::Int, step::Int)
+function unsafe_load_pixels!(arr::AbstractVector, ::Type{C},
+                             gray_ptr::Ptr, alpha_ptr::Ptr,
+                             number::Int, step::Int) where {C<:Union{GrayA,AGray}}
+    @inbounds @simd for i in 𝟙:number
+        off   = step*(i - 𝟙)
+        gray  = unsafe_load( gray_ptr + off)
+        alpha = unsafe_load(alpha_ptr + off)
+        arr[i] = C(gray, alpha)
+    end
+    return nothing
+end
+
+# Load block of pixels in packed format.
+function unsafe_load_pixels!(arr::AbstractMatrix, ptr::Ptr,
+                             width::Int, height::Int,
+                             pitch::Int, step::Int)
     @inbounds for y in 𝟙:height
         @simd for x in 𝟙:width
-            arr[x,y] = unsafe_load(ptr + step*(x - 𝟙))
+            off = pitch*(y - 𝟙) + step*(x - 𝟙)
+            arr[x,y] = unsafe_load(ptr + off)
         end
-        ptr += pitch
     end
     return nothing
 end
 
+function unsafe_load_pixels!(arr::AbstractVector, ptr::Ptr,
+                             number::Int, step::Int)
+    @inbounds @simd for i in 𝟙:number
+        arr[i] = unsafe_load(ptr + step*(i - 𝟙))
+    end
+    return nothing
+end
+
+#=
+#---------------------------------------------------------------------------- Store pixels -
+
+function unsafe_store_pixel!s(interp::Union{TclInterp,Ptr{Tcl_Interp}},
+                              handle::Tk_PhotoHandle, block::ImageBlock,
+                              x::Integer, y::Integer,
+                              width::Integer, height::Integer,
+                              compRule::Integer)
+
+    ::Type{T}, block::ImageBlock,
+                           x::Integer, y::Integer) where {T<:Colorant}
+    (𝟙 ≤ x ≤ block.width) || error("out of bounds `x` index")
+    (𝟙 ≤ y ≤ block.height) || error("out of bounds `y` index")
+    ptr = Ptr{N0f8}(block.pointer) # always N0f8 format for each component
+    ptr += block.step*(x - 𝟙) + block.pitch*(y - 𝟙)
+    red_off, green_off, blue_off, alpha_off = block.offset
+    if red_off == green_off == blue_off
+        # Gray image.
+        gray = unsafe_load(ptr + red_off)
+        if alpha_off < 0 # no alpha channel
+            return convert(T, Gray(gray))
+        else
+            alpha = unsafe_load(ptr + alpha_off)
+            return convert(T, GrayA(gray, alpha))
+        end
+    else
+        red   = unsafe_load(ptr +   red_off)
+        green = unsafe_load(ptr + green_off)
+        blue  = unsafe_load(ptr +  blue_off)
+        if alpha_off < 0 # no alpha channel
+            return convert(T, RGB(red, green, blue))
+        elseif alpha_off == red_off + 3
+            alpha = unsafe_load(ptr + alpha_off)
+            return convert(T, RGBA(red, green, blue, alpha))
+        end
+    end
+end
+=#
 #------------------------------------------------------------------------------ Unsafe API -
 # Unsafe: arguments must be preserved.
 
