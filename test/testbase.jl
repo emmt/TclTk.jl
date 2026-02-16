@@ -1,6 +1,6 @@
 module TclBaseTests
 
-using Tcl
+using TclTk
 using Colors
 using Test
 
@@ -9,44 +9,44 @@ const π = MathConstants.π
 const φ = MathConstants.φ
 
 @testset "Utilities" begin
-    @test @inferred(Bool, Tcl.bool(true)) === true
-    @test @inferred(Bool, Tcl.bool(false)) === false
-    @test @inferred(Bool, Tcl.bool("0")) === false
-    @test @inferred(Bool, Tcl.bool("0.0")) === false
-    @test @inferred(Bool, Tcl.bool(0)) === false
-    @test @inferred(Bool, Tcl.bool(0x00)) === false
-    @test @inferred(Bool, Tcl.bool(0//1)) === false
-    @test @inferred(Bool, Tcl.bool(0.0)) === false
-    @test @inferred(Bool, Tcl.bool(-0.0)) === false
-    @test @inferred(Bool, Tcl.bool(1)) === true
-    @test @inferred(Bool, Tcl.bool(-1234)) === true
-    @test @inferred(Bool, Tcl.bool(π)) === true
-    @test @inferred(Bool, Tcl.bool(Inf)) === true
-    @test @inferred(Bool, Tcl.bool("1")) === true
-    @test @inferred(Bool, Tcl.bool("4.2")) === true
-    @test @inferred(Bool, Tcl.bool(:true)) === true
-    @test @inferred(Bool, Tcl.bool(:True)) === true
-    @test @inferred(Bool, Tcl.bool(:TRUE)) === true
-    @test @inferred(Bool, Tcl.bool(:yes)) === true
-    @test @inferred(Bool, Tcl.bool(:Yes)) === true
-    @test @inferred(Bool, Tcl.bool(:YES)) === true
-    @test @inferred(Bool, Tcl.bool(:on)) === true
-    @test @inferred(Bool, Tcl.bool(:On)) === true
-    @test @inferred(Bool, Tcl.bool(:ON)) === true
-    @test @inferred(Bool, Tcl.bool(:false)) === false
-    @test @inferred(Bool, Tcl.bool(:False)) === false
-    @test @inferred(Bool, Tcl.bool(:FALSE)) === false
-    @test @inferred(Bool, Tcl.bool(:no)) === false
-    @test @inferred(Bool, Tcl.bool(:No)) === false
-    @test @inferred(Bool, Tcl.bool(:NO)) === false
-    @test @inferred(Bool, Tcl.bool(:off)) === false
-    @test @inferred(Bool, Tcl.bool(:Off)) === false
-    @test @inferred(Bool, Tcl.bool(:OFF)) === false
-    @test_throws ArgumentError Tcl.bool("")
-    @test_throws ArgumentError Tcl.bool("oui")
-    @test_throws ArgumentError Tcl.bool("maybe")
-    @test @inferred(Bool, Tcl.bool(TclObj(true))) === true
-    @test @inferred(Bool, Tcl.bool(TclObj(false))) === false
+    @test @inferred(Bool, TclTk.bool(true)) === true
+    @test @inferred(Bool, TclTk.bool(false)) === false
+    @test @inferred(Bool, TclTk.bool("0")) === false
+    @test @inferred(Bool, TclTk.bool("0.0")) === false
+    @test @inferred(Bool, TclTk.bool(0)) === false
+    @test @inferred(Bool, TclTk.bool(0x00)) === false
+    @test @inferred(Bool, TclTk.bool(0//1)) === false
+    @test @inferred(Bool, TclTk.bool(0.0)) === false
+    @test @inferred(Bool, TclTk.bool(-0.0)) === false
+    @test @inferred(Bool, TclTk.bool(1)) === true
+    @test @inferred(Bool, TclTk.bool(-1234)) === true
+    @test @inferred(Bool, TclTk.bool(π)) === true
+    @test @inferred(Bool, TclTk.bool(Inf)) === true
+    @test @inferred(Bool, TclTk.bool("1")) === true
+    @test @inferred(Bool, TclTk.bool("4.2")) === true
+    @test @inferred(Bool, TclTk.bool(:true)) === true
+    @test @inferred(Bool, TclTk.bool(:True)) === true
+    @test @inferred(Bool, TclTk.bool(:TRUE)) === true
+    @test @inferred(Bool, TclTk.bool(:yes)) === true
+    @test @inferred(Bool, TclTk.bool(:Yes)) === true
+    @test @inferred(Bool, TclTk.bool(:YES)) === true
+    @test @inferred(Bool, TclTk.bool(:on)) === true
+    @test @inferred(Bool, TclTk.bool(:On)) === true
+    @test @inferred(Bool, TclTk.bool(:ON)) === true
+    @test @inferred(Bool, TclTk.bool(:false)) === false
+    @test @inferred(Bool, TclTk.bool(:False)) === false
+    @test @inferred(Bool, TclTk.bool(:FALSE)) === false
+    @test @inferred(Bool, TclTk.bool(:no)) === false
+    @test @inferred(Bool, TclTk.bool(:No)) === false
+    @test @inferred(Bool, TclTk.bool(:NO)) === false
+    @test @inferred(Bool, TclTk.bool(:off)) === false
+    @test @inferred(Bool, TclTk.bool(:Off)) === false
+    @test @inferred(Bool, TclTk.bool(:OFF)) === false
+    @test_throws ArgumentError TclTk.bool("")
+    @test_throws ArgumentError TclTk.bool("oui")
+    @test_throws ArgumentError TclTk.bool("maybe")
+    @test @inferred(Bool, TclTk.bool(TclObj(true))) === true
+    @test @inferred(Bool, TclTk.bool(TclObj(false))) === false
 end
 
 @testset "Tcl Objects" begin
@@ -135,10 +135,10 @@ end
             @test (@inferred Bool convert(Bool, y)) == !iszero(x)
         elseif T <: Integer
             if !(x isa Integer)
-                # Floating-point to non-Boolean integer is not allowed by Tcl.
+                # Floating-point to non-Boolean integer is not allowed by TclTk.
                 @test_throws TclError convert(T, y)
             else
-                S = (isconcretetype(T) ? T : Tcl.WideInt)
+                S = (isconcretetype(T) ? T : TclTk.WideInt)
                 if typemin(S) ≤ x ≤ typemax(S)
                     @test (@inferred S convert(T, y)) == convert(S, x)
                 else
@@ -177,31 +177,31 @@ end
                           ("π", π), ("world is beautiful!", true))
 
         # First unset variable.
-        @inferred TclStatus Tcl.exec(TclStatus, "array", "unset", name)
+        @inferred TclStatus TclTk.exec(TclStatus, "array", "unset", name)
         key = Symbol(name)
 
         # Set variable.
-        @inferred Nothing Tcl.setvar(name, value)
+        @inferred Nothing TclTk.setvar(name, value)
 
         # Get variable.
         T = typeof(value)
-        obj = @inferred TclObj Tcl.getvar(name)
+        obj = @inferred TclObj TclTk.getvar(name)
         @test @inferred(TclObj, interp[name]) == obj
         @test @inferred(TclObj, interp[key]) == obj
         if value isa Union{String,Integer}
-            @test @inferred(T, Tcl.getvar(T, name)) == value
+            @test @inferred(T, TclTk.getvar(T, name)) == value
             @test @inferred(T, interp[T, name]) == value
         elseif value isa AbstractFloat
-            @test @inferred(T, Tcl.getvar(T, name)) ≈ value
+            @test @inferred(T, TclTk.getvar(T, name)) ≈ value
             @test @inferred(T, interp[T, name]) ≈ value
         end
 
         # Test existence and delete variable.
-        @test Tcl.exists(name)
+        @test TclTk.exists(name)
         @test haskey(interp, name)
         @test haskey(interp, key)
-        Tcl.unsetvar(name)
-        @test !Tcl.exists(name)
+        TclTk.unsetvar(name)
+        @test !TclTk.exists(name)
         @test !haskey(interp, name)
         @test !haskey(interp, key)
 
@@ -225,32 +225,32 @@ end
                                   ("π", "φ", π),
                                   ("world is", "beautiful!", true))
         # First unset variable.
-        Tcl.unsetvar(part1, nocomplain=true)
-        @test_throws TclError Tcl.unsetvar(part1)
+        TclTk.unsetvar(part1, nocomplain=true)
+        @test_throws TclError TclTk.unsetvar(part1)
         key1 = Symbol(part1)
         key2 = Symbol(part2)
 
         # Set variable.
-        @inferred Nothing Tcl.setvar(part1, part2, value)
+        @inferred Nothing TclTk.setvar(part1, part2, value)
         T = typeof(value)
-        obj = @inferred TclObj Tcl.getvar(part1, part2)
+        obj = @inferred TclObj TclTk.getvar(part1, part2)
         @test @inferred(TclObj, interp[part1, part2]) == obj
         @test @inferred(TclObj, interp[key1, key2]) == obj
         @test @inferred(TclObj, interp["$(part1)($(part2))"]) == obj
         if value isa Union{String,Integer}
-            @test @inferred(T, Tcl.getvar(T, part1, part2)) == value
+            @test @inferred(T, TclTk.getvar(T, part1, part2)) == value
             @test @inferred(T, interp[T, part1, part2]) == value
         elseif value isa AbstractFloat
-            @test @inferred(T, Tcl.getvar(T, part1, part2)) ≈ value
+            @test @inferred(T, TclTk.getvar(T, part1, part2)) ≈ value
             @test @inferred(T, interp[T, part1, part2]) ≈ value
         end
 
         # Test existence and delete variable.
-        @test Tcl.exists(part1, part2)
+        @test TclTk.exists(part1, part2)
         @test haskey(interp, part1, part2)
         @test haskey(interp, key1, key2)
-        Tcl.unsetvar(part1, part2)
-        @test !Tcl.exists(part1, part2)
+        TclTk.unsetvar(part1, part2)
+        @test !TclTk.exists(part1, part2)
         @test !haskey(interp, part1, part2)
         @test !haskey(interp, key1, key2)
 
@@ -271,14 +271,14 @@ end
 
 @testset "Tcl Lists" begin
     # NULL object pointer yields empty list.
-    objc, objv = @inferred Tcl.Impl.unsafe_get_list_elements(Ptr{Tcl.Impl.Tcl_Obj}(0))
+    objc, objv = @inferred TclTk.Impl.unsafe_get_list_elements(Ptr{TclTk.Impl.Tcl_Obj}(0))
     @test objc === 0
-    @test objv === Ptr{Ptr{Tcl.Impl.Tcl_Obj}}(0)
+    @test objv === Ptr{Ptr{TclTk.Impl.Tcl_Obj}}(0)
 
     # Tcl "list".
     wa = ("", 1, "hello world!", (true, false), -3.75, π)
     wf = (1, "hello", "world!", true, false, -3.75, π) # "concat" version
-    wb = @inferred TclObj Tcl.list(wa...)
+    wb = @inferred TclObj TclTk.list(wa...)
     wc = @inferred TclObj TclObj(wa)
     @test wb.type == :list
     @test wc.type == :list
@@ -304,7 +304,7 @@ end
     @test @inferred(TclObj, wb[3]) == @inferred(TclObj, wc[4])
 
     # Tcl "concat".
-    wd = @inferred TclObj Tcl.concat(wa...)
+    wd = @inferred TclObj TclTk.concat(wa...)
     @test wd.type == :list
     @test @inferred(length(wd)) == length(wf)
     @test all([wd[i] == TclObj(wf[i]) for i in 1:length(wf)])
@@ -318,7 +318,7 @@ end
     @test Tuple(v) == map(string, t)
 
     #
-    #lst5 = Tcl.list(π, 1, "hello", 2:6)
+    #lst5 = TclTk.list(π, 1, "hello", 2:6)
     #@test length(lst5) == 4
     #@test lst5[1] ≈ π
     #@test lst5[2] == 1
@@ -339,15 +339,15 @@ end
     #@test A[3,1] == lst5[5]
     #@test A[3,2] == lst5[6]
 
-    #yc = Tcl.exec("list",x,z)
-    #r = Tcl.exec(TclObj,"list",4.6,pi)
-    #q = Tcl.exec(TclObj,"list",4,pi)
-    #Tcl.exec("list",4,pi)
-    #Tcl.exec("list",x,z,r)
-    #Tcl.exec("list",x,z,"hello",r)
+    #yc = TclTk.exec("list",x,z)
+    #r = TclTk.exec(TclObj,"list",4.6,pi)
+    #q = TclTk.exec(TclObj,"list",4,pi)
+    #TclTk.exec("list",4,pi)
+    #TclTk.exec("list",x,z,r)
+    #TclTk.exec("list",x,z,"hello",r)
     #interp = TclInterp()
     #interp[:v] = r
-    #Tcl.eval(interp, raw"foreach x $v { puts $x }")
+    #TclTk.eval(interp, raw"foreach x $v { puts $x }")
 
 end
 #=
@@ -356,35 +356,35 @@ end
         var = "x"
         @testset "Integers" begin
             for v in (1, -1, 0, 250, 1<<40)
-                x = Tcl.exec(:set, var, v)
-                @test x == Tcl.getvar(var)
+                x = TclTk.exec(:set, var, v)
+                @test x == TclTk.getvar(var)
                 @test typeof(x) <: Integer
             end
         end
         @testset "Floats" begin
             for v in (1.0, 0.0, -0.5, π, φ, sqrt(2))
-                x = Tcl.exec(:set, var, v)
-                @test x == Tcl.getvar(var)
+                x = TclTk.exec(:set, var, v)
+                @test x == TclTk.getvar(var)
                 @test typeof(x) <: Cdouble
             end
         end
         @testset "Strings" begin
             for v in ("", "hellow world!", "1", "true", " ", "\n", "\t", "\r",
                       "\a", "caleçon espiègle")
-                x = Tcl.exec(:set, var, v)
-                @test x == Tcl.getvar(var)
+                x = TclTk.exec(:set, var, v)
+                @test x == TclTk.getvar(var)
                 @test typeof(x) <: String
             end
             for v in ("\u0", "\u2200", "\u2200 x \u2203 y")
-                x = Tcl.exec(:set, var, TclObj(v))
-                @test x == Tcl.getvar(var)
+                x = TclTk.exec(:set, var, TclObj(v))
+                @test x == TclTk.getvar(var)
                 @test typeof(x) <: String
             end
         end
         @testset "Booleans" begin
             for v in (true, false)
-                x = Tcl.exec(:set, var, v)
-                @test x == Tcl.getvar(var)
+                x = TclTk.exec(:set, var, v)
+                @test x == TclTk.getvar(var)
                 @test typeof(x) <: Integer
             end
         end

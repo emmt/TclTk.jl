@@ -1,8 +1,8 @@
 # Julia interface to Tcl/Tk
 
 [![License](http://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat)](LICENSE.md)
-[![Build Status](https://github.com/emmt/Tcl.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/emmt/Tcl.jl/actions/workflows/CI.yml?query=branch%3Amain)
-[![Coverage](https://codecov.io/gh/emmt/Tcl.jl/graph/badge.svg?token=2ZyJuZeh71)](https://codecov.io/gh/emmt/Tcl.jl)
+[![Build Status](https://github.com/emmt/TclTk.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/emmt/TclTk.jl/actions/workflows/CI.yml?query=branch%3Amain)
+[![Coverage](https://codecov.io/gh/emmt/TclTk.jl/graph/badge.svg?token=2ZyJuZeh71)](https://codecov.io/gh/emmt/TclTk.jl)
 
 This package provides an optimized Julia interface to [Tcl/Tk](http://www.tcl.tk/).
 
@@ -50,8 +50,8 @@ This package provides an optimized Julia interface to [Tcl/Tk](http://www.tcl.tk
   a script is done by:
 
   ```julia
-  Tcl.eval(script)         # evaluate Tcl script in initial interpreter
-  Tcl.eval(interp, script) # evaluate Tcl script with specific interpreter
+  TclTk.eval(script)         # evaluate Tcl script in initial interpreter
+  TclTk.eval(interp, script) # evaluate Tcl script with specific interpreter
   interp.eval(script)      # idem
   ```
 
@@ -74,42 +74,42 @@ would be very happy if, eventually, the two projects merge.
 
 # Installation
 
-Tcl.jl is not yet an [offical Julia package](https://pkg.julialang.org/) but it is easy to
+`TclTk` is not yet an [offical Julia package](https://pkg.julialang.org/) but it is easy to
 install from the REPL of Julia's package manager<sup>[[pkg]](#pkg)</sup> as follows:
 
 ```julia
-pkg> add https://github.com/emmt/Tcl.jl.git
+pkg> add https://github.com/emmt/TclTk.jl.git
 ```
 
 where `pkg>` represents the package manager prompt and `https` protocol has been assumed; if
 `ssh` is more suitable for you, then:
 
 ```julia
-pkg> add git@github.com:emmt/Tcl.jl.git
+pkg> add git@github.com:emmt/TclTk.jl.git
 ```
 
-To check whether Tcl package works correctly:
+To check whether `TclTk` package works correctly:
 
 ```julia
-pkg> test Tcl
+pkg> test TclTk
 ```
 
 To update to the last version:
 
 ```julia
-pkg> update Tcl
-pkg> build Tcl
+pkg> update TclTk
+pkg> build TclTk
 ```
 
 and perhaps test again...
 
-If something goes wrong, it may be because you already have an old
-version of Tcl.jl.  Uninstall Tcl.jl as follows:
+If something goes wrong, it may be because you already have an old version of `TclTk`.
+Uninstall `TclTk` as follows:
 
 ```julia
-pkg> rm Tcl
+pkg> rm TclTk
 pkg> gc
-pkg> add https://github.com/emmt/Tcl.jl.git
+pkg> add https://github.com/emmt/TclTk.jl.git
 ```
 
 before re-installing.
@@ -117,7 +117,6 @@ before re-installing.
 <hr>
 
 - <a name="pkg"><sup>[pkg]</sup></a> To switch from [julia
-  REPL](https://docs.julialang.org/en/stable/manual/interacting-with-julia/) to
-  the package manager REPL, just hit the `]` key and you should get a
-  `... pkg>` prompt.  To revert to Julia's REPL, hit the `Backspace` key at the
-  `... pkg>` prompt.
+  REPL](https://docs.julialang.org/en/stable/manual/interacting-with-julia/) to the package
+  manager REPL, just hit the `]` key and you should get a `... pkg>` prompt. To revert to
+  Julia's REPL, hit the `Backspace` key at the `... pkg>` prompt.

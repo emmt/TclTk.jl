@@ -1,5 +1,6 @@
-name = "Tcl"
-uuid = "0c1a82aa-b54c-42d3-8054-cbad0e6b9f76"
+name = "TclTk"
+uuid = "26a9145d-e64c-4475-a766-b5ac12021523"
+authors = ["Éric Thiébaut <eric.thiebaut@univ-lyon1.fr> and contributors"]
 version = "0.2.0"
 
 [deps]

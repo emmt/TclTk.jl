@@ -124,9 +124,9 @@ end
 #-------------------------------------------------------------------------- Image commands -
 
 # Make Tk image objects callable.
-(img::TkImage)(args...; kwds...) = Tcl.exec(img.interp, img, args...; kwds...)
+(img::TkImage)(args...; kwds...) = TclTk.exec(img.interp, img, args...; kwds...)
 (img::TkImage)(::Type{T}, args...; kwds...) where {T} =
-    Tcl.exec(T, img.interp, img, args...; kwds...)
+    TclTk.exec(T, img.interp, img, args...; kwds...)
 
 # Reproduce Tk `image command ...`.
 for (prop, type) in (:delete => :Nothing,

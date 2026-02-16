@@ -2,8 +2,8 @@
 #
 # Usage:
 #
-#     using Tcl
-#     using Tcl.ShortNames
+#     using TclTk
+#     using TclTk.ShortNames
 #
 
 module ShortNames
@@ -13,7 +13,6 @@ using ...Tcl
 export
     cget,
     configure,
-    getinterp,
     getparent,
     getpath,
     grid,
@@ -58,15 +57,14 @@ export
     Toplevel,
     Treeview
 
-const cget          = Tcl.cget
-const configure     = Tcl.configure
-const getinterp     = Tcl.getinterp
-const getparent     = Tcl.getparent
-const getpath       = Tcl.getpath
-const grid          = Tcl.grid
-const list          = Tcl.list
-const pack          = Tcl.pack
-const place         = Tcl.place
+const cget          = TclTk.cget
+const configure     = TclTk.configure
+const getparent     = TclTk.getparent
+const getpath       = TclTk.getpath
+const grid          = TclTk.grid
+const list          = TclTk.list
+const pack          = TclTk.pack
+const place         = TclTk.place
 
 # Use the same short names as the Tk class names given by `winfo class $w`.
 const Button        = TkButton

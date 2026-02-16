@@ -1,6 +1,6 @@
 """
-    Tcl.CallBack(f, name=Tcl.auto_name("jl_func_"), interp=TclInterp()) -> callback
-    Tcl.CallBack(f, interp=TclInterp(), name=Tcl.auto_name("jl_func_")) -> callback
+    TclTk.CallBack(f, name=TclTk.auto_name("jl_func_"), interp=TclInterp()) -> callback
+    TclTk.CallBack(f, interp=TclInterp(), name=TclTk.auto_name("jl_func_")) -> callback
 
 Create a command implemented by the function `f` in Tcl interpreter `interp`. The command is
 initially named `name` (the command may be renamed).
@@ -21,9 +21,9 @@ The method `f(interp, args)` may return up to two values (both optional):
   `TCL_BREAK` or `TCL_CONTINUE`) to specify the issue of the callback. If omitted, `TCL_OK`
   is assumed for `status`.
 
-* A `result` to be stored in the interpreter's result by calling `Tcl.setresult!(interp,
+* A `result` to be stored in the interpreter's result by calling `TclTk.setresult!(interp,
   result)`. If `result` is omitted or `nothing`, the interpreter's result is left unchanged
-  (it may have been set by the callback by [`Tcl.setresult!`](@ref)).
+  (it may have been set by the callback by [`TclTk.setresult!`](@ref)).
 
 If `status` and `result` are both returned by the callback, `status` must be first and
 `result` second.
@@ -34,7 +34,7 @@ interpreter.
 
 # See also
 
-[`Tcl.deletecommand`](@ref), [`Tcl.auto_name`](@ref), and [`TclStatus`](@ref).
+[`TclTk.deletecommand`](@ref), [`TclTk.auto_name`](@ref), and [`TclStatus`](@ref).
 
 """
 function Callback(func::Function,
@@ -87,7 +87,7 @@ end
 
 Base.show(io::IO, ::MIME"text/plain", f::Callback) = show(io, f)
 Base.show(io::IO, f::Callback) =
-    print(io, "Tcl.Callback: `", nameof(f.func), "` (in Julia) => \"", f.fullname, "\" (in Tcl)")
+    print(io, "TclTk.Callback: `", nameof(f.func), "` (in Julia) => \"", f.fullname, "\" (in Tcl)")
 
 const release_object_proc = Ref{Ptr{Cvoid}}() # set by __init__
 const eval_command_proc = Ref{Ptr{Cvoid}}() # set by __init__
@@ -131,8 +131,8 @@ function set_command_result(interp::TclInterp, (status,result)::Tuple{TclStatus,
 end
 
 """
-    Tcl.deletecommand(name, interp=TclInterp()) -> bool
-    Tcl.deletecommand(interp, name) -> bool
+    TclTk.deletecommand(name, interp=TclInterp()) -> bool
+    TclTk.deletecommand(interp, name) -> bool
 
 Delete command named `name` in Tcl interpreter `interp` and return whether the command
 existed before the call.
@@ -147,14 +147,14 @@ function deletecommand(interp::TclInterp, name::Name)
 end
 
 """
-    Tcl.deletecommand(callback::Tcl.Callback) -> bool
+    TclTk.deletecommand(callback::TclTk.Callback) -> bool
 
 Delete the Tcl command of `callback` from its interpreter and return whether the command
 existed before the call.
 
 # See also
 
-[`Tcl.Callback`](@ref).
+[`TclTk.Callback`](@ref).
 
 """
 function deletecommand(callback::Callback)
@@ -170,13 +170,13 @@ end
 const preserved_objects = Dict{Any,Int}()
 
 """
-    Tcl.Impl.preserve(obj) -> obj
+    TclTk.Impl.preserve(obj) -> obj
 
 Increment the reference count on object `obj` to prevent that `obj` be garbage collected.
 
 !!! warning
-    Any call to `Tcl.Impl.release(obj)` must match a previous call to
-    [`Tcl.Impl.preserve(obj)`](@ref).
+    Any call to `TclTk.Impl.release(obj)` must match a previous call to
+    [`TclTk.Impl.preserve(obj)`](@ref).
 
 """
 function preserve(obj)
@@ -185,14 +185,14 @@ function preserve(obj)
 end
 
 """
-    Tcl.Impl.release(obj)
+    TclTk.Impl.release(obj)
 
 Decrement the reference count of object `obj`. The resources associated with `obj` may be
 garbage collected if it becomes no longer referenced.
 
 !!! warning
-    Any call to `Tcl.Impl.release(obj)` must match a previous call to
-    [`Tcl.Impl.preserve(obj)`](@ref).
+    Any call to `TclTk.Impl.release(obj)` must match a previous call to
+    [`TclTk.Impl.preserve(obj)`](@ref).
 
 """
 function release(obj)

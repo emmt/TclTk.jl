@@ -1,14 +1,14 @@
-import Tcl
+import TclTk
 
 module TclDemos
 
-using Tcl
-using Tcl.ShortNames
+using TclTk
+using TclTk.ShortNames
 
 function addseedismiss(parent, child)
-    #import Tcl: list
+    #import TclTk: list
     ## See Code / Dismiss buttons
-    interp = getinterp(parent)
+    interp = TclInterp(parent)
     w = TFrame(parent, child)
     if isdefined(:TSeparator)
         sep = TSeparator(w, "sep")
@@ -18,9 +18,8 @@ function addseedismiss(parent, child)
     grid(sep, columnspan=4, row=0, sticky="ew", pady="2")
     dismiss = TButton(w,"dismiss", text="Dismiss",
                         #image="::img::delete",
-                        compound="left",
-                        command=list("destroy",
-                                     interp("winfo","toplevel",w)))
+                        :compound => :left,
+                        :command => list(:destroy, interp(:winfo, :toplevel, w)))
 
     # createcommand(interp, "jlcallback", (args...) -> println("Ouch!"))
     code = TButton(w, "code", text="See Code",
@@ -56,18 +55,18 @@ function addseedismiss(parent, child)
 end
 
 function labelframedemo()
-    interp = tkstart()
+    interp = tk_start()
     wname = ".labelframe"
-    interp("catch {destroy $wname}")
+    interp.eval(Nothing, "catch {destroy $wname}")
     w = Toplevel(wname)
-    interp("wm","title",w,"Labelframe Demonstration")
-    interp("wm","iconname",w,"labelframe")
+    interp(:wm,:title,w,"Labelframe Demonstration")
+    interp(:wm,:iconname,w,"labelframe")
 
     # Some information
     msg = Label(w, "msg", #font="Helveltica",
-                  wraplength="4i", justify="left",
-                  text="Labelframes are used to group related widgets together.  The label may be either plain text or another widget.")
-    pack(msg, side="top")
+                :wraplength => "4i", :justify => :left,
+                :text => "Labelframes are used to group related widgets together.  The label may be either plain text or another widget.")
+    pack(msg, side =>:top)
 
     ## See Code / Dismiss buttons
     btns = addseedismiss(w, "buttons")
@@ -89,7 +88,7 @@ function labelframedemo()
     end
 
     # Using a label window to control a group of options.
-    interp(raw"""
+    interp.eval(Nothing, raw"""
             proc lfEnableButtons {w} {
                 foreach child [winfo children $w] {
                     if {$child == "$w.cb"} continue
@@ -119,15 +118,15 @@ function labelframedemo()
 end
 
 function runtests2()
-    interp = tkstart()
+    interp = tk_start()
     if false
-        name = interp("image create photo -file /home/eric/work/code/CImg/CImg-1.5.5/examples/img/lena.pgm")
-        interp("pack [button .b -image $name]")
-        d = Tcl.getpixels(interp, name, Val{:red});
+        name = interp.eval("image create photo -file /home/eric/work/code/CImg/CImg-1.5.5/examples/img/lena.pgm")
+        interp.eval("pack [button .b -image $name]")
+        d = TclTk.getpixels(interp, name, Val{:red});
     else
-        name = Tcl.eval("image create photo -file /home/eric/work/code/CImg/CImg-1.5.5/examples/img/lena.pgm")
-        Tcl.eval("pack [button .b -image $name]")
-        d = Tcl.getpixels(name, Val{:red});
+        name = TclTk.eval("image create photo -file /home/eric/work/code/CImg/CImg-1.5.5/examples/img/lena.pgm")
+        TclTk.eval("pack [button .b -image $name]")
+        d = TclTk.getpixels(name, Val{:red});
     end
     return d;
 end

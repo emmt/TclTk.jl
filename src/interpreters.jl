@@ -25,7 +25,7 @@ TclObj(42)
 ```
 
 The result of the command is returned as a Tcl object storing the value `42`. See
-[`Tcl.exec`](@ref) for more details about execution of Tcl commands.
+[`TclTk.exec`](@ref) for more details about execution of Tcl commands.
 
 To *evaluate* a Tcl script with the interpreter, call `interp.eval(args...)`. The above
 example can also be done by:
@@ -35,7 +35,7 @@ julia> interp.eval("set x 42")
 TclObj("42")
 ```
 
-whose result is a Tcl object storing the string `"42"`. See method [`Tcl.eval`](@ref) for
+whose result is a Tcl object storing the string `"42"`. See method [`TclTk.eval`](@ref) for
 more details about script evaluation.
 
 The `interp` object can also be indexed as an array to access global Tcl variables (the
@@ -135,8 +135,8 @@ end
 
 # Make a Tcl interpreter callable.
 (interp::TclInterp)(::Type{T}, args...; kwds...) where {T} =
-    Tcl.exec(T, interp, args...; kwds...)
-(interp::TclInterp)(args...; kwds...) = Tcl.exec(interp, args...; kwds...)
+    TclTk.exec(T, interp, args...; kwds...)
+(interp::TclInterp)(args...; kwds...) = TclTk.exec(interp, args...; kwds...)
 
 Base.show(io::IO, ::MIME"text/plain", interp::TclInterp) = show(io, interp)
 function Base.show(io::IO, interp::TclInterp)
@@ -152,7 +152,7 @@ Base.propertynames(interp::TclInterp) = (:concat, :eval, :exec, :list, :ptr,
 
 @inline Base.getproperty(interp::TclInterp, key::Symbol) = _getproperty(interp, Val(key))
 _getproperty(interp::TclInterp, ::Val{:concat}) = PrefixedFunction(concat, interp)
-_getproperty(interp::TclInterp, ::Val{:eval}) = PrefixedFunction(Tcl.eval, interp)
+_getproperty(interp::TclInterp, ::Val{:eval}) = PrefixedFunction(TclTk.eval, interp)
 _getproperty(interp::TclInterp, ::Val{:exec}) = PrefixedFunction(exec, interp)
 _getproperty(interp::TclInterp, ::Val{:list}) = PrefixedFunction(list, interp)
 _getproperty(interp::TclInterp, ::Val{:ptr}) = getfield(interp, :ptr)
@@ -186,16 +186,16 @@ end
 """
     interp[] -> str::String
     interp.result() -> str::String
-    Tcl.getresult() -> str::String
-    Tcl.getresult(interp) -> str::String
+    TclTk.getresult() -> str::String
+    TclTk.getresult(interp) -> str::String
 
     interp.result(T) -> val::T
-    Tcl.getresult(T) -> val::T
-    Tcl.getresult(T, interp) -> val::T
-    Tcl.getresult(interp, T) -> val::T
+    TclTk.getresult(T) -> val::T
+    TclTk.getresult(T, interp) -> val::T
+    TclTk.getresult(interp, T) -> val::T
 
 Retrieve the result of interpreter `interp` as a value of type `T` or as a string if `T` is
-not specified. `Tcl.getresult` returns the result of the shared interpreter of the thread.
+not specified. `TclTk.getresult` returns the result of the shared interpreter of the thread.
 `T` may be `TclObj` to retrieve a managed Tcl object.
 
 # See also
@@ -224,7 +224,7 @@ end
 Base.getindex(interp::TclInterp) = getresult(String, interp)
 
 """
-    Tcl.setresult!(interp = TclInterp(), val) -> nothing
+    TclTk.setresult!(interp = TclInterp(), val) -> nothing
 
 Set the result stored in Tcl interpreter `interp` with `val`.
 
@@ -269,7 +269,7 @@ isactive(interp::TclInterp) = !isnull(pointer(interp)) && !iszero(Tcl_InterpActi
 #------------------------------------------------------------------- Evaluation of scripts -
 
 """
-    Tcl.exec(T=TclObj, interp=TclInterp(), args...) -> res::T
+    TclTk.exec(T=TclObj, interp=TclInterp(), args...) -> res::T
     interp.exec(T=TclObj, args...) -> res::T
     interp(T=TclObj, args...) -> res::T
 
@@ -279,10 +279,10 @@ converted in the pair of arguments `-key` and `val` in the command list (note th
 before the key name).
 
 The evaluation of a Tcl command stores a result (or an error message) in the interpreter and
-returns a status. The behavior of `Tcl.exec` depend on the type `T` of the expected result:
+returns a status. The behavior of `TclTk.exec` depend on the type `T` of the expected result:
 
 * If `T` is `TclStatus`, the status of the evaluation is returned and the command result may
-  be retrieved by calling [`Tcl.getresult`](@ref) or via `interp.result(...)`.
+  be retrieved by calling [`TclTk.getresult`](@ref) or via `interp.result(...)`.
 
 * If `T` is `Nothing`, an exception is thrown if the status is not [`TCL_OK`](@ref) and
   `nothing` is returned otherwise (i.e., the result of the command is ignored).
@@ -292,10 +292,10 @@ returns a status. The behavior of `Tcl.exec` depend on the type `T` of the expec
 
 # See also
 
-See [`Tcl.list`](@ref) for the rules to build a list (apart from the accounting of pairs).
+See [`TclTk.list`](@ref) for the rules to build a list (apart from the accounting of pairs).
 
-See [`Tcl.eval`](@ref) for another way to evaluate a Tcl script. The difference with
-[`Tcl.eval`](@ref) is that each input argument is interpreted as a different *token* of the
+See [`TclTk.eval`](@ref) for another way to evaluate a Tcl script. The difference with
+[`TclTk.eval`](@ref) is that each input argument is interpreted as a different *token* of the
 Tcl command.
 
 """
@@ -330,7 +330,7 @@ function unsafe_append_exec_arg(interp::InterpPtr, list::ObjPtr, (key,val)::Pair
 end
 
 """
-    Tcl.eval(T=TclObj, interp=TclInterp(), args...) -> res::T
+    TclTk.eval(T=TclObj, interp=TclInterp(), args...) -> res::T
     interp.eval(T=TclObj, args...) -> res::T
 
 Concatenate arguments `args...` into a list, evaluate this list as a Tcl script with
@@ -339,10 +339,10 @@ converted in the pair of arguments `-key` and `val` in the script list (note the
 before the key name).
 
 The evaluation of a Tcl script stores a result (or an error message) in the interpreter and
-returns a status. The behavior of `Tcl.eval` depend on the type `T` of the expected result:
+returns a status. The behavior of `TclTk.eval` depend on the type `T` of the expected result:
 
 * If `T` is `TclStatus`, the status of the evaluation is returned and the script result may
-  be retrieved by calling [`Tcl.getresult`](@ref) or via `interp.result(...)`.
+  be retrieved by calling [`TclTk.getresult`](@ref) or via `interp.result(...)`.
 
 * If `T` is `Nothing`, an exception is thrown if the status is not [`TCL_OK`](@ref) and
   `nothing` is returned otherwise (i.e., the result of the script is ignored).
@@ -352,25 +352,25 @@ returns a status. The behavior of `Tcl.eval` depend on the type `T` of the expec
 
 # See also
 
-See [`Tcl.concat`](@ref) for the rules to concatenate arguments into a list (apart from the
+See [`TclTk.concat`](@ref) for the rules to concatenate arguments into a list (apart from the
 accounting of pairs).
 
-See [`Tcl.exec`](@ref) for another way to execute a Tcl command where each of `args...` is
+See [`TclTk.exec`](@ref) for another way to execute a Tcl command where each of `args...` is
 considered as a distinct command argument.
 
 """
-Tcl.eval
+TclTk.eval
 
 # Provide optional leading arguments.
-Tcl.eval(args...) = Tcl.eval(TclInterp(), args...)
-Tcl.eval(::Type{T}, args...) where {T} = Tcl.eval(T, TclInterp(), args...)
-Tcl.eval(interp::TclInterp, args...) = Tcl.eval(TclObj, interp, args...)
+TclTk.eval(args...) = TclTk.eval(TclInterp(), args...)
+TclTk.eval(::Type{T}, args...) where {T} = TclTk.eval(T, TclInterp(), args...)
+TclTk.eval(interp::TclInterp, args...) = TclTk.eval(TclObj, interp, args...)
 
 # Re-order leading arguments.
-Tcl.eval(interp::TclInterp, ::Type{T}, args...) where {T} = Tcl.eval(T, interp, args...)
+TclTk.eval(interp::TclInterp, ::Type{T}, args...) where {T} = TclTk.eval(T, interp, args...)
 
 # Evaluate script provided as a (symbolic) string.
-function Tcl.eval(::Type{T}, interp::TclInterp, script::FastString) where {T}
+function TclTk.eval(::Type{T}, interp::TclInterp, script::FastString) where {T}
     # For a script given as a string, `Tcl_EvalEx` is slightly faster than `Tcl_Eval` (says
     # the doc.) and, more importantly, the script may contain embedded nulls.
     GC.@preserve interp script begin
@@ -380,12 +380,12 @@ function Tcl.eval(::Type{T}, interp::TclInterp, script::FastString) where {T}
         return unsafe_result(T, status, interp_ptr)
     end
 end
-function Tcl.eval(::Type{T}, interp::TclInterp, script::AbstractString) where {T}
-    return Tcl.eval(T, interp, string(script))
+function TclTk.eval(::Type{T}, interp::TclInterp, script::AbstractString) where {T}
+    return TclTk.eval(T, interp, string(script))
 end
 
 # Evaluate script provided as a Tcl object.
-function Tcl.eval(::Type{T}, interp::TclInterp, script::TclObj) where {T}
+function TclTk.eval(::Type{T}, interp::TclInterp, script::TclObj) where {T}
     GC.@preserve interp script begin
         interp_ptr = checked_pointer(interp)
         status = Tcl_EvalObjEx(interp_ptr, script,
@@ -397,7 +397,7 @@ end
 # Evaluate script provided as more than one arguments. Concatenate arguments in a Tcl list
 # object. Then, call `Tcl_EvalObjEx` which do manage the reference count of its object
 # argument.
-function Tcl.eval(::Type{T}, interp::TclInterp, args...) where {T}
+function TclTk.eval(::Type{T}, interp::TclInterp, args...) where {T}
     GC.@preserve interp begin
         interp_ptr = checked_pointer(interp)
         list_ptr = unsafe_new_list(unsafe_append_eval_arg, interp_ptr, args...)
