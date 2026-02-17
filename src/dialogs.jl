@@ -109,7 +109,7 @@ Available options are:
 [`tk_messageBox`](@ref).
 
 """
-function tk_chooseColor(interp::TclInterp, pairs::Pair...) :: Union{TkRGB{UInt8},Nothing}
+function tk_chooseColor(interp::TclInterp, pairs::Pair...) :: Union{RGB{N0f8},Nothing}
     # Make sure Tk is started.
     tk_start(interp)
 
@@ -117,23 +117,12 @@ function tk_chooseColor(interp::TclInterp, pairs::Pair...) :: Union{TkRGB{UInt8}
     color = interp.exec(String, "tk_chooseColor", pairs...)
 
     # Convert to a color.
-    len = length(color)
-    len == 0 && return nothing
-    if startswith(color, '#')
-        r1 = nextind(color, firstindex(color))
-        if len == 7
-            r2 = nextind(color, r1, 1)
-            g1 = nextind(color, r2, 1)
-            g2 = nextind(color, g1, 1)
-            b1 = nextind(color, g2, 1)
-            b2 = nextind(color, b1, 1)
-            red   = parse(UInt8, SubString(color, r1:r2), base=16)
-            green = parse(UInt8, SubString(color, g1:g2), base=16)
-            blue  = parse(UInt8, SubString(color, b1:b2), base=16)
-            return TkRGB{UInt8}(red, green, blue)
-        end
+    isempty(color) && return nothing
+    try
+        return parse(RGB{N0f8}, color)
+    catch
+        error("unexpected color \"$color\"")
     end
-    error("unexpected color \"$color\"")
 end
 
 """
