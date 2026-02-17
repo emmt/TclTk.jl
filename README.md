@@ -1,19 +1,21 @@
 # Julia interface to Tcl/Tk
 
 [![License](http://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat)](LICENSE.md)
-[![Build Status](https://github.com/emmt/TclTk.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/emmt/TclTk.jl/actions/workflows/CI.yml?query=branch%3Amain)
-[![Coverage](https://codecov.io/gh/emmt/TclTk.jl/graph/badge.svg?token=2ZyJuZeh71)](https://codecov.io/gh/emmt/TclTk.jl)
+[![Build Status](https://github.com/JuliaInterop/TclTk.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/JuliaInterop/TclTk.jl/actions/workflows/CI.yml?query=branch%3Amain)
+[![Coverage](https://codecov.io/gh/juliainterop/TclTk.jl/graph/badge.svg?token=MVOdKu5PQF)](https://codecov.io/gh/juliainterop/TclTk.jl)
 
 This package provides an optimized Julia interface to [Tcl/Tk](http://www.tcl-lang.org/).
 
 # Features
 
-* As many Tcl interpreters as needed can be started. At least one per thread is
-  automatically created when needed and serves as the default interpreter for the thread.
+* As many Tcl interpreters as needed can be started. A shared interpreter is automatically
+  created when needed and serves as the default interpreter for the thread. Just call
+  `TclInterp()` to retrieve the shared interpreter of the thread.
 
 * Reading/writing a Tcl variable is as easy as:
 
   ```julia
+  inter = TclInterp()     # get shared interpreter of this thread
   interp[var]             # read Tcl variable value
   interp[var] = val       # set Tcl variable value
   interp[var] = unset     # unset Tcl variable
@@ -30,36 +32,28 @@ This package provides an optimized Julia interface to [Tcl/Tk](http://www.tcl-la
   delete!(interp, part1, part2)   # idem
   ```
 
+* In Tcl, anything can be equivalently expressed as a string but, for efficiency, everything
+  is stored in Tcl objects. Such objects can be manipulated directly in Julia, as instances
+  of `TclObj`, and may be converted to Julia values (strings, integers, floats, or vectors
+  of these) as needed. By avoiding systematic string conversion, faster communication with
+  Tcl/Tk is achieved.
 
-* Consistent conversion between Tcl internal representation of values and Julia
-  types.  That is to say, evaluating a Tcl script or getting the value of a Tcl
-  variable not necessarily yields a string.  For instance, a Tcl float yields a
-  Julia float, a list of integers yields a Julia vector of integers, a list of
-  lists yields a vector of vectors, and so on.  Of course, forcing conversion
-  to strings is still possible (and easy).
-
-* By avoiding systematic string conversion, faster communication with Tcl/Tk is
-  achieved.
-
-* Tcl objects can be manipulated directly in Julia and may be converted to
-  Julia values (strings, integers, floats or vectors of these).
-
-* Scripts can be strings but can also be expressed using a syntax which is
-  closer to Julia.  For instance, keywords are converted to Tcl options.
-  Scripts can also be built as efficient lists of Tcl objects.  Evaluating
-  a script is done by:
+* Tcl scripts can be specified by strings but Tcl commands can also be expressed using a
+  syntax which is closer to Julia. For instance, `key => val` pairs are converted to Tcl
+  options. Tcl scripts and commands can also be built as efficient lists of Tcl objects.
+  Evaluating a script is done by:
 
   ```julia
   TclTk.eval(script)         # evaluate Tcl script in initial interpreter
   TclTk.eval(interp, script) # evaluate Tcl script with specific interpreter
-  interp.eval(script)      # idem
+  interp.eval(script)        # idem
   ```
 
-* A number of wrappers are provided to simplify the use of widgets.
+* A number of wrappers are provided to simplify building and using widgets.
 
-* Julia arrays can be used to set Tk images and conversely. A number of methods are provided
-  to apply pseudo-colormaps or retrieve colorplanes or alpha channel. Temporaries and copies
-  are avoided.
+* Julia arrays can be used to set the pixels of Tk images and conversely. A number of
+  methods are provided to apply pseudo-colormaps. Temporaries and copies are avoided if
+  possible.
 
 * Julia functions may be used as Tk callbacks.
 
@@ -78,14 +72,14 @@ would be very happy if, eventually, the two projects merge.
 install from the REPL of Julia's package manager<sup>[[pkg]](#pkg)</sup> as follows:
 
 ```julia
-pkg> add https://github.com/emmt/TclTk.jl.git
+pkg> add https://github.com/JuliaInterop/TclTk.jl.git
 ```
 
 where `pkg>` represents the package manager prompt and `https` protocol has been assumed; if
 `ssh` is more suitable for you, then:
 
 ```julia
-pkg> add git@github.com:emmt/TclTk.jl.git
+pkg> add git@github.com:JuliaInterop/TclTk.jl.git
 ```
 
 To check whether `TclTk` package works correctly:
@@ -109,7 +103,7 @@ Uninstall `TclTk` as follows:
 ```julia
 pkg> rm TclTk
 pkg> gc
-pkg> add https://github.com/emmt/TclTk.jl.git
+pkg> add https://github.com/JuliaInterop/TclTk.jl.git
 ```
 
 before re-installing.

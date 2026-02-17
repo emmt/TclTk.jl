@@ -1,4 +1,4 @@
-The TclTk.jl package is licensed under the MIT "Expat" License:
+The `TclTk.jl` package is licensed under the MIT "Expat" License:
 
 > Copyright (c) 2017-2026: Éric Thiébaut.
 >
