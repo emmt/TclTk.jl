@@ -293,10 +293,13 @@ Return the error message associated with exception `ex`.
 get_error_message(ex::Exception) = sprint(io -> showerror(io, ex))
 
 @noinline argument_error(mesg::AbstractString) = throw(ArgumentError(mesg))
-@noinline argument_error(arg, args...) = throw(ArgumentError(string(arg, args...)))
+@noinline argument_error(arg, args...) = argument_error(string(arg, args...))
 
 @noinline assertion_error(mesg::AbstractString) = throw(AssertionError(mesg))
-@noinline assertion_error(arg, args...) = throw(AssertionError(string(arg, args...)))
+@noinline assertion_error(arg, args...) = assertion_error(string(arg, args...))
+
+@noinline dimension_mismatch(mesg::AbstractString) = throw(DimensionMismatch(mesg))
+@noinline dimension_mismatch(arg, args...) = dimension_mismatch(string(arg, args...))
 
 @noinline unexpected_null(str::AbstractString) = assertion_error("unexpected NULL ", str)
 

@@ -4,6 +4,11 @@
 # Manipulation of Tk images.
 #
 
+# Union of colorants that can be directly handled by a `TkPhoto`.
+const PhotoColorant = Union{Gray{N0f8},GrayA{N0f8},AGray{N0f8},
+                            RGB{N0f8},RGBA{N0f8},ARGB{N0f8},
+                            BGR{N0f8},BGRA{N0f8},ABGR{N0f8}}
+
 """
     TkImage{type}(interp=TclInterp(), option => value, ...) -> img
     TkImage{type}(interp=TclInterp(), name, option => value, ...) -> img
@@ -225,6 +230,65 @@ function Base.getindex(img::TkPhoto, x::Integer, y::Integer)
     end
 end
 
+function Base.setindex!(img::TkPhoto, A::Colorant, x::Integer, y::Integer)
+    width, height = size(img)
+    check_pixel_x_coordinate(x, width)
+    check_pixel_y_coordinate(y, height)
+    B = to_photo_colorant(A)
+    ref = Ref(B)
+    GC.@preserve img ref begin
+        unsafe_store_pixels!(img, Base.unsafe_convert(Ptr{typeof(B)}, ref),
+                             x, y, 1, 1, TK_PHOTO_COMPOSITE_SET)
+    end
+    return img
+end
+
+function Base.setindex!(img::TkPhoto, A::AbstractVector{<:Colorant},
+                        xrng::ViewRange, y::Integer)
+    width, height = size(img)
+    xroi = check_pixel_x_range(xrng, width)
+    check_pixel_y_coordinate(y, height)
+    length(A) == length(xroi) || error(
+        "array of pixel values and image region of interest have different sizes")
+    B = to_photo_pixels(A)
+    GC.@preserve img B begin
+        unsafe_store_pixels!(img, Base.unsafe_convert(Ptr{eltype(B)}, B),
+                             first(xroi), y, length(xroi), 1, TK_PHOTO_COMPOSITE_SET)
+    end
+    return img
+end
+
+function Base.setindex!(img::TkPhoto, A::AbstractVector{<:Colorant},
+                        x::Integer, yrng::ViewRange)
+    width, height = size(img)
+    check_pixel_x_coordinate(x, width)
+    yroi = check_pixel_y_range(yrng, height)
+    length(A) == length(yroi) || error(
+        "array of pixel values and image region of interest have different sizes")
+    B = to_photo_pixels(A)
+    GC.@preserve img B begin
+        unsafe_store_pixels!(img, Base.unsafe_convert(Ptr{eltype(B)}, B),
+                             x, first(yroi), 1, length(yroi), TK_PHOTO_COMPOSITE_SET)
+    end
+    return img
+end
+
+function Base.setindex!(img::TkPhoto, A::AbstractMatrix{<:Colorant},
+                        xrng::ViewRange, yrng::ViewRange)
+    width, height = size(img)
+    xroi = check_pixel_x_range(xrng, width)
+    yroi = check_pixel_y_range(yrng, height)
+    size(A) == (length(xroi), length(yroi)) || error(
+        "array of pixel values and image region of interest have different sizes")
+    B = to_photo_pixels(A)
+    GC.@preserve img B begin
+        unsafe_store_pixels!(img, Base.unsafe_convert(Ptr{eltype(B)}, B),
+                             first(xroi), first(yroi),
+                             length(xroi), length(yroi), TK_PHOTO_COMPOSITE_SET)
+    end
+    return img
+end
+
 #------------------------------------------------------------------------------ Image size -
 
 # Resize Tk photo image. If image must be resized, its contents is not preserved.
@@ -267,6 +331,28 @@ function photo_resize!(img::TkPhoto, width::Integer, height::Integer)
     end
     return nothing
 end
+
+#-------------------------------------------------------------------------- Pixel colorant -
+
+# Preferred colorant for conversion to a `TkPhoto`.
+photo_colorant(c::Colorant) = photo_colorant(typeof(c))
+photo_colorant(::Type{<:TransparentColor{<:Any,<:Any,4}}) = RGBA{N0f8}
+photo_colorant(::Type{<:TransparentColor{<:Any,<:Any,2}}) = GrayA{N0f8}
+photo_colorant(::Type{Color{<:Any,3}}) = RGB{N0f8}
+photo_colorant(::Type{Color{<:Any,1}}) = Gray{N0f8}
+for C in (:Gray, :GrayA, :AGray, :RGB, :BGR, :ARGB, :ABGR, :RGBA, :BGRA)
+    @eval photo_colorant(::Type{<:$C}) = $C{N0f8}
+end
+
+to_photo_colorant(A::PhotoColorant) = A
+function to_photo_colorant(A::Colorant)
+    C = photo_colorant(A)
+    return convert(C, A)::C
+end
+
+to_photo_pixels(A::DenseArray{<:PhotoColorant}) = A
+to_photo_pixels(A::AbstractArray{<:Colorant}) =
+    copyto!(Array{photo_colorant(eltype(A))}(undef, size(A)), A)
 
 #----------------------------------------------------------------------------- Image block -
 
@@ -312,15 +398,38 @@ function restrict_yrange(block::ImageBlock{T,I}, y::Integer) where {T,I}
                            pointer = block.pointer + block.pitch*(y - 𝟙))
 end
 
-# Return the `offset` field of the `ImageBlock` given the pixel type.
+check_pixel_x_coordinate(x::Integer, width::Integer) =
+    𝟙 ≤ x ≤ width ? nothing : error("out of bounds `x` pixel coordinate")
+
+check_pixel_y_coordinate(y::Integer, height::Integer) =
+    𝟙 ≤ y ≤ height ? nothing : error("out of bounds `y` pixel coordinate")
+
+check_pixel_x_range(xrng::Colon, width::Integer) = 𝟙:(Int(width)::Int)
+function check_pixel_x_range(xrng::AbstractUnitRange{<:Integer}, width::Integer)
+    start, stop = first(xrng), last(xrng)
+    start > stop || ((𝟙 ≤ start)&(stop ≤ width)) || error("out of bounds `x` pixel range")
+    return (Int(start)::Int):(Int(stop)::Int)
+end
+
+check_pixel_y_range(yrng::Colon, height::Integer) = 𝟙:(Int(height)::Int)
+function check_pixel_y_range(yrng::AbstractUnitRange{<:Integer}, height::Integer)
+    start, stop = first(yrng), last(yrng)
+    start > stop || ((𝟙 ≤ start)&(stop ≤ height)) || error("out of bounds `y` pixel range")
+    return (Int(start)::Int):(Int(stop)::Int)
+end
+
+# Return the `offset` field of the `ImageBlock` given the pixel type. All colorants in
+# `PhotoColorant` shall be allowed here.
 offset_from_pixel_type(::Type{UInt8}) = (0, 0, 0, -1)
-offset_from_pixel_type(::Type{Gray{T}}) where {T} = (0, 0, 0, -1)
-offset_from_pixel_type(::Type{RGB{T}}) where {T} = (n = sizof(T); return (0, n, 2n, -1))
-offset_from_pixel_type(::Type{BGR{T}}) where {T} = (n = sizof(T); return (2n, n, 0, -1))
-offset_from_pixel_type(::Type{RGBA{T}}) where {T} = (n = sizof(T); return (0, n, 2n, 3n))
-offset_from_pixel_type(::Type{ARGB{T}}) where {T} = (n = sizof(T); return (n, 2n, 3n, 0))
-offset_from_pixel_type(::Type{BGRA{T}}) where {T} = (n = sizof(T); return (2n, n, 0, 3n))
-offset_from_pixel_type(::Type{ABGR{T}}) where {T} = (n = sizof(T); return (3n, 2n, n, 0))
+offset_from_pixel_type(::Type{Gray{ T}}) where {T} = (0, 0, 0, -1)
+offset_from_pixel_type(::Type{GrayA{T}}) where {T} = (n = sizeof(T); return (0, 0, 0, n))
+offset_from_pixel_type(::Type{AGray{T}}) where {T} = (n = sizeof(T); return (n, n, n, 0))
+offset_from_pixel_type(::Type{RGB{  T}}) where {T} = (n = sizeof(T); return (0, n, 2n, -1))
+offset_from_pixel_type(::Type{BGR{  T}}) where {T} = (n = sizeof(T); return (2n, n, 0, -1))
+offset_from_pixel_type(::Type{RGBA{ T}}) where {T} = (n = sizeof(T); return (0, n, 2n, 3n))
+offset_from_pixel_type(::Type{ARGB{ T}}) where {T} = (n = sizeof(T); return (n, 2n, 3n, 0))
+offset_from_pixel_type(::Type{BGRA{ T}}) where {T} = (n = sizeof(T); return (2n, n, 0, 3n))
+offset_from_pixel_type(::Type{ABGR{ T}}) where {T} = (n = sizeof(T); return (3n, 2n, n, 0))
 
 # Constructors for `ImageBlock`.
 function ImageBlock(block::ImageBlock; pointer::Ptr{T}, kwds...) where {T}
@@ -662,44 +771,28 @@ function unsafe_load_pixels!(arr::AbstractVector, ptr::Ptr,
     return nothing
 end
 
-#=
 #---------------------------------------------------------------------------- Store pixels -
 
-function unsafe_store_pixel!s(interp::Union{TclInterp,Ptr{Tcl_Interp}},
-                              handle::Tk_PhotoHandle, block::ImageBlock,
-                              x::Integer, y::Integer,
-                              width::Integer, height::Integer,
-                              compRule::Integer)
-
-    ::Type{T}, block::ImageBlock,
-                           x::Integer, y::Integer) where {T<:Colorant}
-    (𝟙 ≤ x ≤ block.width) || error("out of bounds `x` index")
-    (𝟙 ≤ y ≤ block.height) || error("out of bounds `y` index")
-    ptr = Ptr{N0f8}(block.pointer) # always N0f8 format for each component
-    ptr += block.step*(x - 𝟙) + block.pitch*(y - 𝟙)
-    red_off, green_off, blue_off, alpha_off = block.offset
-    if red_off == green_off == blue_off
-        # Gray image.
-        gray = unsafe_load(ptr + red_off)
-        if alpha_off < 0 # no alpha channel
-            return convert(T, Gray(gray))
-        else
-            alpha = unsafe_load(ptr + alpha_off)
-            return convert(T, GrayA(gray, alpha))
-        end
-    else
-        red   = unsafe_load(ptr +   red_off)
-        green = unsafe_load(ptr + green_off)
-        blue  = unsafe_load(ptr +  blue_off)
-        if alpha_off < 0 # no alpha channel
-            return convert(T, RGB(red, green, blue))
-        elseif alpha_off == red_off + 3
-            alpha = unsafe_load(ptr + alpha_off)
-            return convert(T, RGBA(red, green, blue, alpha))
-        end
-    end
+# Unsafe: pointer and ROI must be valid.
+function unsafe_store_pixels!(img::TkPhoto, ptr::Ptr{C},
+                              x::Integer, y::Integer, width::Integer, height::Integer,
+                              comprule::Integer) where {C<:PhotoColorant}
+    interp = checked_pointer(img.interp)
+    handle = unsafe_find_photo(interp, img.name)
+    unsafe_store_pixels!(interp, handle, ptr, x, y, width, height, comprule)
 end
-=#
+
+function unsafe_store_pixels!(interp::Union{TclInterp,Ptr{Tcl_Interp}},
+                              handle::Tk_PhotoHandle, ptr::Ptr{C},
+                              x::Integer, y::Integer, width::Integer, height::Integer,
+                              comprule::Integer) where {C<:PhotoColorant}
+    block = Tk_PhotoImageBlock(
+        pointer = ptr, width = width, height = height,
+        pitch = sizeof(C), step = sizeof(C), offset = offset_from_pixel_type(C))
+    status = Tk_PhotoPutBlock(interp, handle, Ref(block), x, y, width, height, comprule)
+    status == TCL_OK || throw(TclError(interp))
+end
+
 #------------------------------------------------------------------------------ Unsafe API -
 # Unsafe: arguments must be preserved.
 
