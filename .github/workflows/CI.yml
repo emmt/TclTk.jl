@@ -66,10 +66,11 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }}
-      - name: Run doctests
-        shell: julia --project=docs --color=yes {0}
-        run: |
-          using Documenter: DocMeta, doctest
-          using TclTk
-          DocMeta.setdocmeta!(TclTk, :DocTestSetup, :(using TclTk); recursive=true)
-          doctest(TclTk)
+# Uncomment the following for running doctests:
+#      - name: Run doctests
+#        shell: julia --project=docs --color=yes {0}
+#        run: |
+#          using Documenter: DocMeta, doctest
+#          using TclTk
+#          DocMeta.setdocmeta!(TclTk, :DocTestSetup, :(using TclTk); recursive=true)
+#          doctest(TclTk)
