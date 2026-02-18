@@ -173,6 +173,9 @@ end
     # Get default interpreter.
     interp = @inferred TclInterp()
 
+    @test_throws TclError TclTk.getvar("non_existing_variable")
+    @test_throws TclError TclTk.getvar("non_existing_variable"; flags=TCL_GLOBAL_ONLY)
+
     for (name, value) in (("a", 42), ("1", 1), ("", "empty"),
                           ("π", π), ("world is beautiful!", true))
 

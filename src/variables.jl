@@ -55,8 +55,8 @@ for (name, decl) in ((:name,)         => (:(name::Name),),
 end
 
 """
-    TclTk.getvar([T=TclObj,][interp=TclInterp(),] name) -> val::T
-    TclTk.getvar([T=TclObj,][interp=TclInterp(),] part1, part2) -> val::T
+    TclTk.getvar(T=TclObj, interp=TclInterp(), name) -> val::T
+    TclTk.getvar(T=TclObj, interp=TclInterp(), part1, part2) -> val::T
 
     interp[name] -> val::TclObj
     interp[part1, part2] -> val::TclObj

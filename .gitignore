@@ -1,6 +1,7 @@
 # Specific files/directories
 work/
 gen/
+docs/build/
 
 # Manifest files.
 Manifest.toml

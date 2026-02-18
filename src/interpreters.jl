@@ -264,11 +264,12 @@ returns a status. The behavior of `TclTk.exec` depend on the type `T` of the exp
 * If `T` is `TclStatus`, the status of the evaluation is returned and the command result may
   be retrieved by calling [`TclTk.getresult`](@ref) or via `interp.result(...)`.
 
-* If `T` is `Nothing`, an exception is thrown if the status is not [`TCL_OK`](@ref) and
-  `nothing` is returned otherwise (i.e., the result of the command is ignored).
+* If `T` is `Nothing`, an exception is thrown if the status is not [`TCL_OK`](@ref
+  TclStatus) and `nothing` is returned otherwise (i.e., the result of the command is
+  ignored).
 
-* Otherwise, an exception is thrown if the status is not [`TCL_OK`](@ref) and the result of
-  the command is returned as a value of type `T` otherwise.
+* Otherwise, an exception is thrown if the status is not [`TCL_OK`](@ref TclStatus) and the
+  result of the command is returned as a value of type `T` otherwise.
 
 # See also
 
@@ -324,11 +325,12 @@ returns a status. The behavior of `TclTk.eval` depend on the type `T` of the exp
 * If `T` is `TclStatus`, the status of the evaluation is returned and the script result may
   be retrieved by calling [`TclTk.getresult`](@ref) or via `interp.result(...)`.
 
-* If `T` is `Nothing`, an exception is thrown if the status is not [`TCL_OK`](@ref) and
-  `nothing` is returned otherwise (i.e., the result of the script is ignored).
+* If `T` is `Nothing`, an exception is thrown if the status is not [`TCL_OK`](@ref
+  TclStatus) and `nothing` is returned otherwise (i.e., the result of the script is
+  ignored).
 
-* Otherwise, an exception is thrown if the status is not [`TCL_OK`](@ref) and the result of
-  the script is returned as a value of type `T` otherwise.
+* Otherwise, an exception is thrown if the status is not [`TCL_OK`](@ref TclStatus) and the
+  result of the script is returned as a value of type `T` otherwise.
 
 # See also
 

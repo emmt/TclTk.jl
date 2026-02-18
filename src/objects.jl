@@ -6,7 +6,7 @@ Return a Tcl object storing value `val`. The initial type of the Tcl object, giv
 
 - A string, symbol, or character is stored as a Tcl `:string`.
 
-- A Boolean or integer is stored as a Tcl `:int`.
+- A Boolean or integer is stored as a Tcl `:int` or `:wideInt`.
 
 - A non-integer real is stored as a Tcl `:double`.
 
@@ -15,15 +15,6 @@ Return a Tcl object storing value `val`. The initial type of the Tcl object, giv
 - A tuple is stored as a Tcl `:list`.
 
 - A Tcl object is returned unchanged. Call `copy` to have an independent copy.
-
-Beware that `obj.type` reflects the *current internal state* of `obj`. Indeed, for
-efficiency, this type may change depending on how the object is used. For example, after
-having evaluated a script in a Tcl string object, the object internal state becomes
-`:bytecode` to reflect that it now stores compiled byte code.
-
-Call `convert(T, obj)` to get a value of type `T` from Tcl object `obj`. The content of a
-Tcl object may always be converted into a string. Methods `convert(String, obj)`,
-`string(obj)`, and `String(obj)` yield a copy of this string.
 
 If the content of a Tcl object is valid as a list, the object may be indexed, elements may
 be added, deleted, etc.
@@ -37,7 +28,16 @@ Tcl objects have the following properties:
 
 - `obj.ptr` yields the pointer to the Tcl object, this is the same as `pointer(obj)`.
 
-- `obj.type` yields the symbolic current type of `obj`.
+- `obj.type` yields the *current internal type* of `obj` as a symbol. This type may change
+  depending on how the object is used by Tcl. For example, after having evaluated a script
+  in a Tcl string object, the object internal state becomes `:bytecode` to reflect that it
+  now stores compiled byte code.
+
+# Conversion
+
+Call `convert(T, obj)` to get a value of type `T` from Tcl object `obj`. The content of a
+Tcl object may always be converted into a string by calling `convert(String, obj)`,
+`string(obj)`, or `String(obj)` which all yield a copy of this string.
 
 # See also
 
