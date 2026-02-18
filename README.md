@@ -1,7 +1,7 @@
 # Julia interface to Tcl/Tk
 
-[![Doc. (stable)](https://img.shields.io/badge/docs-stable-blue.svg)](https://JuliaInterop.github.io/TclTk.jl/dev)
-[![Doc. (devel)](https://img.shields.io/badge/docs-dev-blue.svg)](https://JuliaInterop.github.io/TclTk.jl/stable)
+[![Doc. (stable)](https://img.shields.io/badge/docs-stable-blue.svg)](https://JuliaInterop.github.io/TclTk.jl/stable)
+[![Doc. (devel)](https://img.shields.io/badge/docs-dev-blue.svg)](https://JuliaInterop.github.io/TclTk.jl/dev)
 [![License](http://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat)](LICENSE.md)
 [![Build Status](https://github.com/JuliaInterop/TclTk.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/JuliaInterop/TclTk.jl/actions/workflows/CI.yml?query=branch%3Amain)
 [![Coverage](https://codecov.io/gh/juliainterop/TclTk.jl/graph/badge.svg?token=MVOdKu5PQF)](https://codecov.io/gh/juliainterop/TclTk.jl)

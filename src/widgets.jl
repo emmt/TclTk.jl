@@ -464,28 +464,53 @@ end
 
 """
     TclTk.grid(args...)
-    TclTk.pack(args...)
-    TclTk.place(args...)
 
-Communicate with one of the Tk geometry manager. One of the arguments must be an instance of
-`TkWidget`. For example:
+Call Tk *grid* geometry manager. One of the arguments must be a widget (that is an instance
+of `TkWidget`). All widgets in `args...` must live in the same interpreter.
+
+# See also
+
+[`TclTk.pack`](@ref) and [`TclTk.place`](@ref).
+
+"""
+function grid end
+
+"""
+    TclTk.pack(args...)
+
+Call Tk *packer* geometry manager. One of the arguments must be a widget (that is an
+instance of `TkWidget`). All widgets in `args...` must live in the same interpreter.
+
+For example:
 
 ```julia
 using TclTk
 tk_start()
 top = TkToplevel()
-TclTk.exec(:wm, :title, top, "A simple example")
-btn = TkButton(top, :text => "Click me", :command => "puts \"ouch!\"")
-TclTk.pack(btn, :side => :bottom, :padx => 30, :pady => 5)
+TclTk.exec(Nothing, :wm, :title, top, "A simple example")
+btn = TkButton(top, :text => "Click me", :command => "puts {ouch!}")
+TclTk.pack(Nothing, btn, :side => :bottom, :padx => 30, :pady => 5)
 ```
 
-The call to `TclTk.list` (could also be `TclTk.quote_string` here) is to avoid that the words in
-the title be split as separate arguments.
+# See also
+
+[`TclTk.grid`](@ref) and [`TclTk.place`](@ref).
 
 """
-function grid end
-@doc @doc(grid) pack
-@doc @doc(grid) place
+function pack end
+
+"""
+    TclTk.place(args...)
+
+Call Tk *placer* geometry manager. One of the arguments must be a widget (that is an
+instance of `TkWidget`). All widgets in `args...` must live in the same interpreter.
+
+# See also
+
+[`TclTk.grid`](@ref) and [`TclTk.pack`](@ref).
+
+"""
+function place end
 
 for cmd in (:grid, :pack, :place)
     @eval begin

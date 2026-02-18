@@ -16,4 +16,8 @@ TclTk.setresult!
 TclTk.suspend
 TkWidget
 tk_start
+TclTk.quote_string
+TclTk.grid
+TclTk.pack
+TclTk.place
 ```
