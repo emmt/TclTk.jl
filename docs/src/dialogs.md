@@ -2,9 +2,9 @@
 
 The `TclTk` package exports a number of dialog widgets provided by `Tk`. Dialog options are
 specified as `key => val` pairs where `key` is the option name (a string, a symbol, or a Tcl
-object) without its leading dash and `val` is the option value. The value returned returned
-when the dialog is closed depend on the type of dialog, it is usually a string but it may
-also be a vector of strings (for instance, if multiple selection is allowed in the
+object) without its leading hyphen and `val` is the option value. The value returned
+returned when the dialog is closed depend on the type of dialog, it is usually a string but
+it may also be a vector of strings (for instance, if multiple selection is allowed in the
 `tk_getOpenFile` dialog).
 
 For example:
