@@ -89,8 +89,7 @@ function Base.getindex(list::TclObj, indices::AbstractVector{<:Integer})
         result = new_list()
         try
             for index in indices
-                𝟙 ≤ index ≤ objc || error(
-                    "attempt to index $(objc)-element Tcl list at index $i")
+                𝟙 ≤ index ≤ objc || continue # skip out of range indices
                 unsafe_append_element(result, unsafe_load(objv, index))
             end
         catch
