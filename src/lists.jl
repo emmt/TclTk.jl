@@ -48,13 +48,14 @@ end
 @noinline invalid_list() =
     throw(TclError("Tcl object is not a valid list"))
 
-Base.IteratorSize(::Type{TclObj}) = Base.HasLength()
+Base.IteratorSize(::Type{TclObj}) = Base.HasShape{1}()
 function Base.length(list::TclObj)
     len = Ref{Tcl_Size}()
     status = Tcl_ListObjLength(null(InterpPtr), list, len)
     status == TCL_OK || invalid_list()
     return Int(len[])::Int
 end
+Base.size(list::TclObj) = (length(list),)
 
 # When iterated or indexed, a Tcl object yield Tcl objects.
 Base.IteratorEltype(::Type{TclObj}) = Base.HasEltype()
@@ -62,6 +63,11 @@ Base.eltype(::Type{TclObj}) = TclObj
 
 Base.firstindex(list::TclObj) = 1
 Base.lastindex(list::TclObj) = length(list)
+
+Base.IndexStyle(list::TclObj) = IndexStyle(typeof(x))
+Base.IndexStyle(::Type{TclObj}) = IndexLinear()
+
+Base.keys(list::TclObj) = 𝟙:length(list)
 
 Base.first(list::TclObj) = list[firstindex(list)]
 Base.last(list::TclObj) = list[lastindex(list)]
