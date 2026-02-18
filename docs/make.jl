@@ -9,6 +9,7 @@ DEPLOYDOCS = (get(ENV, "CI", nothing) == "true")
 makedocs(
     sitename = "a Julia interface to Tcl/Tk",
     format = Documenter.HTML(
+        canonical = "https://juliainterop.github.io//TclTk.jl",
         edit_link = "main",
         prettyurls = DEPLOYDOCS,
     ),
@@ -29,6 +30,7 @@ makedocs(
 
 if DEPLOYDOCS
     deploydocs(
-        repo = "https://github.com/JuliaInterop/TclTk.jl.git",
+        repo = "github.com/JuliaInterop/TclTk.jl.git",
+        devbranch="main",
     )
 end
