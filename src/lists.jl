@@ -108,7 +108,7 @@ function Base.getindex(list::TclObj, flags::AbstractVector{Bool})
         len == objc || throw(DimensionMismatch(
             "attempt to index $(objc)-element Tcl list by $(len)-element vector of `Bool`"))
         result = new_list()
-        offset = firstindex(flag) - 1
+        offset = firstindex(flags) - 1
         try
             for index in 𝟙:objc
                 if flags[index + offset]
