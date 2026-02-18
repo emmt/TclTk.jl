@@ -47,7 +47,7 @@ function Callback(func::Function,
         token = Tcl_CreateObjCommand(interp, name, eval_command_proc[],
                                      pointer_from_objref(callback),
                                      release_object_proc[])
-        isnull(token) && throw(TclError(getresult(String, interp)))
+        isnull(token) && tcl_error(interp)
         setfield!(callback, :token, token)
     catch
         release(callback)

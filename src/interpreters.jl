@@ -95,7 +95,7 @@ end
 # Create a new Tcl interpreter object.
 function _TclInterp()
     interp = Tcl_CreateInterp()
-    isnull(interp) && throw(TclError("unable to create Tcl interpreter"))
+    isnull(interp) && tcl_error("unable to create Tcl interpreter")
     try
         # Initialize Tcl interpreter to find Tcl library scripts.
         if isdefined(@__MODULE__, :Tcl_jll)

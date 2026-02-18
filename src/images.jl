@@ -90,8 +90,8 @@ function TkImage{type}(interp::TclInterp, name::TclObj, pairs::Pair...) where {t
     type isa Symbol || argument_error("image type must be a symbol")
     if interp.exec(TclStatus, :image, :type, name) == TCL_OK
         # Image already exists. Possibly configure it and re-wrap it.
-        interp.result(TclObj) == type || throw(TclError(
-            "image already exists with a different type"))
+        interp.result(TclObj) == type || tcl_error(
+            "image already exists with a different type")
         length(pairs) > 0 && interp.exec(Nothing, name, :configure, pairs...)
         return TkImage(Val(type), interp, name)
     else
@@ -790,7 +790,8 @@ function unsafe_store_pixels!(interp::Union{TclInterp,Ptr{Tcl_Interp}},
         pointer = ptr, width = width, height = height,
         pitch = sizeof(C), step = sizeof(C), offset = offset_from_pixel_type(C))
     status = Tk_PhotoPutBlock(interp, handle, Ref(block), x, y, width, height, comprule)
-    status == TCL_OK || throw(TclError(interp))
+    status == TCL_OK || tcl_error(interp)
+    return nothing
 end
 
 #------------------------------------------------------------------------------ Unsafe API -

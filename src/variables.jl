@@ -135,7 +135,7 @@ for (name, decl) in ((:name,)         => (:(name::Name),),
             else
                 mesg = getresult(String, interp)
             end
-            throw(TclError(mesg))
+            tcl_error(mesg)
         end
     end
 end
@@ -210,7 +210,7 @@ for (name, decl) in ((:name,)         => (:(name::Name),),
             else
                 mesg = getresult(String, interp)
             end
-            throw(TclError(mesg))
+            tcl_error(mesg)
         end
     end
 end
@@ -276,7 +276,7 @@ for (name, (decl, func)) in ((:name,)         => ((:(name::Name),),
             else
                 mesg = getresult(String, interp)
             end
-            throw(TclError(mesg))
+            tcl_error(mesg)
         end
     end
 end

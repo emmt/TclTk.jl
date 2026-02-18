@@ -327,13 +327,13 @@ function create_widget(::Type{T}, interp::TclInterp, cmd::Name, path::Name,
         widget = TclObj(path)
         if length(pairs) > 0
             status = interp.exec(TclStatus, widget, :configure, pairs...)
-            status == TCL_OK || throw(TclError(interp))
+            status == TCL_OK || tcl_error(interp)
         end
         return widget
     else
         # Widget does not already exists, create it with configuration options.
         status = interp.exec(TclStatus, cmd, path, pairs...)
-        status == TCL_OK || throw(TclError(interp))
+        status == TCL_OK || tcl_error(interp)
         return interp.result(TclObj)
     end
 end

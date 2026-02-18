@@ -425,7 +425,7 @@ new_object(str::AbstractChar) = new_object(string(char))
 function unsafe_get(::Type{T}, obj::ObjPtr) where {T<:AbstractChar}
     # FIXME Optimize this.
     str = unsafe_get(String, obj)
-    length(str) == 1 || throw(TclError("cannot convert Tcl object to `$T` value"))
+    length(str) == 1 || tcl_error("cannot convert Tcl object to `$T` value")
     return first(str)
 end
 #
@@ -557,8 +557,8 @@ end
 # Error catchers for unsupported Julia types.
 #
 @noinline value_type(::Type{T}) where {T} =
-    throw(TclError("unknown Tcl object type for Julia objects of type `$T`"))
+    tcl_error("unknown Tcl object type for Julia objects of type `$T`")
 @noinline new_object(val::T) where {T} =
-    throw(TclError("cannot convert an instance of type `$T` into a Tcl object"))
+    tcl_error("cannot convert an instance of type `$T` into a Tcl object")
 @noinline unsafe_get(::Type{T}, interp::InterpPtr, obj::ObjPtr) where {T} =
-    throw(TclError("retrieving an instance of type `$T` from a Tcl object is not unsupported"))
+    tcl_error("retrieving an instance of type `$T` from a Tcl object is not unsupported")

@@ -285,6 +285,39 @@ end
 Base.showerror(io::IO, ex::TclError) = print(io, "Tcl/Tk error: ", ex.msg)
 
 """
+    TclError(args...)
+    TclError(interp::TclInterp)
+
+Return a `TclError` exception with error message given by `string(args...)` or taken from
+the last result in interpreter `interp`.
+
+"""
+@noinline TclError(arg, args...) = TclError(string(arg, args...))
+@noinline function TclError(interp::TclInterp)
+    local mesg::String
+    GC.@preserve interp begin
+        interp_ptr = null_or_checked_pointer(interp)
+        if isnull(interp_ptr)
+            mesg = "no error message (NULL interpreter)"
+        else
+            mesg = unsafe_string(Tcl_GetStringResult(interp_ptr))
+            isempty(mesg) && (mesg = "no error message (empty interpreter result)")
+        end
+    end
+    return TclError(mesg)
+end
+
+"""
+    tcl_error(args...)
+    tcl_error(interp::TclInterp)
+
+Throw a `TclError` exception with error message given by `string(args...)` or taken from the
+last result in interpreter `interp`.
+
+"""
+@noinline tcl_error(args...) = throw(TclError(args...))
+
+"""
     TclTk.Impl.get_error_message(ex)
 
 Return the error message associated with exception `ex`.
@@ -304,7 +337,7 @@ get_error_message(ex::Exception) = sprint(io -> showerror(io, ex))
 @noinline unexpected_null(str::AbstractString) = assertion_error("unexpected NULL ", str)
 
 @noinline throw_unexpected(status::TclStatus) =
-    throw(TclError("unexpected return status: $status"))
+    tcl_error("unexpected return status: $status")
 
 """
     TclTk.Impl.unsafe_error(interp)
@@ -317,7 +350,7 @@ Throw a Tcl error with a message stored in the result of `interp`.
 
 """
 @noinline unsafe_error(interp::InterpPtr) =
-    throw(TclError(unsafe_string(Tcl_GetStringResult(interp))))
+    tcl_error(unsafe_string(Tcl_GetStringResult(interp)))
 
 """
     TclTk.Impl.unsafe_error(interp, mesg)
@@ -334,9 +367,8 @@ is taken from interpreter's result; otherwise, the error message is `mesg`.
 [`TclTk.Impl.unsafe_get`](@ref).
 
 """
-@noinline function unsafe_error(interp::InterpPtr, mesg::AbstractString)
-    throw(TclError(unsafe_error_message(interp, mesg)))
-end
+@noinline unsafe_error(interp::InterpPtr, mesg::AbstractString) =
+    tcl_error(unsafe_error_message(interp, mesg))
 
 function unsafe_error_message(interp::InterpPtr, mesg::AbstractString)
     if !isnull(interp)

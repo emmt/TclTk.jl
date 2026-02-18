@@ -45,8 +45,7 @@ for (func, append) in (:list   => :unsafe_append_element,
     end
 end
 
-@noinline invalid_list() =
-    throw(TclError("Tcl object is not a valid list"))
+@noinline invalid_list() = tcl_error("Tcl object is not a valid list")
 
 Base.IteratorSize(::Type{TclObj}) = Base.HasShape{1}()
 function Base.length(list::TclObj)

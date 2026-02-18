@@ -133,6 +133,7 @@ for sym in (
     :setresult!,
     :setvar,
     :suspend,
+    :tcl_error,
     :tcl_library,
     :tcl_version,
     :tk_start,
