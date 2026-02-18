@@ -29,7 +29,7 @@ jobs:
         run: |
           using Pkg
           Pkg.develop(PackageSpec(path=pwd()))
-          try; Pkg.instantiate(); catch; Pkg.build(); Pkg.instantiate(); end
+          Pkg.instantiate()
       - name: Build and deploy
         run: julia --color=yes --project=docs docs/make.jl
         env:
