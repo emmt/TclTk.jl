@@ -176,6 +176,11 @@ end
     @test_throws TclError TclTk.getvar("non_existing_variable")
     @test_throws TclError TclTk.getvar("non_existing_variable"; flags=TCL_GLOBAL_ONLY)
 
+    @test_deprecated TclTk.setvar("some_name", "some_value")
+    @test interp["some_name"] == "some_value"
+    @test_deprecated TclTk.unsetvar("some_name")
+    @test !haskey(interp, "some_name")
+
     for (name, value) in (("a", 42), ("1", 1), ("", "empty"),
                           ("π", π), ("world is beautiful!", true))
 
@@ -184,7 +189,7 @@ end
         key = Symbol(name)
 
         # Set variable.
-        @inferred Nothing TclTk.setvar(name, value)
+        @inferred Nothing TclTk.setvar!(name, value)
 
         # Get variable.
         T = typeof(value)
@@ -203,7 +208,7 @@ end
         @test TclTk.exists(name)
         @test haskey(interp, name)
         @test haskey(interp, key)
-        TclTk.unsetvar(name)
+        TclTk.unsetvar!(name)
         @test !TclTk.exists(name)
         @test !haskey(interp, name)
         @test !haskey(interp, key)
@@ -228,13 +233,13 @@ end
                                   ("π", "φ", π),
                                   ("world is", "beautiful!", true))
         # First unset variable.
-        TclTk.unsetvar(part1, nocomplain=true)
-        @test_throws TclError TclTk.unsetvar(part1)
+        TclTk.unsetvar!(part1, nocomplain=true)
+        @test_throws TclError TclTk.unsetvar!(part1)
         key1 = Symbol(part1)
         key2 = Symbol(part2)
 
         # Set variable.
-        @inferred Nothing TclTk.setvar(part1, part2, value)
+        @inferred Nothing TclTk.setvar!(part1, part2, value)
         T = typeof(value)
         obj = @inferred TclObj TclTk.getvar(part1, part2)
         @test @inferred(TclObj, interp[part1, part2]) == obj
@@ -252,7 +257,7 @@ end
         @test TclTk.exists(part1, part2)
         @test haskey(interp, part1, part2)
         @test haskey(interp, key1, key2)
-        TclTk.unsetvar(part1, part2)
+        TclTk.unsetvar!(part1, part2)
         @test !TclTk.exists(part1, part2)
         @test !haskey(interp, part1, part2)
         @test !haskey(interp, key1, key2)

@@ -6,7 +6,12 @@ Versioning](https://semver.org).
 
 ## Unreleased
 
-## Added
+### Changed
+
+- `TclTk.setvar!` and `TclTk.unsetvar!` replace `TclTk.setvar` and `TclTk.unsetvar` which
+  are deprecated.
+
+### Added
 
 - Abstract vector API for lists of Tcl objects.
 
@@ -15,7 +20,7 @@ Versioning](https://semver.org).
 - Checking for equality of instances of `TclInterp`, `TkWidget`, and `TkImage`.
 
 
-## Fixed
+### Fixed
 
 - Indexation of lists of Tcl objects by a vector of Booleans.
 

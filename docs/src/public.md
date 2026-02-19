@@ -32,8 +32,8 @@ tcl_error
 ```@docs
 TclTk.exists
 TclTk.getvar
-TclTk.setvar
-TclTk.unsetvar
+TclTk.setvar!
+TclTk.unsetvar!
 ```
 
 ## Events

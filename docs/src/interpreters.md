@@ -110,7 +110,7 @@ interp[part1,part2] = value  # set the value of the global variable `part1(part2
 
 Under the hood, retrieving and setting the interpreter result is done by
 [`TclTk.getresult`](@ref) and [`TclTk.setresult!`](@ref) while retrieving and setting the
-value of a global variable is done by [`TclTk.getvar`](@ref) and [`TclTk.setvar`](@ref).
+value of a global variable is done by [`TclTk.getvar`](@ref) and [`TclTk.setvar!`](@ref).
 
 ## Properties
 

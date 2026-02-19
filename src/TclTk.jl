@@ -45,6 +45,9 @@ include("widgets.jl")
 include("dialogs.jl")
 include("images.jl")
 
+@deprecate setvar(args...; kwds...) setvar!(args...; kwds...) false
+@deprecate unsetvar(args...; kwds...) unsetvar!(args...; kwds...) false
+
 function __init__()
     # Check that package was built with the same version as the dynamic library.
     version = tcl_version()
@@ -131,13 +134,15 @@ for sym in (
     :quote_string,
     :resume,
     :setresult!,
-    :setvar,
+    :setvar!,
+    :setvar, # FIXME deprecated
     :suspend,
     :tcl_error,
     :tcl_library,
     :tcl_version,
     :tk_start,
-    :unsetvar,
+    :unsetvar!,
+    :unsetvar, # FIXME deprecated
 
     # Tk images.
     :TkBitmap,
