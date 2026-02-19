@@ -127,7 +127,7 @@ function Base.show(io::IO, img::T) where {T<:TkImage}
 end
 
 for f in (:isequal, :(==))
-    @eval function Base.$f(a::T, b::T) where {T<:IkImage}
+    @eval function Base.$f(a::T, b::T) where {T<:TkImage}
         return $f(a.interp, b.interp) && $f(a.name, b.name)
     end
 end
