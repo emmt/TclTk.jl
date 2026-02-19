@@ -70,15 +70,7 @@ would be very happy if, eventually, the two projects merge.
 
 # Installation
 
-`TclTk` is not yet an [offical Julia package](https://pkg.julialang.org/) but it is easy to
-install from the REPL of Julia's package manager<sup>[[pkg]](#pkg)</sup> as follows:
-
-```julia
-pkg> add https://github.com/JuliaInterop/TclTk.jl.git
-```
-
-where `pkg>` represents the package manager prompt and `https` protocol has been assumed; if
-`ssh` is more suitable for you, then:
+It is easy to install TclTk from the REPL of Julia's package manager<sup>[[pkg]](#pkg)</sup> as follows:
 
 ```julia
 pkg> add TclTk
