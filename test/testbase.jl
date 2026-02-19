@@ -169,6 +169,64 @@ end
     @test TclObj(colorant"red") ∈ ("#FF0000", "#ff0000")
 end
 
+@testset "Tcl Interpreters" begin
+    # Constructor.
+    interp = @inferred TclInterp()
+    shared = @inferred TclInterp(:shared)
+    private = @inferred TclInterp(:private)
+    @test interp === shared
+    @test private != shared
+    @test !isequal(private, shared)
+
+    # Interpreter result.
+    val = "hello world!"
+    interp[] = val
+    @test val == @inferred String interp[]
+    val = -12345
+    interp[] = val
+    @test val == @inferred Int interp[Int]
+
+    # Global variables.
+    name, val = "some_name", -12345
+    private[name] = val
+    @test haskey(private, name)
+    @test TclObj(val) == @inferred TclObj private[name]
+    delete!(private, name)
+    @test !haskey(private, name)
+    name, val = "some_other_name", -13/4
+    private[name] = val
+    @test haskey(private, name)
+    @test TclObj(val) == @inferred TclObj private[name]
+    private[name] = unset
+    @test !haskey(private, name)
+    delete!(private, name)
+
+    # Evaluation of scripts.
+    name, val = "globvar", 4321
+    @test TclObj(val) == @inferred TclObj private.eval("set $name $val")
+    @test haskey(private, name)
+    @test TclObj(val) == @inferred TclObj private[name]
+    delete!(private, name)
+    @test_throws TclError @inferred TclObj private.eval("set $name")
+    @test TCL_ERROR === @inferred TclStatus private.eval(TclStatus, "set $name")
+
+    # Execution of commands.
+    name, val = "arr(1)", 789
+    @test TclObj(val) == @inferred TclObj private.exec(:set, name, val)
+    @test haskey(private, name)
+    @test TclObj(val) == @inferred TclObj private[name]
+    delete!(private, name)
+    @test_throws TclError @inferred TclObj private.exec(:set, name)
+    @test TCL_ERROR === @inferred TclStatus private.exec(TclStatus, "set", name)
+    @test TclObj(val) == @inferred TclObj private(:set, name, val)
+    @test haskey(private, name)
+    @test TclObj(val) == @inferred TclObj private[name]
+    delete!(private, name)
+    @test_throws TclError @inferred TclObj private(:set, name)
+    @test TCL_ERROR === @inferred TclStatus private(TclStatus, "set", name)
+
+end
+
 @testset "Tcl Variables" begin
     # Get default interpreter.
     interp = @inferred TclInterp()
