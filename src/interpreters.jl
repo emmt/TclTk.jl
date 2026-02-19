@@ -187,7 +187,7 @@ thread.
 [`TclInterp`](@ref) and [`TclObj`](@ref).
 
 """
-getresult() = get(TclInterp())
+getresult() = getresult(TclInterp())
 getresult(::Type{T}) where {T} = getresult(T, TclInterp())
 getresult(interp::TclInterp) = getresult(TclObj, interp)
 

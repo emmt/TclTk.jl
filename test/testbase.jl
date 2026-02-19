@@ -187,11 +187,40 @@ end
     # Interpreter result.
     val = "hello world!"
     interp[] = val
-    @test val == @inferred interp[]
-    @test (@inferred interp[]) isa TclObj
-    val = -12345
+    x = @inferred interp[]
+    y = @inferred interp.result()
+    z = @inferred TclTk.getresult()
+    @test x isa TclObj
+    @test y isa TclObj
+    @test z isa TclObj
+    @test val == x
+    @test val == y
+    @test val == z
+    val = -12345 # must be a bit type
     interp[] = val
-    @test val === @inferred interp[typeof(val)]
+    x = @inferred interp[typeof(val)]
+    y = @inferred interp.result(typeof(val))
+    z = @inferred TclTk.getresult(typeof(val))
+    @test x isa typeof(val)
+    @test y isa typeof(val)
+    @test z isa typeof(val)
+    @test val === x
+    @test val === y
+    @test val === z
+
+    # Properties.
+    @test :concat   ∈ @inferred propertynames(interp)
+    @test :eval     ∈ @inferred propertynames(interp)
+    @test :exec     ∈ @inferred propertynames(interp)
+    @test :list     ∈ @inferred propertynames(interp)
+    @test :ptr      ∈ @inferred propertynames(interp)
+    @test :result   ∈ @inferred propertynames(interp)
+    @test :threadid ∈ @inferred propertynames(interp)
+    @test TclInterp().threadid == Threads.threadid()
+    @test TclInterp().ptr == @inferred pointer(interp)
+    @test_throws KeyError TclInterp().non_existing_property
+    @test_throws KeyError TclInterp().non_existing_property = 3
+    @test_throws ErrorException TclInterp().result = 3
 
     # Global variables.
     name, val = "some_name", -12345
@@ -233,6 +262,9 @@ end
     @test_throws TclError @inferred private(:set, name)
     @test TCL_ERROR === @inferred private(TclStatus, "set", name)
 
+    # Explicitly delete private interpreter.
+    private = 0
+    GC.gc()
 end
 
 @testset "Tcl Variables" begin
