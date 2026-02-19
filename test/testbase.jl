@@ -294,6 +294,7 @@ end
     @test (@inferred TclTk.isrunning()) === false
     TclTk.resume()
     @test (@inferred TclTk.isrunning()) === true
+    sleep(0.1) # sleep for a while so that events can be processed
     TclTk.suspend()
     @test (@inferred TclTk.isrunning()) === false
 end
