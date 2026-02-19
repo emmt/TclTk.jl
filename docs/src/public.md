@@ -17,6 +17,9 @@ TclTk.exec
 TclTk.getresult
 TclTk.setresult!
 TclTk.quote_string
+TclTk.isactive
+TclTk.isdeleted
+TclTk.issafe
 ```
 
 ## Status and exceptions

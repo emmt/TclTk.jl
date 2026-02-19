@@ -45,6 +45,8 @@ include("widgets.jl")
 include("dialogs.jl")
 include("images.jl")
 
+@deprecate getinterp(args...; kwds...) TclInterp(args...; kwds...) false
+
 @deprecate setvar(args...; kwds...) setvar!(args...; kwds...) false
 @deprecate unsetvar(args...; kwds...) unsetvar!(args...; kwds...) false
 
@@ -143,7 +145,10 @@ for sym in (
     :getresult,
     :getvar,
     :grid,
+    :isactive,
+    :isdeleted,
     :isrunning,
+    :issafe,
     :list,
     :pack,
     :place,

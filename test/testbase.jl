@@ -183,6 +183,11 @@ end
     @test interp === shared
     @test private != shared
     @test !isequal(private, shared)
+    @test startswith(sprint(show, interp), "Tcl interpreter (address:")
+    @test startswith(sprint(show, MIME"text/plain"(), interp), "Tcl interpreter (address:")
+    @test (@inferred TclTk.isactive(private)) isa Bool
+    @test (@inferred TclTk.isdeleted(private)) isa Bool
+    @test (@inferred TclTk.issafe(private)) isa Bool
 
     # Interpreter result.
     val = "hello world!"

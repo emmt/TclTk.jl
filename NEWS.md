@@ -28,6 +28,8 @@ Versioning](https://semver.org).
 
 - Checking for equality of instances of `TclInterp`, `TkWidget`, and `TkImage`.
 
+- Non-exported public functions `TclTk.isactive`, `TclTk.isdeleted`, and `TclTk.issafe`.
+
 
 ### Fixed
 

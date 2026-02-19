@@ -278,11 +278,45 @@ function setresult!(interp::TclInterp, result)
     return nothing
 end
 
-# TODO rename and doc
-isdeleted(interp::TclInterp) = isnull(pointer(interp)) || !iszero(Tcl_InterpDeleted(interp))
-isactive(interp::TclInterp) = !isnull(pointer(interp)) && !iszero(Tcl_InterpActive(interp))
+"""
+    TclTk.isdeleted(interp=TclInterp()) -> bool::Bool
 
-@deprecate getinterp(args...; kwds...) TclInterp(args...; kwds...)
+Return whether Tcl interpreter `interp` has been deleted.
+
+# See also
+
+[`TclInterp`](@ref), [`TclTk.isactive`](@ref), and [`TclTk.issafe`](@ref).
+
+"""
+isdeleted(interp::TclInterp=TclInterp()) =
+    isnull(pointer(interp)) || !iszero(Tcl_InterpDeleted(interp))
+
+"""
+    TclTk.isactive(interp=TclInterp()) -> bool::Bool
+
+Return whether Tcl interpreter `interp` is active, i.e. is currently executing some script.
+
+# See also
+
+[`TclInterp`](@ref), [`TclTk.issafe`](@ref), and [`TclTk.isdeleted`](@ref).
+
+"""
+isactive(interp::TclInterp=TclInterp()) =
+    !isnull(pointer(interp)) && !iszero(Tcl_InterpActive(interp))
+
+"""
+    TclTk.issafe(interp=TclInterp()) -> bool::Bool
+
+Return whether Tcl interpreter `interp` is *safe*, i.e. is suitable for executing untrusted
+code.
+
+# See also
+
+[`TclInterp`](@ref), [`TclTk.isactive`](@ref), and [`TclTk.isdeleted`](@ref).
+
+"""
+issafe(interp::TclInterp=TclInterp()) =
+    !isnull(pointer(interp)) && !iszero(Tcl_IsSafe(interp))
 
 #------------------------------------------------------------------- Evaluation of scripts -
 
