@@ -19,6 +19,10 @@
 # - Convert to a `Bool` Boolean values returned as `Cint` by TclTk. It is sufficient to
 #   do `!iszero(bool))`.
 
+# Assumed major and minor Tcl version.
+const TCL_MAJOR_VERSION = 9
+const TCL_MINOR_VERSION = 0
+
 """
     TclStatus
 

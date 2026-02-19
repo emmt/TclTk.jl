@@ -9,6 +9,12 @@ const π = MathConstants.π
 const φ = MathConstants.φ
 
 @testset "Utilities" begin
+    # Version number.
+    version = @inferred tcl_version()
+    @test version.major == TCL_MAJOR_VERSION
+    @test version.minor == TCL_MINOR_VERSION
+
+    # Convert to Boolean.
     @test @inferred(TclTk.bool(true)) === true
     @test @inferred(TclTk.bool(false)) === false
     @test @inferred(TclTk.bool("0")) === false

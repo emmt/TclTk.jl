@@ -13,6 +13,7 @@ module Impl
 
 import ..TclTk
 
+using Tcl_jll, Tk_jll
 using CEnum
 using ColorTypes
 using Colors
@@ -29,7 +30,6 @@ if !isdefined(Base, :isnothing)
     isnothing(::Nothing) = true
 end
 
-include(joinpath("..", "deps", "deps.jl"))
 include("libtcl.jl")
 include("libtk.jl")
 include("types.jl")
@@ -67,8 +67,9 @@ include("images.jl")
 function __init__()
     # Check that package was built with the same version as the dynamic library.
     version = tcl_version()
-    TCL_VERSION == version || error(
-        "`TclTk` package was built for Tcl $(TCL_VERSION) while loaded library has version $(version)")
+    (version.major, version.minor) == (TCL_MAJOR_VERSION, TCL_MINOR_VERSION) || assertion_error(
+        "`TclTk` package assumes Tcl $(TCL_MAJOR_VERSION).$(TCL_MINOR_VERSION) while loaded library ",
+        "has version $(version), `Project.toml` must be adjusted")
 
     # Many things do not work properly (segmentation fault when freeing a Tcl object,
     # initialization of Tcl interpreters, etc.) if Tcl internals (encodings, sub-systems,
@@ -103,7 +104,6 @@ for sym in (
     :WideInt,
 
     # Version.
-    :TCL_VERSION,
     :TCL_MAJOR_VERSION,
     :TCL_MINOR_VERSION,
 
