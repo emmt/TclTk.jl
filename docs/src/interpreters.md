@@ -88,7 +88,7 @@ interpreter of the thread is used by default.
 A Tcl interpreter stores the result of the last executed command or of the last evaluated
 script or the last error message. Indexing an interpreter, say `interp`, without anything or
 with a type `T`, that is as `interp[]` or `interp[T]`, give access to the interpreter
-result, converted to type `T` (`String` by default).
+result, converted to type `T` (`TclObj` by default).
 
 For example:
 
@@ -100,7 +100,7 @@ julia> interp[] = 43 # set interpreter's result
 43
 
 julia> interp[] # retrieve interpreter's result
-"43"
+TclObj(43)
 
 julia> interp[Int] # retrieve interpreter's result as an `Int`
 43
@@ -111,7 +111,7 @@ julia> interp[String] # retrieve interpreter's result as a `String`
 ```
 
 Accessing and mutating the result of an interpreter is done by methods
-[`TclTk.getresult(T=String, interp=TclInterp())`](@ref TclTk.getresult) and
+[`TclTk.getresult(T=TclObj, interp=TclInterp())`](@ref TclTk.getresult) and
 [`TclTk.setresult!(interp=TclInterp(), value)`](@ref TclTk.setresult!) which, if no
 interpreter is specified, apply to the shared interpreter of the thread.
 
@@ -122,9 +122,9 @@ A Tcl interpreter may also be indexed by a Tcl variable and an optional leading 
 access to global variables stored by the interpreter:
 
 ```julia
-interp[name]          # get the value of the global variable `name`
-interp[T,name]        # idem but value is converted to type `T`
-interp[name] = value  # set the value of the global variable `name`
+interp[name]          # get value of global variable
+interp[T, name]       # idem but value is converted to type `T`
+interp[name] = value  # set value of global variable
 haskey(interp, name)  # yield whether global variable exists
 delete!(interp, name) # delete global variable
 interp[name] = unset  # idem
@@ -167,7 +167,7 @@ A Tcl interpreter, say `interp::TclInterp` has a number of properties:
   TclTk.eval) to evaluate the concatenation of `args...` as a Tcl script with the
   interpreter and return a result of type `T`, a Tcl object by default.
 
-- `interp.result(T=String)` is a shortcut for [`TclTk.getresult(T, interp)`](@ref
+- `interp.result(T=TclObj)` is a shortcut for [`TclTk.getresult(T, interp)`](@ref
   TclTk.getresult) and the same as `interp[T]` to get the result stored by the interpreter
   as a value of type `T`. Depending on the last thing done by the interpreter, its result
   may be: empty, the result of the last command evaluated by the interpreter, or the error

@@ -168,19 +168,19 @@ end
 #---------------------------------------------------------------------- Interpreter result -
 
 """
-    interp[] -> str::String
-    interp.result() -> str::String
-    TclTk.getresult() -> str::String
-    TclTk.getresult(interp) -> str::String
+    interp[] -> obj::TclObj
+    interp.result() -> obj::TclObj
+    TclTk.getresult() -> obj::TclObj
+    TclTk.getresult(interp) -> obj::TclObj
 
     interp.result(T) -> val::T
     TclTk.getresult(T) -> val::T
     TclTk.getresult(T, interp) -> val::T
     TclTk.getresult(interp, T) -> val::T
 
-Retrieve the result of interpreter `interp` as a value of type `T` or as a string if `T` is
-not specified. `TclTk.getresult` returns the result of the shared interpreter of the thread.
-`T` may be `TclObj` to retrieve a managed Tcl object.
+Retrieve the result of interpreter `interp` as a value of type `T` or as a Tacl object if
+`T` is not specified. `TclTk.getresult` returns the result of the shared interpreter of the
+thread.
 
 # See also
 
@@ -189,7 +189,7 @@ not specified. `TclTk.getresult` returns the result of the shared interpreter of
 """
 getresult() = get(TclInterp())
 getresult(::Type{T}) where {T} = getresult(T, TclInterp())
-getresult(interp::TclInterp) = getresult(String, interp)
+getresult(interp::TclInterp) = getresult(TclObj, interp)
 
 getresult(interp::TclInterp, ::Type{T}) where {T} = getresult(T, interp)
 
@@ -205,7 +205,7 @@ function getresult(::Type{T}, interp::TclInterp) where {T}
 end
 
 # Make `interp[]` yield result.
-Base.getindex(interp::TclInterp) = getresult(String, interp)
+Base.getindex(interp::TclInterp) = getresult(TclObj, interp)
 Base.getindex(interp::TclInterp, ::Type{T}) where {T} = getresult(T, interp)
 function Base.setindex!(interp::TclInterp, val)
     setresult!(interp, val)

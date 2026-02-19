@@ -15,6 +15,9 @@ Versioning](https://semver.org).
   side. Specifying such names as two arguments has been deprecated. This was needed for the
   coherence of base methods like `haskey` or `delete!`.
 
+- The default type when retrieving the result stored by an interpreter is `TclObj` (was
+  `String`).
+
 
 ### Added
 
