@@ -202,6 +202,10 @@ end
 
 # Make `interp[]` yield result.
 Base.getindex(interp::TclInterp) = getresult(String, interp)
+function Base.setindex!(interp::TclInterp, val)
+    setresult!(interp, val)
+    return interp
+end
 
 """
     TclTk.setresult!(interp = TclInterp(), val) -> nothing
