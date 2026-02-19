@@ -125,6 +125,10 @@ function Base.show(io::IO, interp::TclInterp)
     print(io, ", threadid: ", interp.threadid, ")")
 end
 
+for f in (:isequal, :(==))
+    @eval Base.$f(a::TclInterp, b::TclInterp) = $f(a.ptr, b.ptr)
+end
+
 #------------------------------------------------------------------ Interpreter properties -
 
 Base.propertynames(interp::TclInterp) = (:concat, :eval, :exec, :list, :ptr,

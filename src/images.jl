@@ -126,6 +126,12 @@ function Base.show(io::IO, img::T) where {T<:TkImage}
     return nothing
 end
 
+for f in (:isequal, :(==))
+    @eval function Base.$f(a::T, b::T) where {T<:IkImage}
+        return $f(a.interp, b.interp) && $f(a.name, b.name)
+    end
+end
+
 #-------------------------------------------------------------------------- Image commands -
 
 # Make Tk image objects callable.

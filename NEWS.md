@@ -12,6 +12,8 @@ Versioning](https://semver.org).
 
 - `interp[] = result` to set interpreter's result.
 
+- Checking for equality of instances of `TclInterp`, `TkWidget`, and `TkImage`.
+
 
 ## Fixed
 

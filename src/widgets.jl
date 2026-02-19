@@ -376,6 +376,12 @@ function Base.show(io::IO, w::T) where {T<:TkWidget}
     return nothing
 end
 
+for f in (:isequal, :(==))
+    @eval function Base.$f(a::T, b::T) where {T<:TkWidget}
+        return $f(a.interp, b.interp) && $f(a.path, b.path)
+    end
+end
+
 """
     tk_start(interp = TclInterp()) -> interp
 
