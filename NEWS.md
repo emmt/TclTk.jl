@@ -4,8 +4,23 @@ This page describes the most important changes in `Tcl`. The format is based on 
 Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic
 Versioning](https://semver.org).
 
-
 ## Unreleased
+
+## Added
+
+- Abstract vector API for lists of Tcl objects.
+
+- `interp[] = result` to set interpreter's result.
+
+
+## Fixed
+
+- Indexation of lists of Tcl objects by a vector of Booleans.
+
+- Getting value of a global Tcl variable with a 2-part name.
+
+
+## Version 0.2.0 (2026-02-17)
 
 ### Breaking changes
 
