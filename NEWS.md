@@ -18,6 +18,7 @@ Versioning](https://semver.org).
 - The default type when retrieving the result stored by an interpreter is `TclObj` (was
   `String`).
 
+- The package uses artifacts `Tcl_jll` and `Tk_jll` to avoid a build step.
 
 ### Added
 

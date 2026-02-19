@@ -32,7 +32,7 @@ while [ $# -gt 0 ]; do
     esac
     shift
 done
-vers="${vers:=$(echo 1.{5..12})}"
+vers="${vers:=$(echo 1.{6..12})}"
 
 for ver in $vers; do
     echo "########################################### Julia version $ver"
