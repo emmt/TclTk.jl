@@ -212,6 +212,11 @@ end
     @test val === x
     @test val === y
     @test val === z
+    val += 1
+    TclTk.setresult!(val)
+    z = @inferred TclTk.getresult(typeof(val))
+    @test z isa typeof(val)
+    @test val == z
 
     # Properties.
     @test :concat   ∈ @inferred propertynames(interp)
@@ -226,6 +231,18 @@ end
     @test_throws KeyError TclInterp().non_existing_property
     @test_throws KeyError TclInterp().non_existing_property = 3
     @test_throws ErrorException TclInterp().result = 3
+
+    # Lists.
+    t = (1, "a b {c d}", 0)
+    x = @inferred interp.list(t...)
+    y = @inferred interp.concat(t...)
+    @test x isa TclObj
+    @test x.type == :list
+    @test length(x) == 3
+    @test y isa TclObj
+    @test length(y) == 5
+    @test x == TclTk.list(t...)
+    @test y == TclTk.concat(t...)
 
     # Global variables.
     name, val = "some_name", -12345

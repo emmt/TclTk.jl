@@ -39,7 +39,7 @@ for (func, append) in (:list   => :unsafe_append_element,
         $func(args...) = _TclObj(new_list($append, args...))
         function $func(interp::TclInterp, args...)
             GC.@preserve interp begin
-                return _TclObj(new_list($append, checked_pointer(interp), args...))
+                return _TclObj(unsafe_new_list($append, checked_pointer(interp), args...))
             end
         end
     end
