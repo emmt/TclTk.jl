@@ -1,22 +1,60 @@
 # Public API
 
+## Objects
+
 ```@docs
-TclInterp
-TclStatus
 TclObj
 TclTk.concat
-TclTk.do_events
-TclTk.do_one_event
+TclTk.list
+```
+
+## Interpreters
+
+```@docs
+TclInterp
 TclTk.eval
 TclTk.exec
 TclTk.getresult
-TclTk.list
-TclTk.resume
 TclTk.setresult!
-TclTk.suspend
-TkWidget
-tk_start
 TclTk.quote_string
+```
+
+## Status and exceptions
+
+```@docs
+TclStatus
+TclError
+tcl_error
+```
+
+## Variables
+
+```@docs
+TclTk.exists
+TclTk.getvar
+TclTk.setvar
+TclTk.unsetvar
+```
+
+## Events
+
+```@docs
+tk_start
+TclTk.do_events
+TclTk.do_one_event
+TclTk.resume
+TclTk.suspend
+```
+
+## Widgets
+
+```@docs
+TkWidget
+```
+
+## Geometry managers
+
+```@docs
 TclTk.grid
 TclTk.pack
 TclTk.place
