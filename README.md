@@ -17,7 +17,7 @@ This package provides an optimized Julia interface to [Tcl/Tk](http://www.tcl-la
 * Reading/writing a Tcl variable is as easy as:
 
   ```julia
-  inter = TclInterp()     # get shared interpreter of this thread
+  interp = TclInterp()     # get shared interpreter of this thread
   interp[var]             # read Tcl variable value
   interp[var] = val       # set Tcl variable value
   interp[var] = unset     # unset Tcl variable
@@ -81,7 +81,7 @@ where `pkg>` represents the package manager prompt and `https` protocol has been
 `ssh` is more suitable for you, then:
 
 ```julia
-pkg> add git@github.com:JuliaInterop/TclTk.jl.git
+pkg> add TclTk
 ```
 
 To check whether `TclTk` package works correctly:
@@ -105,7 +105,7 @@ Uninstall `TclTk` as follows:
 ```julia
 pkg> rm TclTk
 pkg> gc
-pkg> add https://github.com/JuliaInterop/TclTk.jl.git
+pkg> add TclTk
 ```
 
 before re-installing.
