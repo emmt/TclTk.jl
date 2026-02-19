@@ -19,6 +19,8 @@ Versioning](https://semver.org).
 
 - Getting value of a global Tcl variable with a 2-part name.
 
+- Names of Tcl global variables can also be a (real) number.
+
 
 ## Version 0.2.0 (2026-02-17)
 

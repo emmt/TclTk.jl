@@ -71,7 +71,7 @@ end
 
 # `Name` is anything that can be understood as the name of a variable or of a
 # command.
-const Name = Union{AbstractString,Symbol,TclObj}
+const Name = Union{AbstractString,Symbol,Real,TclObj}
 
 """
     TclTk.Impl.FastString
