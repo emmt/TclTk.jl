@@ -206,6 +206,7 @@ end
 
 # Make `interp[]` yield result.
 Base.getindex(interp::TclInterp) = getresult(String, interp)
+Base.getindex(interp::TclInterp, ::Type{T}) where {T} = getresult(T, interp)
 function Base.setindex!(interp::TclInterp, val)
     setresult!(interp, val)
     return interp
@@ -215,6 +216,11 @@ end
 # global variables.
 function Base.haskey(interp::TclInterp, name::VarName)
     return exists(interp, name)
+end
+
+function Base.delete!(interp::TclInterp, name::VarName)
+    unsetvar!(interp, name; nocomplain=true)
+    return interp
 end
 
 function Base.getindex(interp::TclInterp, name::VarName)
@@ -291,7 +297,8 @@ converted in the pair of arguments `-key` and `val` in the command list (note th
 before the key name).
 
 The evaluation of a Tcl command stores a result (or an error message) in the interpreter and
-returns a status. The behavior of `TclTk.exec` depend on the type `T` of the expected result:
+returns a status. The behavior of `TclTk.exec` depends on the type `T` of the expected
+result:
 
 * If `T` is `TclStatus`, the status of the evaluation is returned and the command result may
   be retrieved by calling [`TclTk.getresult`](@ref) or via `interp.result(...)`.

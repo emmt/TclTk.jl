@@ -285,11 +285,6 @@ end
     tcl_error(mesg)
 end
 
-function Base.delete!(interp::TclInterp, name::VarName)
-    unsetvar!(interp, name; nocomplain=true)
-    return interp
-end
-
 """
     TclTk.Impl.unsafe_getvar(interp, name, flags) -> value_ptr
     TclTk.Impl.unsafe_getvar(interp, part1, part2, flags) -> value_ptr
