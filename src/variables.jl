@@ -81,7 +81,7 @@ function getvar(::Type{T}, interp::TclInterp, name::Name;
     GC.@preserve interp name begin
         value_ptr = unsafe_getvar(interp, name, flags)
         isnull(value_ptr) && getvar_error(interp, name, flags)
-        return _getvar_result(T, value_ptr)
+        return unsafe_get(T, value_ptr)
     end
 end
 
@@ -89,24 +89,8 @@ function getvar(::Type{T}, interp::TclInterp, (part1, part2)::NTuple{2,Name};
                 flags::Integer = getvar_default_flags) where {T}
     GC.@preserve interp part1 part2 begin
         value_ptr = unsafe_getvar(interp, part1, part2, flags)
-        isnull(value_ptr) && getvar_error(interp, name, flags)
-        return _getvar_result(T, value_ptr)
-    end
-end
-
-# Convert a Tcl object pointer to something of a given type taking care of the reference
-# count of the object. In particular, if conversion fails for a temporary object it must be
-# deleted.
-_getvar_result(::Type{TclObj}, objptr::ObjPtr) = _TclObj(objptr)
-function _getvar_result(::Type{T}, objptr::ObjPtr) where {T}
-     # TODO incr/decr ref. count should not be necessary since object shall be referenced by
-     # the interpreter.
-    Tcl_IncrRefCount(objptr)
-    try
-        # Attempt conversion.
-        return unsafe_get(T, objptr)
-    finally
-        Tcl_DecrRefCount(objptr)
+        isnull(value_ptr) && getvar_error(interp, (part1, part2), flags)
+        return unsafe_get(T, value_ptr)
     end
 end
 
