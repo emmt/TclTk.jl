@@ -36,6 +36,12 @@ TclTk.setvar!
 TclTk.unsetvar!
 ```
 
+## Callbacks
+
+```@doc
+TclTk.Callback
+```
+
 ## Events
 
 ```@docs

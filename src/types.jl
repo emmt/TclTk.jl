@@ -73,6 +73,9 @@ end
 # command.
 const Name = Union{AbstractString,Symbol,Real,TclObj}
 
+# A Tcl variable name can be specified as `(part1,part2)`.
+const VarName = Union{Name,Tuple{Name,Name}}
+
 """
     TclTk.Impl.FastString
 

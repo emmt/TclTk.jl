@@ -83,34 +83,66 @@ value of type `T` (a Tcl object by default). In case of error, the behavior depe
 as for the execution of a Tcl command described above. With [`TclTk.eval`](@ref), the shared
 interpreter of the thread is used by default.
 
-## Indexation
+## Interpreter result
 
-A Tcl interpreter may be indexed to access the result of global variables stored by the
-interpreter. Apart from an optional type `T`, the index may have 0, 1, or 2 parts which
-correspond to the interpreter's result or to a global variable whose name is specified by
-one or two parts:
+A Tcl interpreter stores the result of the last executed command or of the last evaluated
+script or the last error message. Indexing an interpreter, say `interp`, without anything or
+with a type `T`, that is as `interp[]` or `interp[T]`, give access to the interpreter
+result, converted to type `T` (`String` by default).
+
+For example:
+
+```julia-repl
+julia> interp = TclInterp()
+Tcl interpreter (address: 0x00000000260af720, threadid: 1)
+
+julia> interp[] = 43 # set interpreter's result
+43
+
+julia> interp[] # retrieve interpreter's result
+"43"
+
+julia> interp[Int] # retrieve interpreter's result as an `Int`
+43
+
+julia> interp[String] # retrieve interpreter's result as a `String`
+"43"
+
+```
+
+Accessing and mutating the result of an interpreter is done by methods
+[`TclTk.getresult(T=String, interp=TclInterp())`](@ref TclTk.getresult) and
+[`TclTk.setresult!(interp=TclInterp(), value)`](@ref TclTk.setresult!) which, if no
+interpreter is specified, apply to the shared interpreter of the thread.
+
+
+## Global variables
+
+A Tcl interpreter may also be indexed by a Tcl variable and an optional leading type `T` to
+access to global variables stored by the interpreter:
 
 ```julia
-interp[]              # yield the interpreter result as a string
-interp[T]             # yield the interpreter result as a value of type `T`
-interp[name]          # yield the value of the global variable `name`
+interp[name]          # get the value of the global variable `name`
 interp[T,name]        # idem but value is converted to type `T`
-interp[part1,part2]   # yield the value of the global variable `part1(part2)`
-interp[T,part1,part2] # idem but value is converted to type `T`
+interp[name] = value  # set the value of the global variable `name`
+haskey(interp, name)  # yield whether global variable exists
+delete!(interp, name) # delete global variable
+interp[name] = unset  # idem
 ```
 
-The `setindex!` method can also be used to set the interpreter result or the value of a
-global variable:
+Above `unset` is the singleton provided by the
+[`UnsetIndex`](https://github.com/emmt/UnsetIndex.jl) package and exported by the `Tcl`
+package
 
-```julia
-interp[] = result            # set the interpreter result
-interp[name] = value         # set the value of the global variable `name`
-interp[part1,part2] = value  # set the value of the global variable `part1(part2)`
-```
+Under the hood, accessing and mutating the value of a global variable is done by the methods
+[`TclTk.getvar(T=TclObj, interp=TclInterp(), name)`](@ref TclTk.getvar) and
+[`TclTk.setvar!(Nothing, interp=TclInterp(), name, value)`](@ref TclTk.setvar!), checking
+for the existence of a global variable is done by the method
+[`TclTk.exists(interp=TclInterp(), name)`](@ref TclTk.exists), and deleting a global
+variable is done by the method [`TclTk.unsetvar!(interp=TclInterp(), name)`](@ref
+TclTk.unsetvar!). All these methods apply to the shared interpreter of the thread if no
+interpreter is specified.
 
-Under the hood, retrieving and setting the interpreter result is done by
-[`TclTk.getresult`](@ref) and [`TclTk.setresult!`](@ref) while retrieving and setting the
-value of a global variable is done by [`TclTk.getvar`](@ref) and [`TclTk.setvar!`](@ref).
 
 ## Properties
 

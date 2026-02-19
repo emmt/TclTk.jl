@@ -2,11 +2,9 @@
     TclTk.exists(interp=TclInterp(), name)
     haskey(interp, name)
 
-    TclTk.exists(interp=TclInterp(), part1, part2)
-    haskey(interp, (part1, part2))
-
-Return whether global variable `name` or `part1(part2)` is defined in Tcl interpreter
-`interp` or in the shared interpreter of the calling thread if this argument is omitted.
+Return whether global variable `name` is defined in Tcl interpreter `interp` or in the
+shared interpreter of the calling thread if this argument is omitted. `name` may be a
+2-tuple `(part1, part2)`.
 
 # See also
 
@@ -15,57 +13,32 @@ Return whether global variable `name` or `part1(part2)` is defined in Tcl interp
 """
 function exists end
 
-for (name, decl) in ((:name,)         => (:(name::Name),),
-                     (:part1, :part2) => (:(part1::Name), :(part2::Name)))
-    @eval begin
-        function exists($(decl...))
-            return exists(TclInterp(), $(name...))
-        end
+const exists_default_flags = TCL_GLOBAL_ONLY
 
-        function exists(interp::TclInterp, $(decl...))
-            GC.@preserve interp $(name...) begin
-                return !isnull(unsafe_getvar(interp, $(name...), TCL_GLOBAL_ONLY))
-            end
-        end
+exists(name::VarName; kwds...) = exists(TclInterp(), name; kwds...)
 
-        # Manage to make any Tcl interpreter usable as an indexable collection with respect to its
-        # global variables.
-        function Base.haskey(interp::TclInterp, $(decl...))
-            return exists(interp, $(name...))
-        end
+function exists(interp::TclInterp, name::Name;
+                flags::Integer = exists_default_flags)
+    GC.@preserve interp name begin
+        return !isnull(unsafe_getvar(interp, name, flags))
+    end
+end
 
-        function Base.getindex(interp::TclInterp, $(decl...))
-            return getvar(interp, $(name...))
-        end
-
-        function Base.getindex(interp::TclInterp, ::Type{T}, $(decl...)) where {T}
-            return getvar(T, interp, $(name...))
-        end
-
-        function Base.setindex!(interp::TclInterp, value, $(decl...))
-            setvar!(Nothing, interp, $(name...), value)
-            return interp
-        end
-
-        function Base.setindex!(interp::TclInterp, ::Unset, $(decl...))
-            unsetvar!(interp, $(name...); nocomplain=true)
-            return interp
-        end
+function exists(interp::TclInterp, (part1, part2)::NTuple{2,Name};
+                flags::Integer = exists_default_flags)
+    GC.@preserve interp part1 part2 begin
+        return !isnull(unsafe_getvar(interp, part1, part2, flags))
     end
 end
 
 """
     TclTk.getvar(T=TclObj, interp=TclInterp(), name) -> val::T
-    TclTk.getvar(T=TclObj, interp=TclInterp(), part1, part2) -> val::T
-
     interp[name] -> val::TclObj
-    interp[part1, part2] -> val::TclObj
-
     interp[T::Type, name] -> val::T
-    interp[T::Type, part1, part2] -> val::T
 
-Return the value of the global variable `name` or `part1(part2)` in Tcl interpreter `interp`
-or in the shared interpreter of the calling thread if this argument is omitted.
+Return the value of the global variable `name` in Tcl interpreter `interp` or in the shared
+interpreter of the calling thread if this argument is omitted. `name` may be a 2-tuple
+`(part1, part2)`.
 
 Optional argument `T` (`TclObj` by default) can be used to specify the type of the returned
 value. Some possibilities are:
@@ -97,63 +70,70 @@ function getvar end
 
 const getvar_default_flags = (TCL_GLOBAL_ONLY|TCL_LEAVE_ERR_MSG);
 
-for (name, decl) in ((:name,)         => (:(name::Name),),
-                     (:part1, :part2) => (:(part1::Name), :(part2::Name)))
-    @eval begin
-        function getvar($(decl...); kwds...)
-            getvar(TclInterp(), $(name...); kwds...)
-        end
-        function getvar(::Type{T}, $(decl...); kwds...) where {T}
-            getvar(T, TclInterp(), $(name...); kwds...)
-        end
-        function getvar(interp::TclInterp, $(decl...); kwds...)
-            getvar(TclObj, interp, $(name...); kwds...)
-        end
-        function getvar(::Type{T}, interp::TclInterp, $(decl...);
-                        flags::Integer = getvar_default_flags) where {T}
-            GC.@preserve interp $(name...) begin
-                value_ptr = unsafe_getvar(interp, $(name...), flags)
-                isnull(value_ptr) && getvar_error(interp, $(name...), flags)
-                if T == TclObj
-                    return _TclObj(value_ptr)
-                else
-                    Tcl_IncrRefCount(value_ptr)
-                    try
-                        # Attempt conversion.
-                        return unsafe_get(T, value_ptr)
-                    finally
-                        Tcl_DecrRefCount(value_ptr)
-                    end
-                end
-            end
-        end
-        @noinline function getvar_error(interp::TclInterp, $(decl...), flags::Integer)
-            local mesg
-            if iszero(flags & TCL_LEAVE_ERR_MSG)
-                varname = variable_name($(name...))
-                mesg = "Tcl variable \"$varname\" does not exist"
-            else
-                mesg = getresult(String, interp)
-            end
-            tcl_error(mesg)
-        end
+getvar(name::VarName; kwds...) = getvar(TclInterp(), name; kwds...)
+
+getvar(::Type{T}, name::VarName; kwds...) where {T} = getvar(T, TclInterp(), name; kwds...)
+
+getvar(interp::TclInterp, name::VarName; kwds...) = getvar(TclObj, interp, name; kwds...)
+
+function getvar(::Type{T}, interp::TclInterp, name::Name;
+                flags::Integer = getvar_default_flags) where {T}
+    GC.@preserve interp name begin
+        value_ptr = unsafe_getvar(interp, name, flags)
+        isnull(value_ptr) && getvar_error(interp, name, flags)
+        return _getvar_result(T, value_ptr)
     end
 end
 
+function getvar(::Type{T}, interp::TclInterp, (part1, part2)::NTuple{2,Name};
+                flags::Integer = getvar_default_flags) where {T}
+    GC.@preserve interp part1 part2 begin
+        value_ptr = unsafe_getvar(interp, part1, part2, flags)
+        isnull(value_ptr) && getvar_error(interp, name, flags)
+        return _getvar_result(T, value_ptr)
+    end
+end
+
+# Convert a Tcl object pointer to something of a given type taking care of the reference
+# count of the object. In particular, if conversion fails for a temporary object it must be
+# deleted.
+_getvar_result(::Type{TclObj}, objptr::ObjPtr) = _TclObj(objptr)
+function _getvar_result(::Type{T}, objptr::ObjPtr) where {T}
+     # TODO incr/decr ref. count should not be necessary since object shall be referenced by
+     # the interpreter.
+    Tcl_IncrRefCount(objptr)
+    try
+        # Attempt conversion.
+        return unsafe_get(T, objptr)
+    finally
+        Tcl_DecrRefCount(objptr)
+    end
+end
+
+@noinline function getvar_error(interp::TclInterp, name::VarName, flags::Integer)
+    local mesg
+    if iszero(flags & TCL_LEAVE_ERR_MSG)
+        varname = variable_name(name)
+        mesg = "Tcl variable \"$varname\" does not exist"
+    else
+        mesg = getresult(String, interp)
+    end
+    tcl_error(mesg)
+end
+
+variable_name(name::String) = name
 variable_name(name::Name) = string(name)
-variable_name(part1::Name, part2::Name) = "$(part1)($(part2))"
+variable_name((part1,part2)::Tuple{Name,Name}) = "$(part1)($(part2))"
 
 """
     TclTk.setvar!(interp=TclInterp(), name, value) -> nothing
     interp[name] = value
 
-    TclTk.setvar!(interp=TclInterp(), part1, part2, value) -> nothing
-    interp[part1, part2] = value
-
-    TclTk.setvar!(T, interp=TclInterp(), part1, part2, value) -> val::T
+    TclTk.setvar!(T, interp=TclInterp(), name, value) -> val::T
 
 Set global variable `name` or `part1(part2)` to be `value` in Tcl interpreter `interp` or in
-the shared interpreter of the calling thread if this argument is omitted.
+the shared interpreter of the calling thread if this argument is omitted. `name` may be a
+2-tuple `(part1, part2)`.
 
 The Tcl variable is deleted if `value` is `unset`, the singleton provided by the
 `UnsetIndex` package and exported by the `Tcl` package.
@@ -171,63 +151,92 @@ function setvar! end
 
 const setvar_default_flags = (TCL_GLOBAL_ONLY|TCL_LEAVE_ERR_MSG);
 
-for (name, decl) in ((:name,)         => (:(name::Name),),
-                     (:part1, :part2) => (:(part1::Name), :(part2::Name)))
-    @eval begin
-        function setvar!($(decl...), value; kwds...)
-            return setvar!(TclInterp(), $(name...), value; kwds...)
-        end
-        function setvar!(::Type{T}, $(decl...), value; kwds...) where {T}
-            return setvar!(T, TclInterp(), $(name...), value; kwds...)
-        end
-        function setvar!(interp::TclInterp, $(decl...), value; kwds...)
-            return setvar!(Nothing, interp, $(name...), value; kwds...)
-        end
-        function setvar!(interp::TclInterp, $(decl...), ::Unset; kwds...)
-            return unsetvar!(interp, $(name...); nocomplain=true, kwds...)
-        end
+setvar!(name::VarName, value; kwds...) = setvar!(TclInterp(), name, value; kwds...)
 
-        function setvar!(::Type{T}, interp::TclInterp, $(decl...), value;
-                        flags::Integer = setvar_default_flags) where {T}
-            # Preserve the interpreter from being garbage collected to ensure the validity
-            # of the new variable value. Also preserve the name part(s) and the value from
-            # being deleted while calling `unsafe_setvar!`.
-            GC.@preserve interp $(name...) value begin
-                new_value_ptr = unsafe_setvar!(interp, $(name...), value, flags)
-                isnull(new_value_ptr) && setvar_error(interp, $(name...), flags)
-                if T == Nothing
-                    return nothing
-                else
-                    return unsafe_get(T, new_value_ptr)
-                end
-            end
-        end
-        @noinline function setvar_error(interp::TclInterp, $(decl...), flags::Integer)
-            local mesg
-            if iszero(flags & TCL_LEAVE_ERR_MSG)
-                varname = variable_name($(name...))
-                mesg = "cannot set Tcl variable \"$varname\""
+setvar!(::Type{T}, name::VarName, value; kwds...) where {T} =
+    setvar!(T, TclInterp(), name, value; kwds...)
+
+setvar!(interp::TclInterp, name::VarName, value; kwds...) =
+    setvar!(Nothing, interp, name, value; kwds...)
+
+setvar!(interp::TclInterp, name::VarName, ::Unset; kwds...) =
+    unsetvar!(interp, name; nocomplain=true, kwds...)
+
+function setvar!(::Type{T}, interp::TclInterp, name::Name, value;
+                 flags::Integer = setvar_default_flags) where {T}
+    GC.@preserve interp name value begin
+        interp_ptr = checked_pointer(interp)
+        name_ptr = null(ObjPtr)
+        value_ptr = null(ObjPtr)
+        try
+            # Retrieve pointers and increment reference counts.
+            name_ptr = Tcl_IncrRefCount(unsafe_objptr_from(name, "Tcl variable name"))::ObjPtr
+            value_ptr = Tcl_IncrRefCount(unsafe_objptr_from(value, "Tcl variable value"))::ObjPtr
+            # Call C function (can only throw if `flags` is not a valid `Cint`).
+            new_value_ptr = Tcl_ObjSetVar2(interp_ptr, name_ptr, null(ObjPtr), value_ptr, flags)
+            isnull(new_value_ptr) && setvar_error(interp, name, flags)
+            if T == Nothing
+                return nothing
             else
-                mesg = getresult(String, interp)
+                return unsafe_get(T, new_value_ptr)
             end
-            tcl_error(mesg)
+        finally
+            # Decrement reference counts.
+            isnull(name_ptr) || Tcl_DecrRefCount(name_ptr)
+            isnull(value_ptr) || Tcl_DecrRefCount(value_ptr)
         end
     end
 end
 
+function setvar!(::Type{T}, interp::TclInterp, (part1, part2)::NTuple{2,Name}, value;
+                 flags::Integer = setvar_default_flags) where {T}
+    GC.@preserve interp part1 part2 value begin
+        interp_ptr = checked_pointer(interp)
+        part1_ptr = null(ObjPtr)
+        part2_ptr = null(ObjPtr)
+        value_ptr = null(ObjPtr)
+        try
+            # Retrieve pointers and increment reference counts.
+            part1_ptr = Tcl_IncrRefCount(unsafe_objptr_from(part1, "Tcl array name"))::ObjPtr
+            part2_ptr = Tcl_IncrRefCount(unsafe_objptr_from(part2, "Tcl array index"))::ObjPtr
+            value_ptr = Tcl_IncrRefCount(unsafe_objptr_from(value, "Tcl array value"))::ObjPtr
+            # Call C function (can only throw if `flags` is not a valid `Cint`).
+            new_value_ptr = Tcl_ObjSetVar2(interp_ptr, part1_ptr, part2_ptr, value_ptr, flags)
+            isnull(new_value_ptr) && setvar_error(interp, (part1, part2), flags)
+            if T == Nothing
+                return nothing
+            else
+                return unsafe_get(T, new_value_ptr)
+            end
+        finally
+            # Decrement reference counts.
+            isnull(part2_ptr) || Tcl_DecrRefCount(part1_ptr)
+            isnull(part1_ptr) || Tcl_DecrRefCount(part2_ptr)
+            isnull(value_ptr) || Tcl_DecrRefCount(value_ptr)
+        end
+    end
+end
+
+@noinline function setvar_error(interp::TclInterp, name::VarName, flags::Integer)
+    local mesg::String
+    if iszero(flags & TCL_LEAVE_ERR_MSG)
+        varname = variable_name(name)
+        mesg = "cannot set Tcl variable \"$varname\""
+    else
+        mesg = getresult(String, interp)
+    end
+    tcl_error(mesg)
+end
+
 """
     TclTk.unsetvar!(interp=TclInterp(), name)
-    TclTk.unsetvar!(interp=TclInterp(), part1, part2)
-
     interp[name] = unset
-    interp[part1, part2] = unset
-
     delete!(interp, name) -> interp
-    delete!(interp, part1, part2) -> interp
 
-Delete global variable `name` or `part1(part2)` in Tcl interpreter `interp` or in the shared
-interpreter of the thread if this argument is omitted. Above, `unset` is the singleton
-provided by the `UnsetIndex` package and exported by the `Tcl` package.
+Delete global variable `name` in Tcl interpreter `interp` or in the shared interpreter of
+the thread if this argument is omitted. `name` may be a 2-tuple `(part1, part2)`. Above,
+`unset` is the singleton provided by the `UnsetIndex` package and exported by the `TclTk`
+package.
 
 # Keywords
 
@@ -247,38 +256,38 @@ function unsetvar_default_flags(nocomplain::Bool)
     return nocomplain ? TCL_GLOBAL_ONLY : (TCL_GLOBAL_ONLY|TCL_LEAVE_ERR_MSG)
 end
 
-for (name, (decl, func)) in ((:name,)         => ((:(name::Name),),
-                                                  :(Tcl_UnsetVar)),
-                             (:part1, :part2) => ((:(part1::Name), :(part2::Name)),
-                                                  :(Tcl_UnsetVar2)))
-    @eval begin
+unsetvar!(name::VarName; kwds...) = unsetvar!(TclInterp(), name; kwds...)
 
-        unsetvar!($(decl...); kwds...) = unsetvar!(TclInterp(), $(name...); kwds...)
+# In <tcl.h> unsetting a variable requires its name part(s) as string(s). This conversion is
+# automatically done for `ccall` by `Base.cconvert` and `Base.unsafe_convert`.
+function unsetvar!(interp::TclInterp, name::Name; nocomplain::Bool = false,
+                   flags::Integer = unsetvar_default_flags(nocomplain))
+    status = Tcl_UnsetVar(interp, name, flags)
+    status == TCL_OK || nocomplain || unsetvar_error(interp, name, flags)
+    return nothing
+end
+function unsetvar!(interp::TclInterp, (part1, part2)::NTuple{2,Name};
+                   nocomplain::Bool = false,
+                   flags::Integer = unsetvar_default_flags(nocomplain))
+    status = Tcl_UnsetVar2(interp, part1, part2, flags)
+    status == TCL_OK || nocomplain || unsetvar_error(interp, (part1, part2), flags)
+    return nothing
+end
 
-        # In <tcl.h> unsetting a variable requires its name part(s) as string(s).
-        function unsetvar!(interp::TclInterp, $(decl...); nocomplain::Bool = false,
-                          flags::Integer = unsetvar_default_flags(nocomplain))
-            status = $func(interp, $(name...), flags)
-            status == TCL_OK || nocomplain || unsetvar_error(interp, $(name...), flags)
-            return nothing
-        end
-
-        function Base.delete!(interp::TclInterp, $(decl...))
-            unsetvar!(interp, $(name...); nocomplain=true)
-            return interp
-        end
-
-        @noinline function unsetvar_error(interp::TclInterp, $(decl...), flags::Integer)
-            local mesg
-            if iszero(flags & TCL_LEAVE_ERR_MSG)
-                varname = variable_name($(name...))
-                mesg = "Tcl variable \"$varname\" does not exist"
-            else
-                mesg = getresult(String, interp)
-            end
-            tcl_error(mesg)
-        end
+@noinline function unsetvar_error(interp::TclInterp, name::VarName, flags::Integer)
+    local mesg::String
+    if iszero(flags & TCL_LEAVE_ERR_MSG)
+        varname = variable_name(name)
+        mesg = "Tcl variable \"$varname\" does not exist"
+    else
+        mesg = getresult(String, interp)
     end
+    tcl_error(mesg)
+end
+
+function Base.delete!(interp::TclInterp, name::VarName)
+    unsetvar!(interp, name; nocomplain=true)
+    return interp
 end
 
 """
@@ -313,97 +322,37 @@ function unsafe_getvar(interp::TclInterp, name::FastString, flags::Integer)
 end
 
 function unsafe_getvar(interp::TclInterp, name::Name, flags::Integer)
-    GC.@preserve interp name begin
-        interp_ptr = checked_pointer(interp)
-        name_ptr = Tcl_IncrRefCount(unsafe_objptr_from(name, "Tcl variable name"))
-        value_ptr = Tcl_ObjGetVar2(interp_ptr, name_ptr, null(ObjPtr), flags)
-        Tcl_DecrRefCount(name_ptr)
-        return value_ptr
-    end
+    # Make sure `flags` is a valid `Cint` to avoid any chance that `Tcl_ObjGetVar2` may
+    # throw.
+    flags = Cint(flags)::Cint
+    interp_ptr = checked_pointer(interp)
+    name_ptr = Tcl_IncrRefCount(unsafe_objptr_from(name, "Tcl variable name"))
+    value_ptr = Tcl_ObjGetVar2(interp_ptr, name_ptr, null(ObjPtr), flags)
+    Tcl_DecrRefCount(name_ptr)
+    return value_ptr
 end
 
 function unsafe_getvar(interp::TclInterp, part1::FastString, part2::FastString,
-                     flags::Integer)
+                       flags::Integer)
     return Tcl_GetVar2Ex(interp, part1, part2, flags)
 end
 
 function unsafe_getvar(interp::TclInterp, part1::Name, part2::Name, flags::Integer)
     # In a comment of Tcl C code for `Tcl_ObjGetVar2`, it is written that "Callers must incr
     # part2Ptr if they plan to decr it."
-    GC.@preserve interp part1 part2 begin
-        interp_ptr = checked_pointer(interp)
-        part1_ptr = null(ObjPtr)
-        part2_ptr = null(ObjPtr)
-        try
-            # Retrieve pointers and increment reference counts.
-            part1_ptr = Tcl_IncrRefCount(unsafe_objptr_from(part1, "Tcl array name"))::ObjPtr
-            part2_ptr = Tcl_IncrRefCount(unsafe_objptr_from(part2, "Tcl array index"))::ObjPtr
-            # Call C function.
-            return Tcl_ObjGetVar2(interp_ptr, part1_ptr, part2_ptr, flags)
-        finally
-            # Decrement reference counts.
-            isnull(part1_ptr) || Tcl_DecrRefCount(part1_ptr)
-            isnull(part2_ptr) || Tcl_DecrRefCount(part2_ptr)
-        end
-    end
-end
-
-"""
-    TclTk.Impl.unsafe_setvar!(interp, name, value, flags) -> new_value_ptr
-    TclTk.Impl.unsafe_setvar!(interp, part1, part2, value, flags) -> new_value_ptr
-
-Private function to set a Tcl variable. Return a pointer `new_value_ptr` to the Tcl object
-storing the value of the variable after being set or *null* in case of failure.
-
-This method is *unsafe* because the pointer `new_value_ptr` to the new variable value is
-only valid while the interpreter is not deleted. Furthermore, the variable name part(s) and
-the value must be valid. Hence, the caller shall have preserved the interpreter, the
-variable name part(s) and the value from being deleted.
-
-# See also
-
-[`TclTk.setvar!`](@ref) and [`TclTk.Impl.unsafe_getvar`](@ref).
-
-"""
-function unsafe_setvar! end
-
-# `unsafe_setvar!` always calls `Tcl_ObjSetVar2` and is similar to
-# [`TclTk.Impl.unsafe_getvar`](@ref) for managing arguments.
-
-function unsafe_setvar!(interp::TclInterp, name::Name, value, flags::Integer)
-    interp_ptr = checked_pointer(interp)
-    name_ptr = null(ObjPtr)
-    value_ptr = null(ObjPtr)
-    try
-        # Retrieve pointers and increment reference counts.
-        name_ptr = Tcl_IncrRefCount(unsafe_objptr_from(name, "Tcl variable name"))::ObjPtr
-        value_ptr = Tcl_IncrRefCount(unsafe_objptr_from(value, "Tcl variable value"))::ObjPtr
-        # Call C function.
-        return Tcl_ObjSetVar2(interp_ptr, name_ptr, null(ObjPtr), value_ptr, flags)
-    finally
-        # Decrement reference counts.
-        isnull(name_ptr) || Tcl_DecrRefCount(name_ptr)
-        isnull(value_ptr) || Tcl_DecrRefCount(value_ptr)
-    end
-end
-
-function unsafe_setvar!(interp::TclInterp, part1::Name, part2::Name, value, flags::Integer)
     interp_ptr = checked_pointer(interp)
     part1_ptr = null(ObjPtr)
     part2_ptr = null(ObjPtr)
-    value_ptr = null(ObjPtr)
     try
         # Retrieve pointers and increment reference counts.
         part1_ptr = Tcl_IncrRefCount(unsafe_objptr_from(part1, "Tcl array name"))::ObjPtr
         part2_ptr = Tcl_IncrRefCount(unsafe_objptr_from(part2, "Tcl array index"))::ObjPtr
-        value_ptr = Tcl_IncrRefCount(unsafe_objptr_from(value, "Tcl array value"))::ObjPtr
         # Call C function.
-        return Tcl_ObjSetVar2(interp_ptr, part1_ptr, part2_ptr, value_ptr, flags)
+        return Tcl_ObjGetVar2(interp_ptr, part1_ptr, part2_ptr, flags)
     finally
         # Decrement reference counts.
-        isnull(part2_ptr) || Tcl_DecrRefCount(part1_ptr)
-        isnull(part1_ptr) || Tcl_DecrRefCount(part2_ptr)
-        isnull(value_ptr) || Tcl_DecrRefCount(value_ptr)
+        isnull(part1_ptr) || Tcl_DecrRefCount(part1_ptr)
+        isnull(part2_ptr) || Tcl_DecrRefCount(part2_ptr)
     end
 end
 

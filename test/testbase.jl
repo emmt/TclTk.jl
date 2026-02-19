@@ -181,27 +181,51 @@ end
     @test_deprecated TclTk.unsetvar("some_name")
     @test !haskey(interp, "some_name")
 
-    for (name, value) in (("a", 42), ("1", 1), ("", "empty"),
-                          ("π", π), ("world is beautiful!", true))
+    for (name, value) in (("a", 42),
+                          ("1", 1),
+                          ("", "empty"),
+                          ("π", π),
+                          ("world is beautiful!", true),
+                          # 2-part variable names.
+                          (("a", "i"), 42),
+                          (("1", "2"), 12),
+                          (("", ""), "really empty"),
+                          (("π", "φ"), π),
+                          (("world is", "beautiful!"), true))
 
         # First unset variable.
-        @inferred TclStatus TclTk.exec(TclStatus, "array", "unset", name)
-        key = Symbol(name)
+        if name isa Tuple
+            @inferred TclStatus TclTk.exec(TclStatus, "array", "unset", first(name))
+        else
+            @inferred TclStatus TclTk.exec(TclStatus, "array", "unset", name)
+        end
+
+        # Symbolic variable name.
+        key = name isa Tuple ? map(Symbol, name) : Symbol(name)
 
         # Set variable.
+        if name isa Tuple
+            @test_deprecated TclTk.setvar!(name..., value)
+            @test_deprecated TclTk.unsetvar!(name...)
+        end
         @inferred Nothing TclTk.setvar!(name, value)
 
         # Get variable.
         T = typeof(value)
         obj = @inferred TclObj TclTk.getvar(name)
-        @test @inferred(TclObj, interp[name]) == obj
-        @test @inferred(TclObj, interp[key]) == obj
+        @test obj == @inferred(TclObj, interp[name])
+        @test obj == @inferred(TclObj, interp[key])
+        if name isa Tuple
+            part1, part2 = name
+            @test obj == @inferred(TclObj, interp["$(part1)($(part2))"])
+            @test obj == @test_deprecated TclTk.getvar(part1, part2)
+        end
         if value isa Union{String,Integer}
-            @test @inferred(T, TclTk.getvar(T, name)) == value
-            @test @inferred(T, interp[T, name]) == value
+            @test value == @inferred(T, TclTk.getvar(T, name))
+            @test value == @inferred(T, interp[T, name])
         elseif value isa AbstractFloat
-            @test @inferred(T, TclTk.getvar(T, name)) ≈ value
-            @test @inferred(T, interp[T, name]) ≈ value
+            @test value ≈ @inferred(T, TclTk.getvar(T, name))
+            @test value ≈ @inferred(T, interp[T, name])
         end
 
         # Test existence and delete variable.
@@ -225,54 +249,6 @@ end
         interp[name] = unset
         @test !haskey(interp, name)
 
-    end
-
-    for (part1, part2, value) in (("a", "i", 42),
-                                  ("1", "2", 12),
-                                  ("", "", "really empty"),
-                                  ("π", "φ", π),
-                                  ("world is", "beautiful!", true))
-        # First unset variable.
-        TclTk.unsetvar!(part1, nocomplain=true)
-        @test_throws TclError TclTk.unsetvar!(part1)
-        key1 = Symbol(part1)
-        key2 = Symbol(part2)
-
-        # Set variable.
-        @inferred Nothing TclTk.setvar!(part1, part2, value)
-        T = typeof(value)
-        obj = @inferred TclObj TclTk.getvar(part1, part2)
-        @test @inferred(TclObj, interp[part1, part2]) == obj
-        @test @inferred(TclObj, interp[key1, key2]) == obj
-        @test @inferred(TclObj, interp["$(part1)($(part2))"]) == obj
-        if value isa Union{String,Integer}
-            @test @inferred(T, TclTk.getvar(T, part1, part2)) == value
-            @test @inferred(T, interp[T, part1, part2]) == value
-        elseif value isa AbstractFloat
-            @test @inferred(T, TclTk.getvar(T, part1, part2)) ≈ value
-            @test @inferred(T, interp[T, part1, part2]) ≈ value
-        end
-
-        # Test existence and delete variable.
-        @test TclTk.exists(part1, part2)
-        @test haskey(interp, part1, part2)
-        @test haskey(interp, key1, key2)
-        TclTk.unsetvar!(part1, part2)
-        @test !TclTk.exists(part1, part2)
-        @test !haskey(interp, part1, part2)
-        @test !haskey(interp, key1, key2)
-
-        # Delete with `delete!`.
-        interp[part1, part2] = value
-        @test haskey(interp, part1, part2)
-        delete!(interp, part1, part2)
-        @test !haskey(interp, part1, part2)
-
-        # Delete with `unset`.
-        interp[part1, part2] = value
-        @test haskey(interp, part1, part2)
-        interp[part1, part2] = unset
-        @test !haskey(interp, part1, part2)
     end
 
 end

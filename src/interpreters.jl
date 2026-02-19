@@ -211,6 +211,30 @@ function Base.setindex!(interp::TclInterp, val)
     return interp
 end
 
+# Manage to make any Tcl interpreter usable as an indexable collection with respect to its
+# global variables.
+function Base.haskey(interp::TclInterp, name::VarName)
+    return exists(interp, name)
+end
+
+function Base.getindex(interp::TclInterp, name::VarName)
+    return getvar(interp, name)
+end
+
+function Base.getindex(interp::TclInterp, ::Type{T}, name::VarName) where {T}
+    return getvar(T, interp, name)
+end
+
+function Base.setindex!(interp::TclInterp, value, name::VarName)
+    setvar!(Nothing, interp, name, value)
+    return interp
+end
+
+function Base.setindex!(interp::TclInterp, ::Unset, name::VarName)
+    unsetvar!(interp, name; nocomplain=true)
+    return interp
+end
+
 """
     TclTk.setresult!(interp = TclInterp(), val) -> nothing
 

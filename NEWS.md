@@ -11,6 +11,11 @@ Versioning](https://semver.org).
 - `TclTk.setvar!` and `TclTk.unsetvar!` replace `TclTk.setvar` and `TclTk.unsetvar` which
   are deprecated.
 
+- 2-part Tcl variable names (a.k.a. Tcl *arrays*) are specified as 2-tuple on the Julia
+  side. Specifying such names as two arguments has been deprecated. This was needed for the
+  coherence of base methods like `haskey` or `delete!`.
+
+
 ### Added
 
 - Abstract vector API for lists of Tcl objects.
