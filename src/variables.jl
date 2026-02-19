@@ -338,7 +338,7 @@ function unsafe_getvar(interp::TclInterp, part1::Name, part2::Name, flags::Integ
             # Retrieve pointers and increment reference counts.
             part1_ptr = Tcl_IncrRefCount(unsafe_objptr_from(part1, "Tcl array name"))
             stage = 1
-            part1_ptr = Tcl_IncrRefCount(unsafe_objptr_from(part2, "Tcl array index"))
+            part2_ptr = Tcl_IncrRefCount(unsafe_objptr_from(part2, "Tcl array index"))
             stage = 2
             # Call C function.
             return Tcl_ObjGetVar2(interp_ptr, part1_ptr, part2_ptr, flags)
