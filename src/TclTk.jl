@@ -234,41 +234,4 @@ end
 using UnsetIndex
 export unset
 
-#=
-const __EXPORTS = (
-    :TclObjCommand,
-    :TCL_NO_EVAL,
-    :TCL_EVAL_GLOBAL,
-    :TCL_EVAL_DIRECT,
-    :TCL_EVAL_INVOKE,
-    :TCL_CANCEL_UNWIND,
-    :TCL_EVAL_NOERR,
-)
-
-import .Impl:
-    choosecolor,
-    choosedirectory,
-    colorize!,
-    colorize,
-    delete,
-    findphoto,
-    getheight,
-    getopenfile,
-    getparent,
-    getpath,
-    getphotosize,
-    getpixels,
-    getsavefile,
-    getvalue,
-    getvar,
-    getwidth,
-    isactive,
-    isdeleted,
-    messagebox,
-    setphotosize!,
-    setpixels!,
-    threshold!,
-
-=#
-
 end # module
