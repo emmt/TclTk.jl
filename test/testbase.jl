@@ -267,6 +267,15 @@ end
     GC.gc()
 end
 
+@testset "Events" begin
+    TclTk.isrunning() && TclTk.suspend()
+    @test (@inferred TclTk.isrunning()) === false
+    TclTk.resume()
+    @test (@inferred TclTk.isrunning()) === true
+    TclTk.suspend()
+    @test (@inferred TclTk.isrunning()) === false
+end
+
 @testset "Tcl Variables" begin
     # Get default interpreter.
     interp = @inferred TclInterp()
