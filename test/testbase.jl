@@ -271,8 +271,44 @@ end
     # Get default interpreter.
     interp = @inferred TclInterp()
 
+    # Accessing or deleting a non-existing variable is an error.
+    TclTk.unsetvar!("non_existing_variable"; nocomplain=true)
+    TclTk.unsetvar!("non_existing_array"; nocomplain=true)
     @test_throws TclError TclTk.getvar("non_existing_variable")
     @test_throws TclError TclTk.getvar("non_existing_variable"; flags=TCL_GLOBAL_ONLY)
+    @test_throws TclError TclTk.getvar(:non_existing_variable)
+    @test_throws TclError TclTk.getvar(:non_existing_variable; flags=TCL_GLOBAL_ONLY)
+    @test_throws TclError TclTk.getvar(("non_existing_array", 1))
+    @test_throws TclError TclTk.getvar(("non_existing_array", 1); flags=TCL_GLOBAL_ONLY)
+    @test_throws TclError TclTk.getvar(:non_existing_variable)
+    @test_throws TclError TclTk.getvar(:non_existing_variable; flags=TCL_GLOBAL_ONLY)
+    @test_throws TclError TclTk.unsetvar!(:non_existing_variable)
+    @test_throws TclError TclTk.unsetvar!(:non_existing_variable; flags=TCL_GLOBAL_ONLY)
+
+    # Manage to make any operation on a variable fail. NOTE Errors in `unset` traces are
+    # ignored.
+    name = "some_name"
+    for (op, trace) in TclTk.exec(:trace, :info, :variable, name)
+        # Remove all existing traces.
+        TclTk.exec(Nothing, :trace, :remove, :variable, name, op, trace)
+    end
+    trace = "forbidden_operation_on_variable"
+    TclTk.eval(Nothing, """
+proc $trace {name1 name2 op} {
+    if {\$name2 eq ""} {
+        set name "\$name1"
+    } else {
+        set name "\${name1}(\${name2})"
+    }
+    error "attempt to \$op variable \\"\$name\\""
+}
+""")
+    TclTk.setvar!(name, "some_value")
+    TclTk.exec(Nothing, :trace, :add, :variable, name, :read, trace)
+    @test_throws TclError TclTk.getvar(name)
+    TclTk.exec(Nothing, :trace, :add, :variable, name, :write, trace)
+    @test_throws TclError TclTk.setvar!(name, "some_other_value")
+    TclTk.unsetvar!(name) # this also deletes all traces
 
     @test_deprecated TclTk.setvar("some_name", "some_value")
     @test interp["some_name"] == "some_value"
@@ -306,7 +342,10 @@ end
             @test_deprecated TclTk.setvar!(name..., value)
             @test_deprecated TclTk.unsetvar!(name...)
         end
-        @inferred Nothing TclTk.setvar!(name, value)
+        @test nothing === @inferred TclTk.setvar!(name, value)
+        obj = @inferred TclTk.setvar!(TclObj, name, value)
+        @test obj isa TclObj
+        @test obj == TclObj(value)
 
         # Get variable.
         T = typeof(value)
