@@ -98,6 +98,23 @@ julia> img(Int, :cget, "-height")
 
 ```
 
+Public functions [`TclTk.cget`](@ref) and [`TclTk.configure`](@ref) are applicable to an
+image instance. For example:
+
+```
+julia> tk_start()
+
+julia> img = TkImage()
+TkPhoto (alias for TkImage{:photo}) name = "image1", size = (0, 0)
+
+julia> TclTk.configure(img)
+TclObj(("-data {} {} {} {}", "-format {} {} {} {}", "-metadata {} {} {} {}", "-file {} {} {} {}", "-gamma {} {} 1 1.0", "-height {} {} 0 0", "-palette {} {} {} {}", "-width {} {} 0 0",))
+
+julia> TclTk.cget(Int, img, "width") # no hyphen here
+0
+
+```
+
 ## Loading and storing pixels
 
 A Tk photo image can be indexed as a 2-dimensional array to access its pixels. Pixel indices

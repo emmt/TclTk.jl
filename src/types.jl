@@ -97,11 +97,12 @@ const FasterString = Union{#=Char,=# String, SubString{String}, Symbol}
 #-------------------------------------------------------------------------------------------
 # Tk widgets and other Tk objects.
 
-abstract type TkWidget     <: WrappedObject end
+abstract type TkObject     <: WrappedObject end
+abstract type TkWidget     <: TkObject      end
 abstract type TkRootWidget <: TkWidget      end
 
 # An image is parameterized by the symbolic image type.
-struct TkImage{T} <: WrappedObject
+struct TkImage{T} <: TkObject
     interp::TclInterp
     name::TclObj
     function TkImage(::Val{T}, interp::TclInterp, name::TclObj) where {T}

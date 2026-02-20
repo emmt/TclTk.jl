@@ -421,7 +421,7 @@ end
     TclTk.configure(w)
     w(:configure)
 
-Return all the options of Tk widget `w`.
+Return all the options of Tk object (widget or image) `w`.
 
 ---
     TclTk.configure(w, opt1 => val1, opt2 => val2)
@@ -439,14 +439,14 @@ way to change the settings is:
 [`TclTk.cget`](@ref) and [`TkWidget`](@ref).
 
 """
-configure(w::TkWidget, pairs...) = exec(w, :configure, pairs...)
+configure(w::TkObject, pairs...) = exec(w, :configure, pairs...)
 
 """
     TclTk.cget(w, opt)
 
-Return the value of the option `opt` for widget `w`. Option `opt` may be specified as a
-string or as a `Symbol` and shall corresponds to a Tk option name without the leading "-".
-Another way to obtain an option value is:
+Return the value of the option `opt` for Tk object (widget or image) `w`. Option `opt` may
+be specified as a string or as a `Symbol` and shall corresponds to a Tk option name without
+the leading "-". Another way to obtain an option value is:
 
     w[opt]
 
@@ -455,9 +455,10 @@ Another way to obtain an option value is:
 [`TclTk.configure`](@ref) and [`TkWidget`](@ref).
 
 """
-cget(w::TkWidget, opt::Name) = exec(w, :cget, "-"*string(opt))
-cget(::Type{T}, w::TkWidget, opt::Name) where {T} = exec(T, w, :cget, "-"*string(opt))
-cget(w::TkWidget, ::Type{T}, opt::Name) where {T} = cget(T, w, opt)
+cget(w::TkObject, opt::Name) = exec(w, :cget, "-"*string(opt))
+cget(::Type{T}, w::TkObject, opt::Name) where {T} =
+    exec(T, w, :cget, "-"*string(opt))
+cget(w::TkObject, ::Type{T}, opt::Name) where {T} = cget(T, w, opt)
 
 Base.getindex(w::TkWidget, key::Name) = cget(w, key)
 Base.getindex(w::TkWidget, (key,T)::Pair{<:Name,DataType}) = cget(T, w, key)
