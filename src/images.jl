@@ -10,11 +10,8 @@ const PhotoColorant = Union{Gray{N0f8},GrayA{N0f8},AGray{N0f8},
                             BGR{N0f8},BGRA{N0f8},ABGR{N0f8}}
 
 """
-    TkImage{type}(interp=TclInterp(), option => value, ...) -> img
-    TkImage{type}(interp=TclInterp(), name, option => value, ...) -> img
-
-    TkImage{type}(w::TkWidget, option => value, ...) -> img
-    TkImage{type}(w::TkWidget, name, option => value, ...) -> img
+    TkImage{type}(host=TclInterp(), option => value, ...) -> img
+    TkImage{type}(host=TclInterp(), name, option => value, ...) -> img
 
 Return a Tk image of given `type` (e.g., `:bitmap`, `:pixmap`, or `:photo`).
 
@@ -22,12 +19,12 @@ Return a Tk image of given `type` (e.g., `:bitmap`, `:pixmap`, or `:photo`).
     `Tk` extension must have been loaded in the interpreter before creating an image.
     This can be done with [`tk_start`](@ref).
 
-`interp` is the Tcl interpreter where lives the image (the shared interpreter of the thread
-by default). If a Tk widget `w` is specified, its interpreter is used.
+Argument `hosts` is used to infer the Tcl interpreter where lives the image (the shared
+interpreter of the thread by default). If `host` is a Tk widget, its interpreter is used.
 
-If the image `name` is not specified, it is automatically generated. If `name` is specified
-and an image with this name already exists in the interpreter, it is re-used and, if options
-are specified, it is reconfigured.
+If the image `name` is omitted, it is automatically generated. If `name` is specified and an
+image with this name already exists in the interpreter, it is re-used and, if options are
+specified, it is reconfigured.
 
 There may be any `option => value` pairs to (re)configure the image. Options depend on the
 image types.

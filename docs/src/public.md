@@ -68,3 +68,12 @@ TclTk.grid
 TclTk.pack
 TclTk.place
 ```
+
+## Images
+
+```@docs
+TkImage
+TkBitmap
+TkPixmap
+TkPhoto
+```

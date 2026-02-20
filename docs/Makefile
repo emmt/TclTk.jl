@@ -3,12 +3,12 @@ SOURCES = \
     src/callbacks.md \
     src/develop.md \
     src/dialogs.md \
+    src/images.md \
     src/index.md \
     src/interpreters.md \
     src/lists.md \
     src/objects.md \
     src/public.md \
-    src/variables.md \
     src/widgets.md
 
 default: build/index.html

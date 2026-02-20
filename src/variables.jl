@@ -3,8 +3,8 @@
     haskey(interp, name)
 
 Return whether global variable `name` is defined in Tcl interpreter `interp` or in the
-shared interpreter of the calling thread if this argument is omitted. `name` may be a
-2-tuple `(part1, part2)`.
+shared interpreter of the calling thread if this argument is omitted. Variable `name` may be
+a 2-tuple `(part1, part2)`.
 
 # See also
 
@@ -37,8 +37,8 @@ end
     interp[T::Type, name] -> val::T
 
 Return the value of the global variable `name` in Tcl interpreter `interp` or in the shared
-interpreter of the calling thread if this argument is omitted. `name` may be a 2-tuple
-`(part1, part2)`.
+interpreter of the calling thread if this argument is omitted. Variable `name` may be a
+2-tuple `(part1, part2)`.
 
 Optional argument `T` (`TclObj` by default) can be used to specify the type of the returned
 value. Some possibilities are:
@@ -116,8 +116,8 @@ variable_name((part1,part2)::Tuple{Name,Name}) = "$(part1)($(part2))"
     TclTk.setvar!(T, interp=TclInterp(), name, value) -> val::T
 
 Set global variable `name` or `part1(part2)` to be `value` in Tcl interpreter `interp` or in
-the shared interpreter of the calling thread if this argument is omitted. `name` may be a
-2-tuple `(part1, part2)`.
+the shared interpreter of the calling thread if this argument is omitted. Variable `name`
+may be a 2-tuple `(part1, part2)`.
 
 The Tcl variable is deleted if `value` is `unset`, the singleton provided by the
 `UnsetIndex` package and exported by the `Tcl` package.
@@ -218,9 +218,9 @@ end
     delete!(interp, name) -> interp
 
 Delete global variable `name` in Tcl interpreter `interp` or in the shared interpreter of
-the thread if this argument is omitted. `name` may be a 2-tuple `(part1, part2)`. Above,
-`unset` is the singleton provided by the `UnsetIndex` package and exported by the `TclTk`
-package.
+the thread if this argument is omitted. Variable `name` may be a 2-tuple `(part1, part2)`.
+Above, `unset` is the singleton provided by the `UnsetIndex` package and exported by the
+`TclTk` package.
 
 # Keywords
 

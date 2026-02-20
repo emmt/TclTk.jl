@@ -19,10 +19,10 @@ makedocs(
         "objects.md",
         "lists.md",
         "interpreters.md",
-        "variables.md",
         "callbacks.md",
         "widgets.md",
         "dialogs.md",
+        "images.md",
         "public.md",
         "develop.md",
     ]
@@ -31,6 +31,6 @@ makedocs(
 if DEPLOYDOCS
     deploydocs(
         repo = "github.com/JuliaInterop/TclTk.jl.git",
-        devbranch="main",
+        devbranch = "main",
     )
 end

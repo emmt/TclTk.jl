@@ -1,6 +1,7 @@
 # Internal API for developers
 
 ```@docs
+TclTk.Impl.WrappedObject
 TclTk.Impl.Tcl_DecrRefCount
 TclTk.Impl.Tcl_GetRefCount
 TclTk.Impl.Tcl_IncrRefCount
