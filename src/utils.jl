@@ -359,7 +359,7 @@ non-null Tcl interpreter with a non-empty result; otherwise, the error message i
 
 # See also
 
-[`TclTk.Impl.unsafe_get`](@ref) and [`TclTk.Impl.unsafe_result`](@ref).
+[`TclTk.Impl.unsafe_value`](@ref) and [`TclTk.Impl.unsafe_result`](@ref).
 
 """
 @noinline unsafe_error(interp::Union{TclInterp,InterpPtr}, mesg::AbstractString) =

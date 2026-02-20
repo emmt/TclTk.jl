@@ -75,7 +75,7 @@ Base.String(obj::TclObj) = convert(String, obj)
 Base.convert(::Type{TclObj}, obj::TclObj) = obj
 function Base.convert(::Type{T}, obj::TclObj) where {T}
     GC.@preserve obj begin
-        val = unsafe_get(value_type(T), checked_pointer(obj))
+        val = unsafe_value(value_type(T), checked_pointer(obj))
         return convert(T, val)::T
     end
 end
@@ -87,7 +87,7 @@ for type in (isdefined(Base, :Memory) ? (:Vector, :Memory) : (:Vector,))
                 objc, objv = unsafe_get_list_elements(pointer(list))
                 vec = $type{T}(undef, objc)
                 for i in 𝟙:objc
-                    vec[i] = unsafe_get(T, unsafe_load(objv, i))
+                    vec[i] = unsafe_value(T, unsafe_load(objv, i))
                 end
                 return vec
             end
@@ -360,8 +360,8 @@ of `0`.
 new_object
 
 """
-    TclTk.Impl.unsafe_get(T, objptr) -> val
-    TclTk.Impl.unsafe_get(T, interp, objptr) -> val
+    TclTk.Impl.unsafe_value(T, objptr) -> val
+    TclTk.Impl.unsafe_value(T, interp, objptr) -> val
 
 Get a value of type `T` from Tcl object pointer `objptr`. Optional argument `interp` is a
 pointer to a Tcl interpreter which, if non-null, may be used for error messages.
@@ -376,18 +376,18 @@ deleted.
     function.
 
 """
-unsafe_get(::Type{TclObj}, objptr::ObjPtr) = _TclObj(objptr)
-function unsafe_get(::Type{T}, interp::InterpPtr, obj::ObjPtr) where {T<:TclObj}
-    return unsafe_get(T, obj) # `interp` not needed
+unsafe_value(::Type{TclObj}, objptr::ObjPtr) = _TclObj(objptr)
+function unsafe_value(::Type{T}, interp::InterpPtr, obj::ObjPtr) where {T<:TclObj}
+    return unsafe_value(T, obj) # `interp` not needed
 end
 
 # Supply pointer (possibly NULL) to interpreter.
-unsafe_get(::Type{T}, objptr::ObjPtr) where {T} =
-    unsafe_get(T, null(InterpPtr), objptr)
-unsafe_get(::Type{T}, interp::TclInterp, objptr::ObjPtr) where {T} =
-    unsafe_get(T, null_or_checked_pointer(interp), objptr)
+unsafe_value(::Type{T}, objptr::ObjPtr) where {T} =
+    unsafe_value(T, null(InterpPtr), objptr)
+unsafe_value(::Type{T}, interp::TclInterp, objptr::ObjPtr) where {T} =
+    unsafe_value(T, null_or_checked_pointer(interp), objptr)
 
-# NOTE `value_type`, `new_object`, and `unsafe_get` must be consistent.
+# NOTE `value_type`, `new_object`, and `unsafe_value` must be consistent.
 #
 # Strings.
 #
@@ -407,10 +407,10 @@ function new_object(str::Union{String,SubString{String}})
         return Tcl_NewStringObj(pointer(str), ncodeunits(str))
     end
 end
-function unsafe_get(::Type{T}, interp::InterpPtr, obj::ObjPtr) where {T<:String}
-    return unsafe_get(T, obj) # `interp` not needed
+function unsafe_value(::Type{T}, interp::InterpPtr, obj::ObjPtr) where {T<:String}
+    return unsafe_value(T, obj) # `interp` not needed
 end
-function unsafe_get(::Type{String}, obj::ObjPtr)
+function unsafe_value(::Type{String}, obj::ObjPtr)
     # NOTE `unsafe_string` catches that `ptr` must not be null so we do not check that.
     len = Ref{Tcl_Size}()
     return unsafe_string(Tcl_GetStringFromObj(obj, len), len[])
@@ -427,9 +427,9 @@ end
 #
 value_type(::Type{<:AbstractChar}) = String
 new_object(str::AbstractChar) = new_object(string(char))
-function unsafe_get(::Type{T}, obj::ObjPtr) where {T<:AbstractChar}
+function unsafe_value(::Type{T}, obj::ObjPtr) where {T<:AbstractChar}
     # FIXME Optimize this.
-    str = unsafe_get(String, obj)
+    str = unsafe_value(String, obj)
     length(str) == 1 || tcl_error("cannot convert Tcl object to `$T` value")
     return first(str)
 end
@@ -441,7 +441,7 @@ end
 #
 value_type(::Type{Bool}) = Bool
 new_object(val::Bool) = Tcl_NewBooleanObj(val)
-function unsafe_get(::Type{Bool}, interp::InterpPtr, obj::ObjPtr)
+function unsafe_value(::Type{Bool}, interp::InterpPtr, obj::ObjPtr)
     val = Ref{Cint}()
     status = Tcl_GetBooleanFromObj(interp, obj, val)
     status == TCL_OK || unsafe_error(interp, "cannot convert Tcl object to `Bool` value")
@@ -458,7 +458,7 @@ end
 #
 value_type(::Type{Clong}) = Clong
 new_object(val::Clong) = Tcl_NewLongObj(val)
-function unsafe_get(::Type{Clong}, interp::InterpPtr, obj::ObjPtr)
+function unsafe_value(::Type{Clong}, interp::InterpPtr, obj::ObjPtr)
     val = Ref{Clong}()
     status = Tcl_GetLongFromObj(interp, obj, val)
     status == TCL_OK || unsafe_error(interp, "cannot convert Tcl object to `$Clong` value")
@@ -470,7 +470,7 @@ end
 if Cint != Clong
     value_type(::Type{Cint}) = Cint
     new_object(val::Cint) = Tcl_NewIntObj(val)
-    function unsafe_get(::Type{Cint}, interp::InterpPtr, obj::ObjPtr)
+    function unsafe_value(::Type{Cint}, interp::InterpPtr, obj::ObjPtr)
         val = Ref{Cint}()
         status = Tcl_GetIntFromObj(interp, obj, val)
         status == TCL_OK || unsafe_error(interp, "cannot convert Tcl object to `$Cint` value")
@@ -483,7 +483,7 @@ end
 if WideInt != Clong && WideInt != Cint
     value_type(::Type{WideInt}) = WideInt
     new_object(val::WideInt) = Tcl_NewWideIntObj(val)
-    function unsafe_get(::Type{WideInt}, interp::InterpPtr, obj::ObjPtr)
+    function unsafe_value(::Type{WideInt}, interp::InterpPtr, obj::ObjPtr)
         val = Ref{WideInt}()
         status = Tcl_GetWideIntFromObj(interp, obj, val)
         status == TCL_OK || unsafe_error(interp, "cannot convert Tcl object to `$WideInt` value")
@@ -505,10 +505,10 @@ function new_object(val::T) where {T<:Integer}
     T <: S && assertion_error("conversion must change value's type")
     return new_object(convert(S, val)::S)
 end
-function unsafe_get(::Type{T}, interp::InterpPtr, obj::ObjPtr) where {T<:Integer}
+function unsafe_value(::Type{T}, interp::InterpPtr, obj::ObjPtr) where {T<:Integer}
     S = value_type(T)
     T <: S && assertion_error("conversion must change object's type")
-    return convert(T, unsafe_get(S, interp, obj))::T
+    return convert(T, unsafe_value(S, interp, obj))::T
 end
 #
 # Floats.
@@ -517,14 +517,14 @@ end
 #
 value_type(::Type{<:Real}) = Cdouble
 new_object(val::Real) = Tcl_NewDoubleObj(val)
-function unsafe_get(::Type{Cdouble}, interp::InterpPtr, obj::ObjPtr)
+function unsafe_value(::Type{Cdouble}, interp::InterpPtr, obj::ObjPtr)
     val = Ref{Cdouble}()
     status = Tcl_GetDoubleFromObj(interp, obj, val)
     status == TCL_OK || unsafe_error(interp, "cannot convert Tcl object to `$Cdouble` value")
     return val[]
 end
-function unsafe_get(::Type{T}, interp::InterpPtr, obj::ObjPtr) where {T<:AbstractFloat}
-    return convert(T, unsafe_get(Cdouble, interp, obj))::T
+function unsafe_value(::Type{T}, interp::InterpPtr, obj::ObjPtr) where {T<:AbstractFloat}
+    return convert(T, unsafe_value(Cdouble, interp, obj))::T
 end
 #
 # Tuples are stored as Tcl lists.
@@ -546,11 +546,11 @@ end
 #
 value_type(::Type{T}) where {T<:DenseVector{UInt8}} = T
 new_object(arr::DenseVector{UInt8}) = Tcl_NewByteArrayObj(arr, length(arr))
-function unsafe_get(::Type{T}, interp::InterpPtr,
+function unsafe_value(::Type{T}, interp::InterpPtr,
                     obj::ObjPtr) where {T<:Union{Vector{UInt8},Memory{UInt8}}}
-    return unsafe_get(T, obj) # `interp` not needed
+    return unsafe_value(T, obj) # `interp` not needed
 end
-function unsafe_get(::Type{T}, obj::ObjPtr) where {T<:Union{Vector{UInt8},Memory{UInt8}}}
+function unsafe_value(::Type{T}, obj::ObjPtr) where {T<:Union{Vector{UInt8},Memory{UInt8}}}
     len = Ref{Tcl_Size}()
     ptr = Tcl_GetByteArrayFromObj(obj, len)
     len = Int(len[])::Int
@@ -565,5 +565,5 @@ end
     tcl_error("unknown Tcl object type for Julia objects of type `$T`")
 @noinline new_object(val::T) where {T} =
     tcl_error("cannot convert an instance of type `$T` into a Tcl object")
-@noinline unsafe_get(::Type{T}, interp::InterpPtr, obj::ObjPtr) where {T} =
+@noinline unsafe_value(::Type{T}, interp::InterpPtr, obj::ObjPtr) where {T} =
     tcl_error("retrieving an instance of type `$T` from a Tcl object is not unsupported")
