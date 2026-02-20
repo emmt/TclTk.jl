@@ -106,7 +106,7 @@ TclInterp(img::TkImage) = img.interp
 # For Tcl, an image is identified by its name.
 TclObj(img::TkImage) = img.name
 Base.convert(::Type{TclObj}, img::TkImage) = TclObj(img)::TclObj
-get_objptr(img::TkImage) = get_objptr(TclObj(img)) # used in `exec`
+unsafe_objptr(img::TkImage) = unsafe_objptr(TclObj(img), "Tk image") # used in `exec`
 Base.print(io::IO, img::TkImage) = print(io, img.name)
 
 Base.show(io::IO, ::MIME"text/plain", img::TkImage) = show(io, img)

@@ -356,7 +356,7 @@ Base.parent(w::TkWidget) = w.parent
 Base.parent(::TkRootWidget) = nothing
 TclObj(w::TkWidget) = w.path
 Base.convert(::Type{TclObj}, w::TkWidget) = TclObj(w)::TclObj
-get_objptr(w::TkWidget) = get_objptr(TclObj(w)) # used in `exec`
+unsafe_objptr(img::TkWidget) = unsafe_objptr(TclObj(w), "Tk widget") # used in `exec`
 
 exec(w::TkWidget, args...) = exec(w.interp, w.path, args...)
 exec(w::TkWidget, ::Type{T}, args...) where {T} = exec(T, w.interp, w.path, args...)
@@ -405,12 +405,12 @@ function tk_start(interp::TclInterp = TclInterp()) :: TclInterp
             tk_library = joinpath(dirname(dirname(Tk_jll.libtk_path)), "lib",
                                   "tk$(TCL_MAJOR_VERSION).$(TCL_MINOR_VERSION)")
             ptr = Tcl_SetVar(interp, "tk_library", tk_library, TCL_GLOBAL_ONLY|TCL_LEAVE_ERR_MSG)
-            isnull(ptr) && @warn "Unable to set `tk_library`: $(unsafe_string_result(interp))"
+            isnull(ptr) && @warn "Unable to set `tk_library`: $(getresult(String, interp))"
         end
         # Load Tk and Ttk packages. It is not needed to explicitly load these packages, it
         # is sufficient to call `Tk_Init`.
         status = @ccall libtk.Tk_Init(interp::Ptr{Tcl_Interp})::TclStatus
-        status == TCL_OK || @warn "Unable to initialize Tk interpreter: $(unsafe_string(Tcl_GetStringResult(interp)))"
+        status == TCL_OK || @warn "Unable to initialize Tk interpreter: $(getresult(String, interp))"
         status == TCL_OK && TclTk.eval(Nothing, interp, "wm withdraw .")
     end
     isrunning() || resume()

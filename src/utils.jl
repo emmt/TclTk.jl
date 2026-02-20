@@ -66,13 +66,18 @@ Base.cconvert(::Type{Cstring}, obj::TclObj) = obj
 Base.cconvert(::Type{Cstring}, objptr::ObjPtr) = objptr
 
 # For a Tcl object, a valid pointer is simply non-null.
-checked_pointer(obj::TclObj) = nonnull_pointer(obj)
+function checked_pointer(obj::TclObj)
+    ptr = pointer(obj)
+    isnull(ptr) && unexpected_null(ptr)
+    return ptr
+end
 
 # For a Tcl interpreter, a valid pointer is non-null and the interpreter must also live in
 # the same thread as the caller.
 function checked_pointer(interp::TclInterp)
-    ptr = nonnull_pointer(interp)
-    assert_same_thread(interp)
+    ptr = pointer(interp)
+    isnull(ptr) && unexpected_null(ptr)
+    same_thread(interp) || thread_mismatch()
     return ptr
 end
 
@@ -80,17 +85,14 @@ end
 # must live in the same thread as the caller.
 function null_or_checked_pointer(interp::TclInterp)
     ptr = pointer(interp)
-    isnull(ptr) || assert_same_thread(interp)
+    isnull(ptr) || same_thread(interp) || thread_mismatch()
     return ptr
 end
-
-assert_same_thread(interp::TclInterp) =
-    same_thread(interp) ? nothing : throw_thread_mismatch()
 
 same_thread(interp::TclInterp) =
     getfield(interp, :threadid) == Threads.threadid()
 
-@noinline throw_thread_mismatch() = throw(AssertionError(
+@noinline thread_mismatch() = throw(AssertionError(
     "attempt to use a Tcl interpreter in a different thread"))
 
 """
@@ -120,18 +122,16 @@ null(ptr::Union{Ptr,Cstring}) = null(typeof(ptr))
 null(::Type{Ptr{T}}) where {T} = Ptr{T}(0)
 null(::Type{Cstring}) = Cstring(C_NULL)
 
-nonnull_pointer(obj) = nonnull_pointer(pointer(obj))
-nonnull_pointer(ptr::Ptr) = isnull(ptr) ? throw_null_pointer(ptr) : ptr
-
-assert_nonnull(ptr::Ptr) = isnull(ptr) ? throw_null_pointer(ptr) : nothing
-
-@noinline throw_null_pointer(ptr::Ptr) = throw_null_pointer(typeof(ptr))
-@noinline throw_null_pointer(::Type{InterpPtr}) =
-    throw(ArgumentError("invalid NULL pointer to Tcl interpreter"))
-@noinline throw_null_pointer(::Type{ObjPtr}) =
-    throw(ArgumentError("invalid NULL pointer to Tcl object"))
-@noinline throw_null_pointer(::Type{Ptr{T}}) where {T} =
-    throw(ArgumentError("invalid NULL pointer to object of type `$T`"))
+@noinline unexpected_null(str::AbstractString) = assertion_error("unexpected NULL ", str)
+@noinline unexpected_null(x::Any) = unexpected_null(typeof(x))
+@noinline unexpected_null(::Type{<:Union{TclInterp,InterpPtr}}) =
+    unexpected_null("Tcl interpreter")
+@noinline unexpected_null(::Type{<:Union{TclObj,ObjPtr}}) =
+    unexpected_null("Tcl object")
+@noinline unexpected_null(::Type{Ptr{T}}) where {T} =
+    unexpected_null("pointer to object of type `$T`")
+@noinline unexpected_null(::Type{T}) where {T} =
+    unexpected_null("object of type `$T`")
 
 function unsafe_memcmp(a, b, nbytes)
     # NOTE `Ptr{UInt8}`, not `Ptr{Cvoid}`, to have it works for `FastString`.
@@ -334,11 +334,6 @@ get_error_message(ex::Exception) = sprint(io -> showerror(io, ex))
 @noinline dimension_mismatch(mesg::AbstractString) = throw(DimensionMismatch(mesg))
 @noinline dimension_mismatch(arg, args...) = dimension_mismatch(string(arg, args...))
 
-@noinline unexpected_null(str::AbstractString) = assertion_error("unexpected NULL ", str)
-
-@noinline throw_unexpected(status::TclStatus) =
-    tcl_error("unexpected return status: $status")
-
 """
     TclTk.Impl.unsafe_error(interp)
 
@@ -349,26 +344,29 @@ Throw a Tcl error with a message stored in the result of `interp`.
     call.
 
 """
-@noinline unsafe_error(interp::InterpPtr) =
-    tcl_error(unsafe_string(Tcl_GetStringResult(interp)))
+@noinline unsafe_error(interp::Union{TclInterp,InterpPtr}) =
+    tcl_error(unsafe_result(String, interp))
 
 """
     TclTk.Impl.unsafe_error(interp, mesg)
 
-Throw a Tcl error. If `interp` is a non-null pointer to a Tcl interpreter, the error message
-is taken from interpreter's result; otherwise, the error message is `mesg`.
+Throw a Tcl error. The error message is given by the result of `interp` if it refers to a
+non-null Tcl interpreter with a non-empty result; otherwise, the error message is `mesg`.
 
 !!! warning
-    This method is *unsafe*: if non-null, interpreter pointer must remain valid during the
-    call.
+    This method is *unsafe*: if non-null, the interpreter pointer must remain valid during
+    the call.
 
 # See also
 
-[`TclTk.Impl.unsafe_get`](@ref).
+[`TclTk.Impl.unsafe_get`](@ref) and [`TclTk.Impl.unsafe_result`](@ref).
 
 """
-@noinline unsafe_error(interp::InterpPtr, mesg::AbstractString) =
+@noinline unsafe_error(interp::Union{TclInterp,InterpPtr}, mesg::AbstractString) =
     tcl_error(unsafe_error_message(interp, mesg))
+
+unsafe_error_message(interp::TclInterp, mesg::AbstractString) =
+    unsafe_error_message(pointer(interp), mesg)
 
 function unsafe_error_message(interp::InterpPtr, mesg::AbstractString)
     if !isnull(interp)

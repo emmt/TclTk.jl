@@ -49,8 +49,9 @@ convert other types of value to Tcl object.
 
 """
 TclObj(obj::TclObj) = obj
-TclObj() = _TclObj(null(ObjPtr))
+TclObj() = TclObj(null(ObjPtr))
 TclObj(val) = _TclObj(new_object(val))
+TclObj(objptr::ObjPtr) = _TclObj(objptr)
 
 function Base.copy(obj::TclObj)
     local objptr
@@ -304,18 +305,31 @@ function _setproperty!(obj::TclObj, ::Val{:ptr}, newptr::ObjPtr)
 end
 
 """
-    TclTk.Impl.get_objptr(obj::WrappedObject) -> objptr
+    TclTk.Impl.unsafe_objptr(arg) -> objptr
+    TclTk.Impl.unsafe_objptr(arg, descr) -> objptr
 
-Return a pointer to the Tcl object associated with `obj`. The returned object is at least
-referenced by its parent `obj` which shall be preserved form being garbage collected while
-`objptr` is used.
+Return a pointer to a Tcl object from `arg`. If `arg` is an instance of `TclObj`,
+`pointer(arg)` is returned throwing an error if this pointer is null. Otherwise, a new Tcl
+object is created from `arg` and the caller is responsible for managing this object so that
+it is correctly released when no longer in use. In any case, the returned pointer is
+guaranteed to be non-null but may only remain valid while `arg` is not garbage collected.
+
+Optional `descr` provides a description of the argument `arg` for error messages.
 
 # See also
 
 [`TclObj`](@ref), [`TclTk.Impl.WrappedObject`](@ref), and [`TclTk.Impl.new_object`](@ref),
 
 """
-get_objptr(obj::TclObj) = pointer(obj)
+unsafe_objptr(obj::TclObj) = checked_pointer(obj)
+function unsafe_objptr(obj::TclObj, descr::AbstractString)
+    ptr = pointer(obj)
+    isnull(ptr) && unexpected_null(descr)
+    return ptr
+end
+
+unsafe_objptr(val::Any) = new_object(val)
+unsafe_objptr(val::Any, descr::AbstractString) = unsafe_objptr(val)
 
 """
     TclTk.Impl.value_type(x)
@@ -363,26 +377,15 @@ deleted.
 
 """
 unsafe_get(::Type{TclObj}, objptr::ObjPtr) = _TclObj(objptr)
-unsafe_get(::Type{T}, objptr::ObjPtr) where {T} = unsafe_get(T, null(InterpPtr), objptr)
-unsafe_get(::Type{String}, interp::InterpPtr, objptr::ObjPtr) = unsafe_get(String, objptr)
-
-"""
-    TclTk.Impl.unsafe_get(T, interp) -> val
-
-Get the result from Tcl interpreter pointer `interp` as a value of type `T`.
-
-!!! warning
-    Unsafe function: interpreter pointer must not be null and must remain valid during the
-    call to this function.
-
-"""
-function unsafe_get(::Type{String}, interp::InterpPtr)
-    return unsafe_string(Tcl_GetStringResult(interp))
+function unsafe_get(::Type{T}, interp::InterpPtr, obj::ObjPtr) where {T<:TclObj}
+    return unsafe_get(T, obj) # `interp` not needed
 end
-function unsafe_get(::Type{T}, interp::InterpPtr) where {T}
-    obj = Tcl_GetObjResult(interp)
-    return unsafe_get(T, interp, obj)
-end
+
+# Supply pointer (possibly NULL) to interpreter.
+unsafe_get(::Type{T}, objptr::ObjPtr) where {T} =
+    unsafe_get(T, null(InterpPtr), objptr)
+unsafe_get(::Type{T}, interp::TclInterp, objptr::ObjPtr) where {T} =
+    unsafe_get(T, null_or_checked_pointer(interp), objptr)
 
 # NOTE `value_type`, `new_object`, and `unsafe_get` must be consistent.
 #
@@ -399,9 +402,13 @@ end
 value_type(::Type{<:AbstractString}) = String
 new_object(str::AbstractString) = new_object(String(str))
 function new_object(str::Union{String,SubString{String}})
+    # We must preserve `str` because we direct pass its address and size.
     GC.@preserve str begin
         return Tcl_NewStringObj(pointer(str), ncodeunits(str))
     end
+end
+function unsafe_get(::Type{T}, interp::InterpPtr, obj::ObjPtr) where {T<:String}
+    return unsafe_get(T, obj) # `interp` not needed
 end
 function unsafe_get(::Type{String}, obj::ObjPtr)
     # NOTE `unsafe_string` catches that `ptr` must not be null so we do not check that.
@@ -413,9 +420,7 @@ end
 #
 value_type(::Type{Symbol}) = String
 function new_object(sym::Symbol)
-    GC.@preserve sym begin
-        return Tcl_NewStringObj(sym, -1)
-    end
+    return Tcl_NewStringObj(sym, -1)
 end
 #
 # Characters are equivalent to Tcl strings of unit length.
@@ -497,12 +502,12 @@ function value_type(::Type{T}) where {T<:Integer}
 end
 function new_object(val::T) where {T<:Integer}
     S = value_type(T)
-    T <: S && error("conversion must change object's type")
+    T <: S && assertion_error("conversion must change value's type")
     return new_object(convert(S, val)::S)
 end
 function unsafe_get(::Type{T}, interp::InterpPtr, obj::ObjPtr) where {T<:Integer}
     S = value_type(T)
-    T <: S && error("conversion must change object's type")
+    T <: S && assertion_error("conversion must change object's type")
     return convert(T, unsafe_get(S, interp, obj))::T
 end
 #

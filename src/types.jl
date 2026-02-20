@@ -32,8 +32,8 @@ end
 
 Abstract super-type of Julia objects that reflect or wrap a Tcl object.
 
-Such objects implement [`TclTk.Impl.get_objptr`](@ref) to yield a pointer to their
-associated Tcl object.
+Such objects implement [`TclTk.Impl.unsafe_objptr`](@ref) to yield a checked pointer to
+their associated Tcl object.
 
 """
 abstract type WrappedObject end

@@ -180,12 +180,9 @@ end
 # length(list)`, `value` is appended to the end of the list.
 function Base.setindex!(list::TclObj, value, index::Integer)
     GC.@preserve list value begin
-        obj = Tcl_IncrRefCount(
-            if value isa TclObj
-                checked_pointer(value)
-            else
-                new_object(value)
-            end)
+        # The ref, count is incremented and finally decremented, to protect against
+        # exceptions that may be thrown by `unsafe_replace_list`.
+        obj = Tcl_IncrRefCount(unsafe_objptr(value))
         try
             unsafe_replace_list(pointer(list), index - 1, 1, 1, Ref(obj))
         finally
@@ -314,7 +311,7 @@ function unsafe_new_list(f::Function, interp::InterpPtr,
             f(interp, list, unsafe_load(objv, i))
         end
     catch
-        Tcl_DecrRefCount(list)
+        Tcl_DecrRefCount(list) # free list object
         rethrow()
     end
     return list
@@ -377,37 +374,25 @@ for (jl, (c, mesg)) in (:unsafe_append_element => (:(Tcl_ListObjAppendElement),
     @eval begin
         $jl(list::ObjPtr, arg) = $jl(null(InterpPtr), list, arg)
 
-        function $jl(interp::InterpPtr, list::ObjPtr, obj::ObjPtr)
+        # NOTE The computational burden of `Tcl_ListObjAppendElement` and
+        # `Tcl_ListObjAppendList` is such that not incrementing and finally decrementing the
+        # reference count of a wrapped object is a negligible optimization.
+        function $jl(interp::InterpPtr, list::ObjPtr, arg)
             assert_writable(list) # required by copy-on-write policy
-            assert_readable(obj) # must be non-null
-            status = $c(interp, list, obj)
+            objptr = if arg isa WrappedObject
+                unsafe_objptr(arg)
+            elseif arg isa Function
+                # Setting a callback involves (i) passing the name of the corresponding Tcl
+                # command and (ii) creating this command in the target interpreter if it
+                # does not exists.
+                tcl_error("appending a callback is not yet implemented")
+            else
+                Tcl_IncrRefCount(new_object(arg))
+            end
+            status = $c(interp, list, objptr)
+            arg isa WrappedObject || Tcl_DecrRefCount(objptr)
             status == TCL_OK || unsafe_error(interp, $mesg)
             return nothing
-        end
-
-        function $jl(interp::InterpPtr, list::ObjPtr, arg)
-            obj = Tcl_IncrRefCount(new_object(arg))
-            try
-                $jl(interp, list, obj)
-            finally
-                Tcl_DecrRefCount(obj)
-            end
-            return nothing
-        end
-
-        function $jl(interp::InterpPtr, list::ObjPtr, obj::WrappedObject)
-            GC.@preserve obj begin
-                $jl(interp, list, get_objptr(obj))
-            end
-            return nothing
-        end
-
-        function $jl(interp::InterpPtr, list::ObjPtr, func::Function)
-            @warn "Appending a callback is not yet implemented"
-            return nothing
-            # Setting a callback involves (i) passing the name of the corresponding Tcl
-            # command and (ii) creating this command in the target interpreter if it does
-            # not exists.
         end
     end
 end

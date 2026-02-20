@@ -61,7 +61,7 @@ method to load Tk.
 TclInterp(sym::Symbol) =
     sym === :shared ? TclInterp() :
     sym === :private ? _TclInterp() :
-    throw(ArgumentError("unexpected argument, shall be `:shared` or `:private`"))
+    argument_error("unexpected argument, shall be `:shared` or `:private`")
 
 # Create a thread-wise shared interpreter.
 function TclInterp()
@@ -85,8 +85,8 @@ const _shared_interpreters = TclInterp[]
     threadid = Threads.threadid()
     length(_shared_interpreters) < threadid && resize!(_shared_interpreters,
                                                        max(threadid, Threads.nthreads()))
-    isassigned(_shared_interpreters, threadid) && throw(AssertionError(
-        "there is already a shared Tcl interpreter for this thread ($threadid)"))
+    isassigned(_shared_interpreters, threadid) && assertion_error(
+        "there is already a shared Tcl interpreter for this thread ($threadid)")
     interp = _TclInterp()
     _shared_interpreters[threadid] = interp
     return interp
@@ -102,10 +102,10 @@ function _TclInterp()
             tcl_library = joinpath(dirname(dirname(Tcl_jll.libtcl_path)), "lib",
                                    "tcl$(TCL_MAJOR_VERSION).$(TCL_MINOR_VERSION)")
             ptr = Tcl_SetVar(interp, "tcl_library", tcl_library, TCL_GLOBAL_ONLY|TCL_LEAVE_ERR_MSG)
-            isnull(ptr) && @warn "Unable to set `tcl_library`: $(unsafe_string_result(interp))"
+            isnull(ptr) && @warn "Unable to set `tcl_library`: $(unsafe_result(String, interp))"
         end
         status = @ccall libtcl.Tcl_Init(interp::Ptr{Tcl_Interp})::TclStatus
-        status == TCL_OK || @warn "Unable to initialize Tcl interpreter: $(unsafe_string_result(interp))"
+        status == TCL_OK || @warn "Unable to initialize Tcl interpreter: $(unsafe_result(String, interp))"
     catch
         Tcl_DeleteInterp(interp)
         rethrow()
@@ -190,17 +190,10 @@ thread.
 getresult() = getresult(TclInterp())
 getresult(::Type{T}) where {T} = getresult(T, TclInterp())
 getresult(interp::TclInterp) = getresult(TclObj, interp)
-
 getresult(interp::TclInterp, ::Type{T}) where {T} = getresult(T, interp)
-
-function getresult(::Type{String}, interp::TclInterp)
-    GC.@preserve interp begin
-        return unsafe_string(Tcl_GetStringResult(interp))
-    end
-end
 function getresult(::Type{T}, interp::TclInterp) where {T}
     GC.@preserve interp begin
-        return unsafe_get(T, Tcl_GetObjResult(interp))
+        return unsafe_result(T, interp)
     end
 end
 
@@ -211,6 +204,25 @@ function Base.setindex!(interp::TclInterp, val)
     setresult!(interp, val)
     return interp
 end
+
+"""
+    TclTk.Impl.unsafe_result(T, interp) -> val
+
+Return the result of Tcl interpreter `interp` as a value of type `T`.
+
+The function is *unsafe*: interpreter must be valid (non-null pointer) and remain so during
+the call to this function.
+
+"""
+function unsafe_result(::Type{String}, interp::Union{TclInterp,InterpPtr})
+    return unsafe_string(Tcl_GetStringResult(interp))
+end
+
+function unsafe_result(::Type{T}, interp::Union{TclInterp,InterpPtr}) where {T}
+    return unsafe_get(T, interp, Tcl_GetObjResult(interp))
+end
+
+#------------------------------------------------------------------------ Global variables -
 
 # Manage to make any Tcl interpreter usable as an indexable collection with respect to its
 # global variables.
@@ -242,38 +254,29 @@ function Base.setindex!(interp::TclInterp, ::Unset, name::VarName)
 end
 
 """
-    TclTk.setresult!(interp = TclInterp(), val) -> nothing
+    TclTk.setresult!(interp = TclInterp(), value) -> nothing
 
-Set the result stored in Tcl interpreter `interp` with `val`.
+Set the result stored in Tcl interpreter `interp` with `value`.
 
 If not specified, `interp` is the shared interpreter of the calling thread.
 
 """
-setresult!(val) = setresult!(TclInterp(), val)
+setresult!(value) = setresult!(TclInterp(), value)
 
 # To set Tcl interpreter result, we call `Tcl_SetObjResult` for any object, as
 # `Tcl_SetResult` is a macro since Tcl 9.
-
-setresult!(interp::TclInterp, result::TclObj) =
-    Tcl_SetObjResult(interp, result)
-
-function setresult!(interp::TclInterp, result)
-    # Here we save creating a mutable `TclObj` structure to temporarily wrap the new Tcl
-    # object.
-    GC.@preserve interp begin
-        interp_ptr = checked_pointer(interp) # this may throw
-        result_ptr = new_object(result) # this may throw
-        if true
-            # As can be seen in `generic/tclResult.c`, `Tcl_SetObjResult` does manage the
-            # reference count of its object argument so it is OK to directly pass a
-            # temporary object.
-            Tcl_SetObjResult(interp_ptr, result_ptr)
-        else
-            # A safer approach is to increment the reference count of the temporary object
-            # before calling `Tcl_SetObjResult` and decrement it after.
-            Tcl_SetObjResult(interp_ptr, Tcl_IncrRefCount(result_ptr))
-            Tcl_DecrRefCount(result_ptr)
-        end
+function setresult!(interp::TclInterp, value)
+    # We call `unsafe_objptr` to save creating a mutable `TclObj` structure to temporarily
+    # wrap the new Tcl object if value is not a Tcl object.
+    GC.@preserve interp value begin
+        # `checked_pointer` may throw so it must be called before `unsafe_objptr` which may
+        # create a new Tcl object for the value.
+        interp_ptr = checked_pointer(interp)
+        value_ptr = unsafe_objptr(value)
+        # As can be seen in `generic/tclResult.c`, `Tcl_SetObjResult` does manage the
+        # reference count of its object argument so it is OK to directly pass a
+        # temporary object for the value.
+        Tcl_SetObjResult(interp_ptr, value_ptr)
     end
     return nothing
 end
@@ -360,7 +363,7 @@ function exec(::Type{T}, interp::TclInterp, args...) where {T}
         status = Tcl_EvalObjEx(interp_ptr, Tcl_IncrRefCount(list_ptr),
                                TCL_EVAL_DIRECT | TCL_EVAL_GLOBAL)
         Tcl_DecrRefCount(list_ptr)
-        return unsafe_result(T, status, interp_ptr)
+        return unsafe_eval_result(T, status, interp_ptr)
     end
 end
 
@@ -432,7 +435,7 @@ function TclTk.eval(::Type{T}, interp::TclInterp, script::FastString) where {T}
         interp_ptr = checked_pointer(interp)
         status = Tcl_EvalEx(interp_ptr, script, sizeof(script),
                             TCL_EVAL_DIRECT | TCL_EVAL_GLOBAL)
-        return unsafe_result(T, status, interp_ptr)
+        return unsafe_eval_result(T, status, interp_ptr)
     end
 end
 function TclTk.eval(::Type{T}, interp::TclInterp, script::AbstractString) where {T}
@@ -445,7 +448,7 @@ function TclTk.eval(::Type{T}, interp::TclInterp, script::TclObj) where {T}
         interp_ptr = checked_pointer(interp)
         status = Tcl_EvalObjEx(interp_ptr, script,
                                TCL_EVAL_DIRECT | TCL_EVAL_GLOBAL)
-        return unsafe_result(T, status, interp_ptr)
+        return unsafe_eval_result(T, status, interp_ptr)
     end
 end
 
@@ -459,7 +462,7 @@ function TclTk.eval(::Type{T}, interp::TclInterp, args...) where {T}
         status = Tcl_EvalObjEx(interp_ptr, Tcl_IncrRefCount(list_ptr),
                                TCL_EVAL_DIRECT | TCL_EVAL_GLOBAL)
         Tcl_DecrRefCount(list_ptr)
-        return unsafe_result(T, status, interp_ptr)
+        return unsafe_eval_result(T, status, interp_ptr)
     end
 end
 
@@ -474,21 +477,24 @@ function unsafe_append_eval_arg(interp::InterpPtr, list::ObjPtr, (key,val)::Pair
     return nothing
 end
 
-unsafe_string_result(interp::Union{TclInterp,InterpPtr}) =
-    unsafe_string(Tcl_GetStringResult(interp))
-
-function unsafe_result(::Type{TclStatus}, status::TclStatus, interp::InterpPtr)
+# `unsafe_eval_result(T, status, interp)` yields the value of type `T` returned by
+# `TclTk.exec` or `TclTk.eval` or throws depending on `T` and of the `status` of the script
+# or command evaluated by `interp`.
+function unsafe_eval_result(::Type{TclStatus}, status::TclStatus, interp::InterpPtr)
     return status
 end
 
-function unsafe_result(::Type{Nothing}, status::TclStatus, interp::InterpPtr)
+function unsafe_eval_result(::Type{Nothing}, status::TclStatus, interp::InterpPtr)
     status == TCL_OK && return nothing
     status == TCL_ERROR && unsafe_error(interp)
     throw_unexpected(status)
 end
 
-function unsafe_result(::Type{T}, status::TclStatus, interp::InterpPtr) where {T}
-    status == TCL_OK && return unsafe_get(T, Tcl_GetObjResult(interp))
+function unsafe_eval_result(::Type{T}, status::TclStatus, interp::InterpPtr) where {T}
+    status == TCL_OK && return unsafe_result(T, interp)
     status == TCL_ERROR && unsafe_error(interp)
     throw_unexpected(status)
 end
+
+@noinline throw_unexpected(status::TclStatus) =
+    tcl_error("unexpected return status: $status")

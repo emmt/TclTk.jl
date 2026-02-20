@@ -154,8 +154,8 @@ function setvar!(::Type{T}, interp::TclInterp, name::Name, value;
         value_ptr = null(ObjPtr)
         try
             # Retrieve pointers and increment reference counts.
-            name_ptr = Tcl_IncrRefCount(unsafe_objptr_from(name, "Tcl variable name"))::ObjPtr
-            value_ptr = Tcl_IncrRefCount(unsafe_objptr_from(value, "Tcl variable value"))::ObjPtr
+            name_ptr = Tcl_IncrRefCount(unsafe_objptr(name, "Tcl variable name"))::ObjPtr
+            value_ptr = Tcl_IncrRefCount(unsafe_objptr(value, "Tcl variable value"))::ObjPtr
             # Call C function (can only throw if `flags` is not a valid `Cint`).
             new_value_ptr = Tcl_ObjSetVar2(interp_ptr, name_ptr, null(ObjPtr), value_ptr, flags)
             isnull(new_value_ptr) && setvar_error(interp, name, flags)
@@ -181,9 +181,9 @@ function setvar!(::Type{T}, interp::TclInterp, (part1, part2)::NTuple{2,Name}, v
         value_ptr = null(ObjPtr)
         try
             # Retrieve pointers and increment reference counts.
-            part1_ptr = Tcl_IncrRefCount(unsafe_objptr_from(part1, "Tcl array name"))::ObjPtr
-            part2_ptr = Tcl_IncrRefCount(unsafe_objptr_from(part2, "Tcl array index"))::ObjPtr
-            value_ptr = Tcl_IncrRefCount(unsafe_objptr_from(value, "Tcl array value"))::ObjPtr
+            part1_ptr = Tcl_IncrRefCount(unsafe_objptr(part1, "Tcl array name"))::ObjPtr
+            part2_ptr = Tcl_IncrRefCount(unsafe_objptr(part2, "Tcl array index"))::ObjPtr
+            value_ptr = Tcl_IncrRefCount(unsafe_objptr(value, "Tcl array value"))::ObjPtr
             # Call C function (can only throw if `flags` is not a valid `Cint`).
             new_value_ptr = Tcl_ObjSetVar2(interp_ptr, part1_ptr, part2_ptr, value_ptr, flags)
             isnull(new_value_ptr) && setvar_error(interp, (part1, part2), flags)
@@ -305,7 +305,7 @@ function unsafe_getvar(interp::TclInterp, name::Name, flags::Integer)
     # throw.
     flags = Cint(flags)::Cint
     interp_ptr = checked_pointer(interp)
-    name_ptr = Tcl_IncrRefCount(unsafe_objptr_from(name, "Tcl variable name"))
+    name_ptr = Tcl_IncrRefCount(unsafe_objptr(name, "Tcl variable name"))
     value_ptr = Tcl_ObjGetVar2(interp_ptr, name_ptr, null(ObjPtr), flags)
     Tcl_DecrRefCount(name_ptr)
     return value_ptr
@@ -324,8 +324,8 @@ function unsafe_getvar(interp::TclInterp, part1::Name, part2::Name, flags::Integ
     part2_ptr = null(ObjPtr)
     try
         # Retrieve pointers and increment reference counts.
-        part1_ptr = Tcl_IncrRefCount(unsafe_objptr_from(part1, "Tcl array name"))::ObjPtr
-        part2_ptr = Tcl_IncrRefCount(unsafe_objptr_from(part2, "Tcl array index"))::ObjPtr
+        part1_ptr = Tcl_IncrRefCount(unsafe_objptr(part1, "Tcl array name"))::ObjPtr
+        part2_ptr = Tcl_IncrRefCount(unsafe_objptr(part2, "Tcl array index"))::ObjPtr
         # Call C function.
         return Tcl_ObjGetVar2(interp_ptr, part1_ptr, part2_ptr, flags)
     finally
@@ -334,11 +334,3 @@ function unsafe_getvar(interp::TclInterp, part1::Name, part2::Name, flags::Integ
         isnull(part2_ptr) || Tcl_DecrRefCount(part2_ptr)
     end
 end
-
-# Yield a pointer to a Tcl object from 1st argument. 2nd argument describe the argument.
-function unsafe_objptr_from(obj::TclObj, mesg::AbstractString)
-    ptr = pointer(obj)
-    isnull(ptr) && unexpected_null(mesg)
-    return ptr
-end
-unsafe_objptr_from(val::Any, mesg::AbstractString) = new_object(val)
