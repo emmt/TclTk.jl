@@ -101,6 +101,24 @@ function TkImage{type}(interp::TclInterp, name::TclObj, pairs::Pair...) where {t
     end
 end
 
+"""
+    TkImage(host=TclInterp(), name, option => value, ...) -> img
+
+Return an instance of `TkImage` managing Tk image named `name` in the Tcl interpreter
+specified by `host` (can be a Tk widget) and after applying any options specified by the
+trailing `option => value, ...` pairs.
+
+"""
+TkImage(name::Name, pairs::Pair...) = TkImage(TclInterp(), name, pairs...)
+TkImage(w::TkWidget, name::Name, pairs::Pair...) = TkImage(w.interp, name, pairs...)
+TkImage(interp::TclInterp, name::Name, pairs::Pair...) =
+    TkImage(interp, TclObj(name), pairs...)
+function TkImage(interp::TclInterp, name::TclObj, pairs::Pair...)
+    type = interp.exec(String, :image, :type, name)
+    length(pairs) > 0 && interp.exec(Nothing, name, :configure, pairs...)
+    return TkImage(Val(Symbol(type)), interp, name)
+end
+
 TclInterp(img::TkImage) = img.interp
 
 # For Tcl, an image is identified by its name.
