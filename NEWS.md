@@ -30,6 +30,8 @@ Versioning](https://semver.org).
 
 - Non-exported public functions `TclTk.isactive`, `TclTk.isdeleted`, and `TclTk.issafe`.
 
+- Enumerations can be stored as integer Tcl objects and can be retrieved from integer Tcl
+  objects.
 
 ### Fixed
 

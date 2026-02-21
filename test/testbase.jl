@@ -8,6 +8,8 @@ using Test
 const π = MathConstants.π
 const φ = MathConstants.φ
 
+@enum Fruit apple=1 orange=2 kiwi=3
+
 @testset "Utilities" begin
     # Version number.
     version = @inferred tcl_version()
@@ -275,26 +277,41 @@ end
     @test haskey(private, name)
     @test TclObj(val) == @inferred private[name]
     delete!(private, name)
-    @test_throws TclError @inferred private.exec(:set, name)
+    @test_throws TclError private.exec(:set, name)
     @test TCL_ERROR === @inferred private.exec(TclStatus, "set", name)
     @test TclObj(val) == @inferred private(:set, name, val)
     @test haskey(private, name)
     @test TclObj(val) == @inferred private[name]
     delete!(private, name)
-    @test_throws TclError @inferred private(:set, name)
+    @test_throws TclError private(:set, name)
     @test TCL_ERROR === @inferred private(TclStatus, "set", name)
+    @test_throws TclError private(:continue)
+    @test_throws TclError private("break")
 
-    # Explicitly delete private interpreter.
+    # Options and enumeration.
+    @test TCL_OK === @inferred private(TclStatus, :return, :code => TCL_OK)
+    @test TCL_ERROR === @inferred private(TclStatus, :return, :code => TCL_ERROR)
+    @test apple === @inferred private(Fruit, :set, "fruit", apple)
+    @test kiwi === @inferred private.eval(Fruit, "set fruit $(Integer(kiwi))")
+
+    # Explicitly delete private interpreter to call finalizer.
     private = 0
     GC.gc()
 end
 
 @testset "Events" begin
+    # Make sure event handler is not running.
     TclTk.isrunning() && TclTk.suspend()
     @test (@inferred TclTk.isrunning()) === false
+    # Create some delayed task.
+    TclTk.eval("set jl_counter 0")
+    id = interp.exec(:after, 1, "incr jl_counter")
+    sleep(0.1)
+    @test TclTk.eval("set jl_counter") == "0"
     TclTk.resume()
     @test (@inferred TclTk.isrunning()) === true
     sleep(0.1) # sleep for a while so that events can be processed
+    @test TclTk.eval("set jl_counter") == "1"
     TclTk.suspend()
     @test (@inferred TclTk.isrunning()) === false
 end

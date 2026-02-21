@@ -511,6 +511,15 @@ function unsafe_value(::Type{T}, interp::InterpPtr, obj::ObjPtr) where {T<:Integ
     return convert(T, unsafe_value(S, interp, obj))::T
 end
 #
+# Enumeration are like integers.
+#
+const Enumeration{T} = Union{Enum{T}, CEnum.Cenum{T}}
+value_type(::Type{<:Enumeration{T}}) where {T} = value_type(T)
+new_object(val::Enumeration{T}) where {T} = new_object(Integer(val))
+function unsafe_value(::Type{T}, interp::InterpPtr, obj::ObjPtr) where {S,T<:Enumeration{S}}
+    return T(unsafe_value(S, interp, obj))::T
+end
+#
 # Floats.
 #
 #     Non-integer reals are considered as double precision floating-point numbers.
