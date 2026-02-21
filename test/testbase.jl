@@ -305,7 +305,7 @@ end
     @test (@inferred TclTk.isrunning()) === false
     # Create some delayed task.
     TclTk.eval("set jl_counter 0")
-    id = interp.exec(:after, 1, "incr jl_counter")
+    id = TclTk.exec(:after, 1, "incr jl_counter")
     sleep(0.1)
     @test TclTk.eval("set jl_counter") == "0"
     TclTk.resume()
