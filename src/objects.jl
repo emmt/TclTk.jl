@@ -490,22 +490,15 @@ end
 #
 # Other integer types.
 #
+#     `value_type(T)` yields a Tcl integer type wide enough for `T`. `new_object` and
+#     `unsafe_value` fallback to generic methods defined below.
+#
 function value_type(::Type{T}) where {T<:Integer}
     if isbitstype(T)
         sizeof(T) ≤ sizeof(Cint) && return Cint
         sizeof(T) ≤ sizeof(Clong) && return Clong
     end
     return WideInt
-end
-function new_object(val::T) where {T<:Integer}
-    S = value_type(T)
-    T <: S && assertion_error("conversion must change value's type")
-    return new_object(convert(S, val)::S)
-end
-function unsafe_value(::Type{T}, interp::InterpPtr, obj::ObjPtr) where {T<:Integer}
-    S = value_type(T)
-    T <: S && assertion_error("conversion must change object's type")
-    return convert(T, unsafe_value(S, interp, obj))::T
 end
 #
 # Enumeration are like integers.
@@ -522,15 +515,12 @@ end
 #     Non-integer reals are considered as double precision floating-point numbers.
 #
 value_type(::Type{<:Real}) = Cdouble
-new_object(val::Real) = Tcl_NewDoubleObj(val)
+new_object(val::Cdouble) = Tcl_NewDoubleObj(val)
 function unsafe_value(::Type{Cdouble}, interp::InterpPtr, obj::ObjPtr)
     val = Ref{Cdouble}()
     status = Tcl_GetDoubleFromObj(interp, obj, val)
     status == TCL_OK || unsafe_error(interp, "cannot convert Tcl object to `$Cdouble` value")
     return val[]
-end
-function unsafe_value(::Type{T}, interp::InterpPtr, obj::ObjPtr) where {T<:AbstractFloat}
-    return convert(T, unsafe_value(Cdouble, interp, obj))::T
 end
 #
 # Tuples are stored as Tcl lists.
@@ -565,11 +555,20 @@ function unsafe_value(::Type{T}, obj::ObjPtr) where {T<:Union{Vector{UInt8},Memo
     return arr
 end
 #
-# Error catchers for unsupported Julia types.
+# Generic and error catcher methods for other Julia types.
 #
 @noinline value_type(::Type{T}) where {T} =
-    tcl_error("unknown Tcl object type for Julia objects of type `$T`")
-@noinline new_object(val::T) where {T} =
-    tcl_error("cannot convert an instance of type `$T` into a Tcl object")
-@noinline unsafe_value(::Type{T}, interp::InterpPtr, obj::ObjPtr) where {T} =
-    tcl_error("retrieving an instance of type `$T` from a Tcl object is not unsupported")
+    tcl_error("no Tcl object type corresponds to Julia objects of type `$T`")
+function new_object(val::T) where {T}
+    S = proxy_type(T)
+    return new_object(convert(S, val)::S)
+end
+function unsafe_value(::Type{T}, interp::InterpPtr, obj::ObjPtr) where {T}
+    S = proxy_type(T)
+    return convert(T, unsafe_value(S, interp, obj))::T
+end
+function proxy_type(::Type{T}) where {T}
+    S = value_type(T)
+    T <: S && assertion_error("conversion must change value's type")
+    return S
+end
