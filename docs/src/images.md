@@ -101,7 +101,7 @@ julia> img(Int, :cget, "-height")
 Public functions [`TclTk.cget`](@ref) and [`TclTk.configure`](@ref) are applicable to an
 image instance. For example:
 
-```
+```julia-repl
 julia> tk_start()
 
 julia> img = TkImage()
