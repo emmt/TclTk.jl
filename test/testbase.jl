@@ -78,22 +78,55 @@ end
     @test script == @inferred string(x)
     @test script == @inferred String(x)
     @test script == @inferred convert(String, x)
+    @test x === @inferred TclObj(x)
     @test x == x
     @test x == script
     @test script == x
-    @test x == symbolic_script
-    @test symbolic_script == x
     @test isequal(x, x)
     @test isequal(x, script)
     @test isequal(script, x)
+    @test x == symbolic_script
+    @test symbolic_script == x
     @test isequal(x, symbolic_script)
     @test isequal(symbolic_script, x)
+    s = SubString(script, firstindex(script), lastindex(script))
+    @test x == s
+    @test s == x
+    @test isequal(x, s)
+    @test isequal(s, x)
+    y = @inferred TclObj(symbolic_script)
+    @test y isa TclObj
+    @test y.type == :string
+    @test y == x
+    @test y == symbolic_script
+    @test symbolic_script == y
+    @test isequal(y, symbolic_script)
+    @test isequal(symbolic_script, y)
+    @test y == script
+    @test script == y
+    @test isequal(y, script)
+    @test isequal(script, y)
+
+    # Build Tcl object from pointer.
+    n = x.refcnt
+    z = @inferred TclObj(pointer(x))
+    @test z isa TclObj
+    @test x.refcnt == n + 1
+    @test z.refcnt == n + 1
+    @test pointer(z) == pointer(x)
+
+    # NULL Tcl object.
+    nul = @inferred TclObj()
+    @test pointer(nul) == C_NULL
+    @test nul.refcnt < 0
 
     # copy() yields same but distinct objects
+    n = x.refcnt
     y = @inferred copy(x)
     @test y isa TclObj
     @test y.type == :string
-    @test isone(y.refcnt) && isone(x.refcnt)
+    @test isone(y.refcnt)
+    @test x.refcnt == n
     @test y.ptr !== x.ptr
     @test x == y
     @test isequal(x, y)
@@ -126,6 +159,22 @@ end
     z = TclObj(0)
     z = 0 # no longer a Tcl object
     @test try GC.gc(); true; catch; false; end
+
+    # Print, show, etc.
+    values = (Int16(-123), 12.125, "hello world!")
+    @testset "Print/string conversion of $v::$(typeof(v))" for v in values
+        x = @inferred TclObj(v)
+        @test "$x" == "$v"
+        @test summary(x) == sprint(summary, x)
+        @test startswith(sprint(show, x), "TclObj(")
+        @test startswith(sprint(show, MIME"text/plain"(), x), "TclObj(")
+    end
+    v = (false, 1, -2.75, "hello you!")
+    x = @inferred TclObj(v)
+    y = @inferred TclObj("$x")
+    @test length(x) == length(y)
+    @test x == y
+    @test collect(x) == collect(y)
 
     # Conversions. NOTE Tcl conversion rules are more restricted than Julia.
     # TODO Test unsigned integers.
