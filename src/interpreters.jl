@@ -219,7 +219,7 @@ function unsafe_result(::Type{String}, interp::Union{TclInterp,InterpPtr})
 end
 
 function unsafe_result(::Type{T}, interp::Union{TclInterp,InterpPtr}) where {T}
-    return unsafe_value(T, interp, Tcl_GetObjResult(interp))
+    return unsafe_value(T, Tcl_GetObjResult(interp))
 end
 
 #------------------------------------------------------------------------ Global variables -
