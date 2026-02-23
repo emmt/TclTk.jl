@@ -75,24 +75,11 @@ Base.String(obj::TclObj) = convert(String, obj)
 Base.convert(::Type{TclObj}, obj::TclObj) = obj
 function Base.convert(::Type{T}, obj::TclObj) where {T}
     GC.@preserve obj begin
-        val = unsafe_value(value_type(T), checked_pointer(obj))
-        return convert(T, val)::T
+        return unsafe_value(T, checked_pointer(obj))::T
     end
 end
 for type in (isdefined(Base, :Memory) ? (:Vector, :Memory) : (:Vector,))
-    @eval begin
-        Base.convert(::Type{$type{T}}, obj::TclObj) where {T} = $type{T}(obj)::$type{T}
-        function Base.$type{T}(list::TclObj) where {T}
-            GC.@preserve list begin
-                objc, objv = unsafe_get_list_elements(pointer(list))
-                vec = $type{T}(undef, objc)
-                for i in 𝟙:objc
-                    vec[i] = unsafe_value(T, unsafe_load(objv, i))
-                end
-                return vec
-            end
-        end
-    end
+    @eval Base.$type{T}(obj::TclObj) where {T} = convert($type{T}, obj)
 end
 
 Base.:(==)(A::TclObj, B::TclObj) = isequal(A, B)
@@ -540,18 +527,28 @@ end
 #
 # Dense vector of bytes are stored as Tcl `bytearray` object.
 #
-value_type(::Type{T}) where {T<:DenseVector{UInt8}} = T
+value_type(::Type{T}) where {T<:BasicVector} = T
+value_type(::Type{T}) where {T<:AbstractVector} = Memory{eltype(T)}
 new_object(arr::DenseVector{UInt8}) = Tcl_NewByteArrayObj(arr, length(arr))
-function unsafe_value(::Type{T}, interp::InterpPtr,
-                    obj::ObjPtr) where {T<:Union{Vector{UInt8},Memory{UInt8}}}
+function unsafe_value(::Type{T}, interp::InterpPtr, obj::ObjPtr) where {T<:AbstractVector}
     return unsafe_value(T, obj) # `interp` not needed
 end
-function unsafe_value(::Type{T}, obj::ObjPtr) where {T<:Union{Vector{UInt8},Memory{UInt8}}}
+function unsafe_value(::Type{T}, obj::ObjPtr) where {T<:BasicVector{UInt8}}
+    # Assume object is an array of bytes.
     len = Ref{Tcl_Size}()
     ptr = Tcl_GetByteArrayFromObj(obj, len)
     len = Int(len[])::Int
     arr = T(undef, len)
-    len > 0 && Libc.memcpy(arr, ptr, len)
+    len > 0 && GC.@preserve arr Libc.memcpy(pointer(arr), ptr, len)
+    return arr
+end
+function unsafe_value(::Type{T}, obj::ObjPtr) where {E,T<:BasicVector{E}}
+    # Assume object is a list.
+    objc, objv = unsafe_get_list_elements(obj)
+    arr = T(undef, objc)
+    for i in 𝟙:objc
+        arr[i] = unsafe_value(E, unsafe_load(objv, i))
+    end
     return arr
 end
 #

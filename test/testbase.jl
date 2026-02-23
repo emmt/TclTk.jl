@@ -176,6 +176,13 @@ end
     @test length(y) == length(t)
     # TODO @test y == t
 
+    # Dense vector of bytes.
+    v = [0x00, 0x12, 0xff, 0x4a]
+    x = @inferred TclObj(v)
+    @test x.type == :bytearray
+    @test sprint(show, x) == "TclObj(UInt8[0x00, 0x12, 0xff, 0x4a])"
+    @test v == @inferred convert(Vector{UInt8}, x)
+
     # Colors.
     c = @inferred TclObj TclObj(colorant"pink")
     @test TclObj(colorant"red") ∈ ("#FF0000", "#ff0000")

@@ -22,8 +22,11 @@ using Neutrals
 using TypeUtils
 using UnsetIndex: Unset, unset
 
-if !isdefined(Base, :Memory)
+if isdefined(Base, :Memory)
+    const BasicVector{T} = Union{Vector{T},Memory{T}}
+else
     const Memory{T} = Vector{T}
+    const BasicVector{T} = Vector{T}
 end
 if !isdefined(Base, :isnothing)
     isnothing(::Any) = false

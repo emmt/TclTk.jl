@@ -381,9 +381,18 @@ function Tcl_NewByteArrayObj(bytes, numBytes)
     @ccall libtcl.Tcl_NewByteArrayObj(bytes::Ptr{Cuchar}, numBytes::Tcl_Size)::Ptr{Tcl_Obj}
 end
 
-function Tcl_GetByteArrayFromObj(objPtr, numBytesPtr)
-    @ccall libtcl.Tcl_GetByteArrayFromObj(objPtr::Ptr{Tcl_Obj},
+if TCL_MAJOR_VERSION ≥ 9
+    # `interp` is only for error reporting.
+    function Tcl_GetBytesFromObj(interp, obj, numBytesPtr)
+        @ccall libtcl.Tcl_GetBytesFromObj(interp::Ptr{Tcl_Interp}, obj::Ptr{Tcl_Obj},
                                           numBytesPtr::Ptr{Tcl_Size})::Ptr{UInt8}
+    end
+    Tcl_GetByteArrayFromObj(obj, numBytesPtr) = Tcl_GetBytesFromObj(C_NULL, obj, numBytesPtr)
+else
+    function Tcl_GetByteArrayFromObj(obj, numBytesPtr)
+        @ccall libtcl.Tcl_GetByteArrayFromObj(obj::Ptr{Tcl_Obj},
+                                              numBytesPtr::Ptr{Tcl_Size})::Ptr{UInt8}
+    end
 end
 
 function Tcl_SetByteArrayLength(objPtr, numBytes)
