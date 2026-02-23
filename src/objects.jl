@@ -236,10 +236,14 @@ end
 # It is forbidden to access to the fields of a `TclObj` by the `obj.key` syntax.
 Base.propertynames(obj::TclObj) = (:ptr, :refcnt, :type)
 @inline Base.getproperty(obj::TclObj, key::Symbol) = _getproperty(obj, Val(key))
-@inline Base.setproperty!(obj::TclObj, key::Symbol, val) = _setproperty!(obj, Val(key), val)
+@noinline function Base.setproperty!(obj::TclObj, key::Symbol, val)
+    key ∈ propertynames(obj) ? error("attempt to set read-only property") :
+        throw(KeyError(key))
+end
 
 _getproperty(obj::TclObj, ::Val{key}) where {key} = throw(KeyError(key))
-_setproperty!(obj::TclObj, key::Symbol, val) = throw(KeyError(key))
+
+_getproperty(obj::TclObj, ::Val{:ptr}) = getfield(obj, :ptr)
 
 function _getproperty(obj::TclObj, ::Val{:refcnt})
     GC.@preserve obj begin
@@ -285,16 +289,9 @@ function assert_writable(objptr::ObjPtr)
     return objptr
 end
 
-function finalize(obj::TclObj)
-    obj.ptr = null(ObjPtr)
-    return nothing
-end
+finalize(obj::TclObj) = set_pointer!(obj, null(ObjPtr))
 
-function _getproperty(obj::TclObj, ::Val{:ptr})
-    return getfield(obj, :ptr)
-end
-
-function _setproperty!(obj::TclObj, ::Val{:ptr}, newptr::ObjPtr)
+function set_pointer!(obj::TclObj, newptr::ObjPtr)
     oldptr = getfield(obj, :ptr)
     if newptr != oldptr
         isnull(newptr) || Tcl_IncrRefCount(newptr)

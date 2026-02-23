@@ -58,6 +58,7 @@ const φ = MathConstants.φ
 end
 
 @testset "Tcl Objects" begin
+    # Julia string and symbols to Tcl object.
     script = "puts {hello world!}"
     symbolic_script = Symbol(script)
     x = @inferred TclObj(script)
@@ -71,6 +72,9 @@ end
     @test isreadable(x)
     @test iswritable(x)
     @test x.ptr === @inferred(pointer(x))
+    @test_throws KeyError x.non_existing_field
+    @test_throws KeyError x.non_existing_field = 4
+    @test_throws ErrorException x.refcnt = 1
     @test script == @inferred string(x)
     @test script == @inferred String(x)
     @test script == @inferred convert(String, x)
