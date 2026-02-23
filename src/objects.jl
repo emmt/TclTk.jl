@@ -78,6 +78,15 @@ function Base.convert(::Type{T}, obj::TclObj) where {T}
         return unsafe_value(T, checked_pointer(obj))::T
     end
 end
+
+# Usual constructors can also perform conversion.
+for type in (:Integer, :Signed, :Unsigned, :AbstractFloat, :Real, :Bool,
+             :Int8, :UInt8, :Int16, :UInt16, :Int32, :UInt32, :Int64, :UInt64,
+             (isdefined(Base, :Int128) ? (:Int128,) : ())...,
+             (isdefined(Base, :UInt128) ? (:UInt128,) : ())...,
+             :Float16, :Float32, :Float64, :BigFloat,)
+    @eval Base.$type(obj::TclObj) = convert($type, obj)
+end
 for type in (isdefined(Base, :Memory) ? (:Vector, :Memory) : (:Vector,))
     @eval Base.$type{T}(obj::TclObj) where {T} = convert($type{T}, obj)
 end

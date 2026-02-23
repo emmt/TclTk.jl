@@ -212,6 +212,20 @@ end
         end
     end
 
+    # Other conversions.
+    x = @inferred TclObj("true")
+    @test Bool(x) === true # this also trigger conversion of internal type
+    @test x.type == :boolean
+    @test_broken Real(x) isa Bool
+    @test_broken Integer(x) isa Bool # this is a limitation of Tcl: "true" -> Boolean is ok, but "true" -> other numeric type is not allowed
+    @test_throws Exception AbstractFloat(x) # this is a limitation of Tcl: "true" -> Boolean is ok, but "true" -> other numeric type is not allowed
+    x = @inferred TclObj("1.25")
+    @test Bool(x) === true # this also trigger conversion of internal type
+    @test x.type == :double
+    @test AbstractFloat(x) isa Cdouble
+    @test Real(x) isa Cdouble
+
+
     # Tuples.
     x = @inferred TclObj(:hello)
     @test x.type == :string
@@ -231,6 +245,7 @@ end
     @test x.type == :bytearray
     @test sprint(show, x) == "TclObj(UInt8[0x00, 0x12, 0xff, 0x4a])"
     @test v == @inferred convert(Vector{UInt8}, x)
+    @test v == @inferred Vector{UInt8}(x)
 
     # Colors.
     c = @inferred TclObj TclObj(colorant"pink")

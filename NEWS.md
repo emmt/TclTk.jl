@@ -109,3 +109,6 @@ Versioning](https://semver.org).
   convenience). For example: `Tcl.unset(interp, name)`, `Base.delete!(interp, name)`, or
   `interp[name] = unset` (where `unset` is the singleton provided by the `UnsetIndex`
   package and exported by the `Tcl` package).
+
+- Like `String`, common type constructors (`Bool`, `Int`, `Float64`, `Vector{T}`,
+  `Memory{T}`, etc.) can also be directly used to convert a Tcl object.
