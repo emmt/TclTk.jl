@@ -47,6 +47,8 @@ Versioning](https://semver.org).
 - Conversion of Tcl objects to/from vectors. If element type is `UInt8`, the byte vector is
   considered to represent the raw content of the Tcl object.
 
+- Some bug fixed with Tk images.
+
 ## Version 0.2.0 (2026-02-17)
 
 ### Breaking changes

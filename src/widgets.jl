@@ -356,7 +356,7 @@ Base.parent(w::TkWidget) = w.parent
 Base.parent(::TkRootWidget) = nothing
 TclObj(w::TkWidget) = w.path
 Base.convert(::Type{TclObj}, w::TkWidget) = TclObj(w)::TclObj
-unsafe_objptr(img::TkWidget) = unsafe_objptr(TclObj(w), "Tk widget") # used in `exec`
+unsafe_objptr(w::TkWidget) = unsafe_objptr(TclObj(w), "Tk widget") # used in `exec`
 
 exec(w::TkWidget, args...) = exec(w.interp, w.path, args...)
 exec(w::TkWidget, ::Type{T}, args...) where {T} = exec(T, w.interp, w.path, args...)

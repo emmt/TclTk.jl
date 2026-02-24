@@ -835,7 +835,7 @@ function unsafe_store_pixels!(interp::Union{TclInterp,Ptr{Tcl_Interp}},
                               comprule::Integer) where {C<:PhotoColorant}
     block = Tk_PhotoImageBlock(
         pointer = ptr, width = width, height = height,
-        pitch = sizeof(C), step = sizeof(C), offset = offset_from_pixel_type(C))
+        pitch = sizeof(C)*width, step = sizeof(C), offset = offset_from_pixel_type(C))
     status = Tk_PhotoPutBlock(interp, handle, Ref(block), x, y, width, height, comprule)
     status == TCL_OK || tcl_error(interp)
     return nothing
