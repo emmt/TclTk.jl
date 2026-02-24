@@ -197,13 +197,13 @@ end
         elseif T <: Integer
             if !(x isa Integer)
                 # Floating-point to non-Boolean integer is not allowed by TclTk.
-                @test_throws TclError convert(T, y)
+                @test_throws ArgumentError convert(T, y)
             else
                 S = (isconcretetype(T) ? T : TclTk.WideInt)
                 if typemin(S) ≤ x ≤ typemax(S)
                     @test (@inferred S convert(T, y)) == convert(S, x)
                 else
-                    @test_throws Union{TclError,InexactError} convert(T, y)
+                    @test_throws ArgumentError convert(T, y)
                 end
             end
         else # T is non-integer real
@@ -216,15 +216,18 @@ end
     x = @inferred TclObj("true")
     @test Bool(x) === true # this also trigger conversion of internal type
     @test x.type == :boolean
-    @test_broken Real(x) isa Bool
-    @test_broken Integer(x) isa Bool # this is a limitation of Tcl: "true" -> Boolean is ok, but "true" -> other numeric type is not allowed
-    @test_throws Exception AbstractFloat(x) # this is a limitation of Tcl: "true" -> Boolean is ok, but "true" -> other numeric type is not allowed
+    @test Real(x) isa Bool
+    @test Integer(x) isa Bool
+    @test_throws Exception AbstractFloat(x) # this is a restriction of Tcl: "true" -> Boolean is ok, but "true" -> other numeric type is not allowed
     x = @inferred TclObj("1.25")
     @test Bool(x) === true # this also trigger conversion of internal type
     @test x.type == :double
     @test AbstractFloat(x) isa Cdouble
     @test Real(x) isa Cdouble
 
+    # Short/long conversion error messages.
+    @test_throws ArgumentError convert(Int, TclObj("yes"))
+    @test_throws ArgumentError convert(Int, TclObj("This long string is not an integer and should trigger an exception when attempting to convert it to an integer, you have been warned..."))
 
     # Tuples.
     x = @inferred TclObj(:hello)

@@ -13,5 +13,4 @@ TclTk.Impl.unsafe_error
 TclTk.Impl.unsafe_objptr
 TclTk.Impl.unsafe_result
 TclTk.Impl.unsafe_value
-TclTk.Impl.value_type
 ```

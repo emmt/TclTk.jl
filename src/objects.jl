@@ -44,8 +44,8 @@ Tcl object may always be converted into a string by calling `convert(String, obj
 [`TclTk.list`](@ref) or [`TclTk.concat`](@ref) for building Tcl objects to efficiently store
 arguments of Tcl commands.
 
-Methods [`TclTk.Impl.value_type`](@ref) and [`TclTk.Impl.new_object`](@ref) may be extended to
-convert other types of value to Tcl object.
+Methods [`TclTk.Impl.new_object`](@ref) and [`TclTk.Impl.unsafe_value`](@ref) may be
+extended to convert other types of value to Tcl object.
 
 """
 TclObj(obj::TclObj) = obj
@@ -70,16 +70,28 @@ function unsafe_duplicate(objptr::ObjPtr)
 end
 
 Base.string(obj::TclObj) = String(obj)
-Base.String(obj::TclObj) = convert(String, obj)
+function Base.String(obj::TclObj)
+    GC.@preserve obj begin
+        return unsafe_string(pointer(obj))
+    end
+end
+function Base.unsafe_string(objptr::ObjPtr)
+    isnull(objptr) && unexpected_null(objptr)
+    # NOTE `unsafe_string` takes care of NULL `ptr`, so we do not check that.
+    len = Ref{Tcl_Size}()
+    return unsafe_string(Tcl_GetStringFromObj(objptr, len), len[])
+end
 
 Base.convert(::Type{TclObj}, obj::TclObj) = obj
+Base.convert(::Type{String}, obj::TclObj) = String(obj)
 function Base.convert(::Type{T}, obj::TclObj) where {T}
     GC.@preserve obj begin
-        return unsafe_value(T, checked_pointer(obj))::T
+        # NOTE `unsafe_value` takes care of NULL object pointer.
+        return unsafe_value(T, pointer(obj))::T
     end
 end
 
-# Usual constructors can also perform conversion.
+# Usual constructors can also perform conversion. FIXME Char, AbstractChar
 for type in (:Integer, :Signed, :Unsigned, :AbstractFloat, :Real, :Bool,
              :Int8, :UInt8, :Int16, :UInt16, :Int32, :UInt32, :Int64, :UInt64,
              (isdefined(Base, :Int128) ? (:Int128,) : ())...,
@@ -325,17 +337,105 @@ unsafe_objptr(val::Any) = new_object(val)
 unsafe_objptr(val::Any, descr::AbstractString) = unsafe_objptr(val)
 
 """
-    TclTk.Impl.value_type(x)
-    TclTk.Impl.value_type(typeof(x))
+    tryparse(T, obj::TclObj)::Union{T,Nothing}
 
-Return the suitable type for storing a Julia object `x` in a Tcl object.
-
-# See also
-
-[`TclTk.Impl.new_object`](@ref) and [`TclTk.Impl.new_list`](@ref).
+Attempt to convert a Tcl object `obj` to a Julia value of type `T`. Return a value of type
+`T` on success; `nothing on failure.
 
 """
-value_type(x) = value_type(typeof(x))
+function Base.tryparse(::Type{T}, obj::TclObj) where {T}
+    GC.@preserve obj begin
+        return unsafe_tryparse(T, pointer(obj)) # NOTE pointer may be NULL
+    end
+end
+
+# Tcl provides accessor functions for a few numeric types:
+#
+# - Tcl_GetBooleanFromObj for Booleans.
+#
+# - Tcl_GetIntFromObj for Cint, Tcl_GetLongFromObj for Clong, and Tcl_GetWideIntFromObj
+#   for WideInt. However, for Tcl ≥ 9, any non-Boolean integer is stored as a WideInt.
+#   So, we use this type for any non-Boolean integer.
+#
+# - Tcl_GetDoubleFromObj for Cdouble and we use this type for any non-integer real.
+
+function unsafe_tryparse(::Type{Bool}, objptr::ObjPtr)
+    if !isnull(objptr)
+        val = Ref{Cint}()
+        Tcl_GetBooleanFromObj(C_NULL, objptr, val) == TCL_OK && return !iszero(val[])
+    end
+    return nothing
+end
+
+function unsafe_tryparse(::Type{WideInt}, objptr::ObjPtr)
+    if !isnull(objptr)
+        val = Ref{WideInt}()
+        Tcl_GetWideIntFromObj(C_NULL, objptr, val) == TCL_OK && return val[]
+    end
+    return nothing
+end
+
+function unsafe_tryparse(::Type{Cdouble}, objptr::ObjPtr)
+    if !isnull(objptr)
+        val = Ref{Cdouble}()
+        Tcl_GetDoubleFromObj(C_NULL, objptr, val) == TCL_OK && return val[]
+    end
+    return nothing
+end
+
+function unsafe_tryparse(::Type{T}, objptr::ObjPtr) where {T<:Integer}
+    val = unsafe_tryparse(WideInt, objptr)
+    return isnothing(val) || !(typemin(T) ≤ val ≤ typemax(T)) ? nothing : convert(T, val)::T
+end
+
+function unsafe_tryparse(::Type{T}, objptr::ObjPtr) where {T<:Union{AbstractFloat,Rational}}
+    val = unsafe_tryparse(Cdouble, objptr)
+    return isnothing(val) ? nothing : convert(T, val)::T
+end
+
+function unsafe_tryparse(::Type{Integer}, objptr::ObjPtr)
+    type = unsafe_get_typename(objptr)
+    if type == :boolean
+        return unsafe_tryparse(Bool, objptr)
+    elseif type ∈ (:int, :wideInt)
+        # In Tcl ≥ 9, non-Boolean integers are stored as `WideInt`.
+        return unsafe_tryparse(WideInt, objptr)
+    elseif type == :string
+        # Try to parse an integer.
+        i = unsafe_tryparse(WideInt, objptr)
+        isnothing(i) || return i
+        # Otherwise, maybe a textual Boolean.
+        b = unsafe_tryparse(Bool, objptr)
+        isnothing(b) || return b
+    end
+    return nothing
+end
+
+function unsafe_tryparse(::Type{Real}, objptr::ObjPtr)
+    type = unsafe_get_typename(objptr)
+    if type == :boolean
+        return unsafe_tryparse(Bool, objptr)
+    elseif type ∈ (:int, :wideInt)
+        # In Tcl ≥ 9, non-Boolean integers are stored as `WideInt`.
+        return unsafe_tryparse(WideInt, objptr)
+    elseif type == :double
+        return unsafe_tryparse(Cdouble, objptr)
+    elseif type == :string
+        # Try to parse a floating-point.
+        x = unsafe_tryparse(Cdouble, objptr)
+        if isnothing(x)
+            # Otherwise, maybe a textual Boolean.
+            b = unsafe_tryparse(Bool, objptr)
+            isnothing(b) || return b
+        elseif trunc(x) === x
+            # Try to parse an integer.
+            i = unsafe_tryparse(WideInt, objptr)
+            isnothing(i) || return i
+        end
+        return x
+    end
+    return nothing
+end
 
 """
     TclTk.Impl.new_object(x) -> ptr
@@ -345,9 +445,8 @@ of `0`.
 
 # See also
 
-[`TclObj`](@ref), [`TclTk.Impl.new_list`](@ref), [`TclTk.Impl.value_type`](@ref),
-[`TclTk.Impl.Tcl_GetRefCount`](@ref), [`TclTk.Impl.Tcl_IncrRefCount`](@ref), and
-[`TclTk.Impl.Tcl_DecrRefCount`](@ref).
+[`TclObj`](@ref), [`TclTk.Impl.new_list`](@ref), [`TclTk.Impl.Tcl_GetRefCount`](@ref),
+[`TclTk.Impl.Tcl_IncrRefCount`](@ref), and [`TclTk.Impl.Tcl_DecrRefCount`](@ref).
 
 """
 new_object
@@ -363,19 +462,13 @@ and must remain valid during the call to this function.
 """
 unsafe_value(::Type{TclObj}, objptr::ObjPtr) = _TclObj(objptr)
 
-# NOTE `value_type`, `new_object`, and `unsafe_value` must be consistent.
-#
 # Strings.
 #
-#     Julia strings and symbols are assumed to be Tcl strings. Julia characters are assumed
-#     to Tcl strings of length 1.
+# There are two alternatives to create Tcl string objects: `Tcl_NewStringObj` or
+# `Tcl_NewUnicodeObj`. After some testings, the following works correctly. To build a
+# Tcl object from a Julia string, use `Ptr{UInt8}` instead of `Cstring` and provide the
+# number of bytes with `ncodeunit(str)`.
 #
-#     There are two alternatives to create Tcl string objects: `Tcl_NewStringObj` or
-#     `Tcl_NewUnicodeObj`. After some testings, the following works correctly. To build a
-#     Tcl object from a Julia string, use `Ptr{UInt8}` instead of `Cstring` and provide the
-#     number of bytes with `ncodeunit(str)`.
-#
-value_type(::Type{<:AbstractString}) = String
 new_object(str::AbstractString) = new_object(String(str))
 function new_object(str::Union{String,SubString{String}})
     # We must preserve `str` because we direct pass its address and size.
@@ -383,124 +476,44 @@ function new_object(str::Union{String,SubString{String}})
         return Tcl_NewStringObj(pointer(str), ncodeunits(str))
     end
 end
-function unsafe_value(::Type{String}, objptr::ObjPtr)
-    # NOTE `unsafe_string` catches that `ptr` must not be null so we do not check that.
-    len = Ref{Tcl_Size}()
-    return unsafe_string(Tcl_GetStringFromObj(objptr, len), len[])
-end
-#
-# Symbols are considered as Tcl strings._
-#
-value_type(::Type{Symbol}) = String
-function new_object(sym::Symbol)
-    return Tcl_NewStringObj(sym, -1)
-end
-#
+
+unsafe_value(::Type{String}, objptr::ObjPtr) = unsafe_string(objptr)
+
+# Symbols are considered as Tcl strings.
+new_object(sym::Symbol) = Tcl_NewStringObj(sym, -1)
+
 # Characters are equivalent to Tcl strings of unit length.
-#
-value_type(::Type{<:AbstractChar}) = String
 new_object(str::AbstractChar) = new_object(string(char))
 function unsafe_value(::Type{T}, objptr::ObjPtr) where {T<:AbstractChar}
-    # FIXME Optimize this.
-    str = unsafe_value(String, objptr)
-    length(str) == 1 || tcl_error("cannot convert Tcl object to `$T` value")
-    return first(str)
+    # FIXME Optimize this to avoid allocating a Julia string.
+    val = unsafe_tryparse(String, objptr)
+    (isnothing(val) || length(val) != 1) && unsafe_convert_error(T, objptr)
+    return convert(T, first(val))
 end
-#
-# Booleans.
-#
-#     Despite that it is possible to create boolean objects with `Tcl_NewBooleanObj`, Tcl
-#     stores Booleans as `Cint`s and Booleans are retrieved as `Cint` objects.
-#
-value_type(::Type{Bool}) = Bool
+
+# Reals.
+
+function unsafe_value(::Type{T}, objptr::ObjPtr) where {T<:Real}
+    val = unsafe_tryparse(T, objptr)
+    isnothing(val) && unsafe_convert_error(T, objptr)
+    return val
+end
+
 new_object(val::Bool) = Tcl_NewBooleanObj(val)
-function unsafe_value(::Type{Bool}, objptr::ObjPtr)
-    val = Ref{Cint}()
-    status = Tcl_GetBooleanFromObj(C_NULL, objptr, val)
-    status == TCL_OK || tcl_error("cannot convert Tcl object to `Bool` value")
-    return !iszero(val[])
-end
-#
-# Integers.
-#
-#     For each integer type, we choose the Tcl integer which is large enough to store a
-#     value of that type. Small unsigned integers may be problematic, but not so much as the
-#     smallest Tcl integer type is `Cint` which is at least 32 bits.
-#
-# `Clong` type.
-#
-value_type(::Type{Clong}) = Clong
-new_object(val::Clong) = Tcl_NewLongObj(val)
-function unsafe_value(::Type{Clong}, objptr::ObjPtr)
-    val = Ref{Clong}()
-    status = Tcl_GetLongFromObj(C_NULL, objptr, val)
-    status == TCL_OK || tcl_error("cannot convert Tcl object to `$Clong` value")
-    return val[]
-end
-#
-# `Cint` if not the same thing as `Clong`.
-#
-if Cint != Clong
-    value_type(::Type{Cint}) = Cint
-    new_object(val::Cint) = Tcl_NewIntObj(val)
-    function unsafe_value(::Type{Cint}, objptr::ObjPtr)
-        val = Ref{Cint}()
-        status = Tcl_GetIntFromObj(C_NULL, objptr, val)
-        status == TCL_OK || tcl_error("cannot convert Tcl object to `$Cint` value")
-        return val[]
-    end
-end
-#
-# `WideInt` if not the same thing as `Clong` or `Cint`.
-#
-if WideInt != Clong && WideInt != Cint
-    value_type(::Type{WideInt}) = WideInt
-    new_object(val::WideInt) = Tcl_NewWideIntObj(val)
-    function unsafe_value(::Type{WideInt}, objptr::ObjPtr)
-        val = Ref{WideInt}()
-        status = Tcl_GetWideIntFromObj(C_NULL, objptr, val)
-        status == TCL_OK || tcl_error("cannot convert Tcl object to `$WideInt` value")
-        return val[]
-    end
-end
-#
-# Other integer types.
-#
-#     `value_type(T)` yields a Tcl integer type wide enough for `T`. `new_object` and
-#     `unsafe_value` fallback to generic methods defined below.
-#
-function value_type(::Type{T}) where {T<:Integer}
-    if isbitstype(T)
-        sizeof(T) ≤ sizeof(Cint) && return Cint
-        sizeof(T) ≤ sizeof(Clong) && return Clong
-    end
-    return WideInt
-end
-#
+
+# In Tcl ≥ 9, non-Boolean integers are stored as `WideInt`.
+new_object(val::Integer) = Tcl_NewWideIntObj(val)
+
+# Non-integer reals are considered as double precision floating-point numbers.
+new_object(val::Real) = Tcl_NewDoubleObj(val)
+
 # Enumeration are like integers.
-#
 const Enumeration{T} = Union{Enum{T}, CEnum.Cenum{T}}
-value_type(::Type{<:Enumeration{T}}) where {T} = value_type(T)
 new_object(val::Enumeration{T}) where {T} = new_object(Integer(val))
-function unsafe_value(::Type{T}, objptr::ObjPtr) where {S,T<:Enumeration{S}}
-    return T(unsafe_value(S, objptr))::T
-end
-#
-# Floats.
-#
-#     Non-integer reals are considered as double precision floating-point numbers.
-#
-value_type(::Type{<:Real}) = Cdouble
-new_object(val::Cdouble) = Tcl_NewDoubleObj(val)
-function unsafe_value(::Type{Cdouble}, objptr::ObjPtr)
-    val = Ref{Cdouble}()
-    status = Tcl_GetDoubleFromObj(C_NULL, objptr, val)
-    status == TCL_OK || tcl_error("cannot convert Tcl object to `$Cdouble` value")
-    return val[]
-end
-#
+unsafe_value(::Type{T}, objptr::ObjPtr) where {S,T<:Enumeration{S}} =
+    T(unsafe_value(S, objptr))::T
+
 # Tuples are stored as Tcl lists.
-#
 function new_object(tup::Tuple)
     list = new_list()
     try
@@ -513,45 +526,55 @@ function new_object(tup::Tuple)
     end
     return list
 end
-#
+
 # Dense vector of bytes are stored as Tcl `bytearray` object.
-#
-value_type(::Type{T}) where {T<:BasicVector} = T
-value_type(::Type{T}) where {T<:AbstractVector} = Memory{eltype(T)}
-new_object(arr::DenseVector{UInt8}) = Tcl_NewByteArrayObj(arr, length(arr))
+new_object(vec::AbstractVector{UInt8}) = new_object(convert(Memory{UInt8}, vec))
+new_object(vec::DenseVector{UInt8}) = Tcl_NewByteArrayObj(vec, length(vec))
 function unsafe_value(::Type{T}, objptr::ObjPtr) where {T<:BasicVector{UInt8}}
     # Assume object is an array of bytes.
     len = Ref{Tcl_Size}()
     ptr = Tcl_GetByteArrayFromObj(objptr, len)
     len = Int(len[])::Int
-    arr = T(undef, len)
-    len > 0 && GC.@preserve arr Libc.memcpy(pointer(arr), ptr, len)
-    return arr
+    vec = T(undef, len)
+    len > 0 && GC.@preserve vec Libc.memcpy(pointer(vec), ptr, len)
+    return vec
 end
 function unsafe_value(::Type{T}, objptr::ObjPtr) where {E,T<:BasicVector{E}}
     # Assume object is a list.
     objc, objv = unsafe_get_list_elements(objptr)
-    arr = T(undef, objc)
+    vec = T(undef, objc)
     for i in 𝟙:objc
-        arr[i] = unsafe_value(E, unsafe_load(objv, i))
+        vec[i] = unsafe_value(E, unsafe_load(objv, i))
     end
-    return arr
+    return vec
 end
-#
+
 # Generic and error catcher methods for other Julia types.
-#
-@noinline value_type(::Type{T}) where {T} =
-    tcl_error("no Tcl object type corresponds to Julia objects of type `$T`")
-function new_object(val::T) where {T}
-    S = proxy_type(T)
-    return new_object(convert(S, val)::S)
-end
-function unsafe_value(::Type{T}, objptr::ObjPtr) where {T}
-    S = proxy_type(T)
-    return convert(T, unsafe_value(S, objptr))::T
-end
-function proxy_type(::Type{T}) where {T}
-    S = value_type(T)
-    T <: S && assertion_error("conversion must change value's type")
-    return S
+@noinline new_object(val::T) where {T} =
+    argument_error("cannot convert a Julia value of type `$T` to a Tcl object")
+@noinline unsafe_value(::Type{T}, objptr::ObjPtr) where {T} =
+    unsafe_convert_error(T, opjptr)
+
+@noinline function unsafe_convert_error(::Type{T}, objptr::ObjPtr) where {T}
+    io = IOBuffer()
+    print(io, "cannot convert ")
+    if isnull(objptr)
+        print(io, "NULL Tcl object")
+    else
+        maxlen = 32
+        print(io, "Tcl object \"")
+        str = unsafe_string(objptr) # FIXME avoid allocating a huge Julia string
+        len = length(str)
+        if len ≤ maxlen
+            escape_string(io, str)
+        else
+            start = firstindex(str)
+            stop = nextind(str, start, maxlen - 1)
+            escape_string(io, SubString(str, start, stop))
+            print(io, "[…]")
+        end
+        print(io, '"')
+    end
+    print(io, " to Julia value of type `", T, '`')
+    argument_error(String(take!(io)))
 end

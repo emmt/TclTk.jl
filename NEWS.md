@@ -112,3 +112,6 @@ Versioning](https://semver.org).
 
 - Like `String`, common type constructors (`Bool`, `Int`, `Float64`, `Vector{T}`,
   `Memory{T}`, etc.) can also be directly used to convert a Tcl object.
+
+- `tryparse(T, obj)` can be used to attempt converting the content of a Tcl object `obj` to
+  a Julia numeric value of type `T`.
