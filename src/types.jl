@@ -46,7 +46,7 @@ mutable struct TclObj <: WrappedObject
     global _TclObj
     function _TclObj(ptr::ObjPtr)
         if !isnull(ptr)
-            _ = unsafe_get_typename(ptr) # register object's type
+            _ = unsafe_object_type(ptr) # register object's type
             Tcl_IncrRefCount(ptr)
         end
         return finalizer(finalize, new(ptr))

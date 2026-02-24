@@ -230,7 +230,7 @@ const auto_name_dict = Dict{String,UInt64}()
 #-------------------------------------------------------------------------- Tcl type names -
 
 """
-    TclTk.Impl.unsafe_get_typename(ptr) -> sym::Symbol
+    TclTk.Impl.unsafe_object_type(ptr) -> sym::Symbol
 
 Return the symbolic type name of Tcl object pointer `ptr`. The result can be:
 
@@ -245,20 +245,20 @@ Return the symbolic type name of Tcl object pointer `ptr`. The result can be:
     The function is *unsafe* as `ptr` may be null and otherwise must be valid for the
     duration of the call (i.e., protected form being garbage collected).
 
-""" unsafe_get_typename
+""" unsafe_object_type
 
 # The table of known types is updated while objects of new types are created because seeking
 # for an existing type is much faster than creating the mutable `TclObj` structure so the
 # overhead is negligible.
 const _known_types = Tuple{ObjTypePtr,Symbol}[]
 
-function unsafe_get_typename(objPtr::ObjPtr)
+function unsafe_object_type(objPtr::ObjPtr)
     isnull(objPtr) && return :null # null object pointer
     typePtr = unsafe_load(Ptr{Tcl_Obj_typePtr_type}(objPtr + Tcl_Obj_typePtr_offset))
-    return unsafe_get_typename(typePtr)
+    return unsafe_object_type(typePtr)
 end
 
-function unsafe_get_typename(typePtr::ObjTypePtr)
+function unsafe_object_type(typePtr::ObjTypePtr)
     global _known_types
     for (ptr, sym) in _known_types
         ptr == typePtr && return sym

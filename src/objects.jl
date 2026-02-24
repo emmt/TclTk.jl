@@ -262,7 +262,7 @@ end
 
 function _getproperty(obj::TclObj, ::Val{:type})
     GC.@preserve obj begin
-        return unsafe_get_typename(pointer(obj))
+        return unsafe_object_type(pointer(obj))
     end
 end
 
@@ -394,7 +394,7 @@ function unsafe_tryparse(::Type{T}, objptr::ObjPtr) where {T<:Union{AbstractFloa
 end
 
 function unsafe_tryparse(::Type{Integer}, objptr::ObjPtr)
-    type = unsafe_get_typename(objptr)
+    type = unsafe_object_type(objptr)
     if type == :boolean
         return unsafe_tryparse(Bool, objptr)
     elseif type ∈ (:int, :wideInt)
@@ -412,7 +412,7 @@ function unsafe_tryparse(::Type{Integer}, objptr::ObjPtr)
 end
 
 function unsafe_tryparse(::Type{Real}, objptr::ObjPtr)
-    type = unsafe_get_typename(objptr)
+    type = unsafe_object_type(objptr)
     if type == :boolean
         return unsafe_tryparse(Bool, objptr)
     elseif type ∈ (:int, :wideInt)
