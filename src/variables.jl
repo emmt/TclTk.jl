@@ -81,7 +81,7 @@ function getvar(::Type{T}, interp::TclInterp, name::Name;
     GC.@preserve interp name begin
         value_ptr = unsafe_getvar(interp, name, flags)
         isnull(value_ptr) && getvar_error(interp, name, flags)
-        return unsafe_value(T, value_ptr)
+        return unsafe_convert(T, value_ptr)
     end
 end
 
@@ -90,7 +90,7 @@ function getvar(::Type{T}, interp::TclInterp, (part1, part2)::NTuple{2,Name};
     GC.@preserve interp part1 part2 begin
         value_ptr = unsafe_getvar(interp, part1, part2, flags)
         isnull(value_ptr) && getvar_error(interp, (part1, part2), flags)
-        return unsafe_value(T, value_ptr)
+        return unsafe_convert(T, value_ptr)
     end
 end
 
@@ -162,7 +162,7 @@ function setvar!(::Type{T}, interp::TclInterp, name::Name, value;
             if T == Nothing
                 return nothing
             else
-                return unsafe_value(T, new_value_ptr)
+                return unsafe_convert(T, new_value_ptr)
             end
         finally
             # Decrement reference counts.
@@ -190,7 +190,7 @@ function setvar!(::Type{T}, interp::TclInterp, (part1, part2)::NTuple{2,Name}, v
             if T == Nothing
                 return nothing
             else
-                return unsafe_value(T, new_value_ptr)
+                return unsafe_convert(T, new_value_ptr)
             end
         finally
             # Decrement reference counts.

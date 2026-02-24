@@ -44,7 +44,7 @@ Tcl object may always be converted into a string by calling `convert(String, obj
 [`TclTk.list`](@ref) or [`TclTk.concat`](@ref) for building Tcl objects to efficiently store
 arguments of Tcl commands.
 
-Methods [`TclTk.Impl.new_object`](@ref) and [`TclTk.Impl.unsafe_value`](@ref) may be
+Methods [`TclTk.Impl.new_object`](@ref) and [`TclTk.Impl.unsafe_convert`](@ref) may be
 extended to convert other types of value to Tcl object.
 
 """
@@ -86,8 +86,8 @@ Base.convert(::Type{TclObj}, obj::TclObj) = obj
 Base.convert(::Type{String}, obj::TclObj) = String(obj)
 function Base.convert(::Type{T}, obj::TclObj) where {T}
     GC.@preserve obj begin
-        # NOTE `unsafe_value` takes care of NULL object pointer.
-        return unsafe_value(T, pointer(obj))::T
+        # NOTE `unsafe_convert` takes care of NULL object pointer.
+        return unsafe_convert(T, pointer(obj))::T
     end
 end
 
@@ -452,7 +452,7 @@ of `0`.
 new_object
 
 """
-    TclTk.Impl.unsafe_value(T, objptr) -> val
+    TclTk.Impl.unsafe_convert(T, objptr) -> val
 
 Return a value of type `T` from Tcl object pointer `objptr`.
 
@@ -460,7 +460,8 @@ The `unsafe` prefix on this function indicates that object pointer `objptr` must
 and must remain valid during the call to this function.
 
 """
-unsafe_value(::Type{TclObj}, objptr::ObjPtr) = _TclObj(objptr)
+unsafe_convert(::Type{TclObj}, objptr::ObjPtr) = _TclObj(objptr)
+unsafe_convert(::Type{T}, x) where {T} = Base.unsafe_convert(Ptr{T}, x) # fallback
 
 # Strings.
 #
@@ -477,14 +478,14 @@ function new_object(str::Union{String,SubString{String}})
     end
 end
 
-unsafe_value(::Type{String}, objptr::ObjPtr) = unsafe_string(objptr)
+unsafe_convert(::Type{String}, objptr::ObjPtr) = unsafe_string(objptr)
 
 # Symbols are considered as Tcl strings.
 new_object(sym::Symbol) = Tcl_NewStringObj(sym, -1)
 
 # Characters are equivalent to Tcl strings of unit length.
 new_object(str::AbstractChar) = new_object(string(char))
-function unsafe_value(::Type{T}, objptr::ObjPtr) where {T<:AbstractChar}
+function unsafe_convert(::Type{T}, objptr::ObjPtr) where {T<:AbstractChar}
     # FIXME Optimize this to avoid allocating a Julia string.
     val = unsafe_tryparse(String, objptr)
     (isnothing(val) || length(val) != 1) && unsafe_convert_error(T, objptr)
@@ -493,7 +494,7 @@ end
 
 # Reals.
 
-function unsafe_value(::Type{T}, objptr::ObjPtr) where {T<:Real}
+function unsafe_convert(::Type{T}, objptr::ObjPtr) where {T<:Real}
     val = unsafe_tryparse(T, objptr)
     isnothing(val) && unsafe_convert_error(T, objptr)
     return val
@@ -510,8 +511,8 @@ new_object(val::Real) = Tcl_NewDoubleObj(val)
 # Enumeration are like integers.
 const Enumeration{T} = Union{Enum{T}, CEnum.Cenum{T}}
 new_object(val::Enumeration{T}) where {T} = new_object(Integer(val))
-unsafe_value(::Type{T}, objptr::ObjPtr) where {S,T<:Enumeration{S}} =
-    T(unsafe_value(S, objptr))::T
+unsafe_convert(::Type{T}, objptr::ObjPtr) where {S,T<:Enumeration{S}} =
+    T(unsafe_convert(S, objptr))::T
 
 # Tuples are stored as Tcl lists.
 function new_object(tup::Tuple)
@@ -530,7 +531,7 @@ end
 # Dense vector of bytes are stored as Tcl `bytearray` object.
 new_object(vec::AbstractVector{UInt8}) = new_object(convert(Memory{UInt8}, vec))
 new_object(vec::DenseVector{UInt8}) = Tcl_NewByteArrayObj(vec, length(vec))
-function unsafe_value(::Type{T}, objptr::ObjPtr) where {T<:BasicVector{UInt8}}
+function unsafe_convert(::Type{T}, objptr::ObjPtr) where {T<:BasicVector{UInt8}}
     # Assume object is an array of bytes.
     len = Ref{Tcl_Size}()
     ptr = Tcl_GetByteArrayFromObj(objptr, len)
@@ -539,12 +540,12 @@ function unsafe_value(::Type{T}, objptr::ObjPtr) where {T<:BasicVector{UInt8}}
     len > 0 && GC.@preserve vec Libc.memcpy(pointer(vec), ptr, len)
     return vec
 end
-function unsafe_value(::Type{T}, objptr::ObjPtr) where {E,T<:BasicVector{E}}
+function unsafe_convert(::Type{T}, objptr::ObjPtr) where {E,T<:BasicVector{E}}
     # Assume object is a list.
     objc, objv = unsafe_get_list_elements(objptr)
     vec = T(undef, objc)
     for i in 𝟙:objc
-        vec[i] = unsafe_value(E, unsafe_load(objv, i))
+        vec[i] = unsafe_convert(E, unsafe_load(objv, i))
     end
     return vec
 end
@@ -552,7 +553,7 @@ end
 # Generic and error catcher methods for other Julia types.
 @noinline new_object(val::T) where {T} =
     argument_error("cannot convert a Julia value of type `$T` to a Tcl object")
-@noinline unsafe_value(::Type{T}, objptr::ObjPtr) where {T} =
+@noinline unsafe_convert(::Type{T}, objptr::ObjPtr) where {T} =
     unsafe_convert_error(T, opjptr)
 
 @noinline function unsafe_convert_error(::Type{T}, objptr::ObjPtr) where {T}

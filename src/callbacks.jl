@@ -79,7 +79,7 @@ function get_fullname(f::Callback)
     GC.@preserve f begin
         objptr = Tcl_NewStringObj("", 0)
         Tcl_GetCommandFullName(f.interp, f.token, Tcl_IncrRefCount(objptr))
-        fullname = unsafe_value(String, objptr)
+        fullname = unsafe_string(objptr)
         Tcl_DecrRefCount(objptr)
         return fullname
     end
