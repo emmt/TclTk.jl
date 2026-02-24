@@ -537,7 +537,7 @@ function unsafe_convert(::Type{T}, objptr::ObjPtr) where {T<:BasicVector{UInt8}}
     ptr = Tcl_GetByteArrayFromObj(objptr, len)
     len = Int(len[])::Int
     vec = T(undef, len)
-    len > 0 && GC.@preserve vec Libc.memcpy(pointer(vec), ptr, len)
+    len > 0 && GC.@preserve vec unsafe_memcpy(pointer(vec), ptr, len)
     return vec
 end
 function unsafe_convert(::Type{T}, objptr::ObjPtr) where {E,T<:BasicVector{E}}

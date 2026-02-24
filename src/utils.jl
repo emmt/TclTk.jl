@@ -138,6 +138,10 @@ function unsafe_memcmp(a, b, nbytes)
     return @ccall memcmp(a::Ptr{UInt8}, b::Ptr{UInt8}, nbytes::Csize_t)::Cint
 end
 
+function unsafe_memcpy(a, b, nbytes)
+    return @ccall memcpy(a::Ptr{Cvoid}, b::Ptr{Cvoid}, nbytes::Csize_t)::Ptr{Cvoid}
+end
+
 #---------------------------------------------------------------------------- Quote string -
 
 """
