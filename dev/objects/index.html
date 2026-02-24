@@ -28,7 +28,81 @@ julia&gt; string(x)
 
 julia&gt; convert(String, x)
 &quot;1.234&quot;
-</code></pre><h2 id="Comparisons-with-Tcl-objects"><a class="docs-heading-anchor" href="#Comparisons-with-Tcl-objects">Comparisons with Tcl objects</a><a id="Comparisons-with-Tcl-objects-1"></a><a class="docs-heading-anchor-permalink" href="#Comparisons-with-Tcl-objects" title="Permalink"></a></h2><p>Base methods <code>isequal(a, b)</code> and <code>a == b</code> yield whether Tcl objects <code>a</code> and <code>b</code> have the same value. Since any kind of Tcl object is equivalent to a string, Tcl objects may also be compared to strings and symbols for equality:</p><pre><code class="language-julia-repl hljs">julia&gt; a = TclObj(1.234)
+</code></pre><p>Conversion of a Tcl object to a vector is also supported. For basic vector types (<code>Vector</code> or <code>Memory</code>), conversion by the constructor is also implemented. If the element type is <code>UInt8</code>, a vector of bytes representing the raw content of the Tcl object is returned. For other element types, the Tcl object is treated as a list whose elements are converted to the element type. For example:</p><pre><code class="language-julia-repl hljs">julia&gt; t = (false, true, -1, 12)
+(false, true, -1, 12)
+
+julia&gt; x = TclObj(t)
+TclObj((0, 1, -1, 12,))
+
+julia&gt; Vector{Int16}(x)
+4-element Vector{Int16}:
+  0
+  1
+ -1
+ 12
+
+julia&gt; Vector{String}(x)
+4-element Vector{String}:
+ &quot;0&quot;
+ &quot;1&quot;
+ &quot;-1&quot;
+ &quot;12&quot;
+
+julia&gt; v = Vector{UInt8}(x) # conversion to bytes yields raw object content...
+9-element Vector{UInt8}:
+ 0x30
+ 0x20
+ 0x31
+ 0x20
+ 0x2d
+ 0x31
+ 0x20
+ 0x31
+ 0x32
+
+julia&gt; s = &quot;$x&quot;
+&quot;0 1 -1 12&quot;
+
+julia&gt; codeunits(s) # ... which is like the string representation in this case
+9-element Base.CodeUnits{UInt8, String}:
+ 0x30
+ 0x20
+ 0x31
+ 0x20
+ 0x2d
+ 0x31
+ 0x20
+ 0x31
+ 0x32
+
+julia&gt; Memory{Float64}(TclObj(1.25))
+1-element Memory{Float64}:
+ 1.25
+
+julia&gt; Memory{UInt8}(TclObj(1.25))
+4-element Memory{UInt8}:
+ 0x31
+ 0x2e
+ 0x32
+ 0x35
+
+julia&gt; codeunits(&quot;1.25&quot;)
+4-element Base.CodeUnits{UInt8, String}:
+ 0x31
+ 0x2e
+ 0x32
+ 0x35
+
+julia&gt; b = TclObj([0x01,0xff,0x00,0x3c]) # an array of raw bytes...
+TclObj(UInt8[0x01, 0xff, 0x00, 0x3c])
+
+julia&gt; Vector{UInt8}(b) # ... is stored unchanged by the Tcl object
+4-element Vector{UInt8}:
+ 0x01
+ 0xff
+ 0x00
+ 0x3c
+</code></pre><p>As shown above, conversion of a Tcl object to an array of bytes is similar to the code units of the string representation of the object except for <code>:bytearray</code> Tcl objects where the raw byte values are preserved.</p><h2 id="Comparisons-with-Tcl-objects"><a class="docs-heading-anchor" href="#Comparisons-with-Tcl-objects">Comparisons with Tcl objects</a><a id="Comparisons-with-Tcl-objects-1"></a><a class="docs-heading-anchor-permalink" href="#Comparisons-with-Tcl-objects" title="Permalink"></a></h2><p>Base methods <code>isequal(a, b)</code> and <code>a == b</code> yield whether Tcl objects <code>a</code> and <code>b</code> have the same value. Since any kind of Tcl object is equivalent to a string, Tcl objects may also be compared to strings and symbols for equality:</p><pre><code class="language-julia-repl hljs">julia&gt; a = TclObj(1.234)
 TclObj(1.234)
 
 julia&gt; b = TclObj(string(a))
@@ -57,4 +131,4 @@ true
 
 julia&gt; c == &quot;GREEN&quot;
 false
-</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../">« Introduction</a><a class="docs-footer-nextpage" href="../lists/">Lists of Tcl objects »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Saturday 21 February 2026 08:32">Saturday 21 February 2026</span>. Using Julia version 1.12.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../">« Introduction</a><a class="docs-footer-nextpage" href="../lists/">Lists of Tcl objects »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Tuesday 24 February 2026 09:03">Tuesday 24 February 2026</span>. Using Julia version 1.12.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
