@@ -7,7 +7,106 @@
 
 This package provides an optimized Julia interface to [Tcl/Tk](http://www.tcl-lang.org/).
 
-# Features
+## Examples
+
+### Tcl scripts and commands
+
+The traditional example:
+
+``` julia-repl
+julia> using TclTk
+
+julia> TclTk.eval(Nothing, "puts {Hello world!}")
+Hello world!
+
+```
+
+which shows how to evaluate a Tcl script. Here, `Nothing` indicates that we are not
+interested in the result of the script. Another type can be specified if the result is of
+interest and has a known type:
+
+``` julia-repl
+julia> TclTk.eval(Float64, "expr {4*atan(1)}")
+3.141592653589793
+
+```
+
+If the leading type argument is omitted, a Tcl object is returned which can be reused or
+converted later:
+
+``` julia-repl
+julia> x = TclTk.eval("format \"%s/data-%06d.bin\" \"/tmp\" 123")
+TclObj("/tmp/data-000123.bin")
+
+julia> String(x) # `string(x)` and `convert(String, x)` work as well
+"/tmp/data-000123.bin"
+
+```
+
+Spaces and braces are special characters in Tcl and may have to be properly escaped in
+scripts, perhaps with the help of `TclTk.escape_string`. A better solution if the script is
+a single Tcl command, is to call `TclTk.exec` which assumes that each argument (after an
+optional leading type) is a single Tcl token:
+
+``` julia-repl
+julia> msg = "- - } Hello world! { - -"
+"- -} Hello world! { - -"
+
+julia> x = TclTk.exec(Nothing, :puts, msg)
+- - } Hello world! { - -
+
+julia> x = TclTk.exec(String, "format", "%s/%s/data-%06d.bin", ENV["HOME"], "tmp", 123)
+"/home/eric/tmp/data-000123.bin"
+
+```
+
+### Widgets and images
+
+Below is a simple example to show an image in a Tk top-level window:
+
+``` julia-repl
+julia> using TclTk, TestImages
+
+julia> img = testimage("mandrill"); # read some image data
+
+julia> tk_start() # to make sure Tk package is loaded and the event loop is running
+Tcl interpreter (address: 0x0000000017dc33e0, threadid: 1)
+
+julia> top = TkToplevel(:background => "darkseagreen")
+TkToplevel(".top1")
+
+julia> TclTk.exec(Nothing, "wm", "title", top, "A Nice Image")
+
+julia> lab = TkLabel(top, :image => TkPhoto(permutedims(img)), :cursor => :target)
+TkLabel(".top1.lab1")
+
+julia> TclTk.pack(Nothing, lab, :side => :top, :padx => 20, :pady => 30)
+
+```
+
+The different stages are:
+
+- Load some image data as a Julia array.
+
+- Call `tk_start()` to make sure that Tk package is loaded and the event loop is running.
+
+- Create a top-level window `top` with a given background color.
+
+- Call  window manager `wm` command to set the title of the top-level window.
+
+- Create a widget, here a label `lab`, whose parent is `top` to display the image.
+
+- Call the `pack` geometry manager to specify how to display the `lab` widget in its parent
+  (leading `Nothing` argument is because we are not interested in the result of this
+  command).
+
+It may be noticed that, following Tk conventions, the width and height of an image are its
+first and second dimensions. The images provided by the `TestImages` have a different
+convention and we call `permutedims(img)` to cope with that. Using the apostrophe, i.e.
+`img'`, would also do the job.
+
+
+## Features
 
 * As many Tcl interpreters as needed can be started. A shared interpreter is automatically
   created when needed and serves as the default interpreter for the thread. Just call
