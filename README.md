@@ -6,10 +6,10 @@
 [![Coverage](https://codecov.io/gh/juliainterop/TclTk.jl/graph/badge.svg?token=MVOdKu5PQF)](https://codecov.io/gh/juliainterop/TclTk.jl)
 
 This package provides an optimized Julia interface to [Tcl/Tk](http://www.tcl-lang.org/).
+The [documentation is available on-line](https://JuliaInterop.github.io/TclTk.jl/) but a few
+examples are given below to whet your appetite.
 
-## Examples
-
-### Tcl scripts and commands
+## Examples of Tcl scripts and commands
 
 The traditional example:
 
@@ -44,7 +44,7 @@ julia> String(x) # `string(x)` and `convert(String, x)` work as well
 ```
 
 Spaces and braces are special characters in Tcl and may have to be properly escaped in
-scripts, perhaps with the help of `TclTk.escape_string`. A better solution if the script is
+scripts, perhaps with the help of `TclTk.escape_string`. A better solution, if the script is
 a single Tcl command, is to call `TclTk.exec` which assumes that each argument (after an
 optional leading type) is a single Tcl token:
 
@@ -60,7 +60,7 @@ julia> x = TclTk.exec(String, "format", "%s/%s/data-%06d.bin", ENV["HOME"], "tmp
 
 ```
 
-### Widgets and images
+## Examples of widgets and images
 
 Below is a simple example to show an image in a Tk top-level window:
 
@@ -69,13 +69,13 @@ julia> using TclTk, TestImages
 
 julia> img = testimage("mandrill"); # read some image data
 
-julia> tk_start() # to make sure Tk package is loaded and the event loop is running
+julia> tk_start() # make sure Tk package is loaded and event loop is running
 Tcl interpreter (address: 0x0000000017dc33e0, threadid: 1)
 
 julia> top = TkToplevel(:background => "darkseagreen")
 TkToplevel(".top1")
 
-julia> TclTk.exec(Nothing, "wm", "title", top, "A Nice Image")
+julia> TclTk.exec(Nothing, :wm, :title, top, "A Nice Image")
 
 julia> lab = TkLabel(top, :image => TkPhoto(permutedims(img)), :cursor => :target)
 TkLabel(".top1.lab1")
@@ -92,7 +92,11 @@ The different stages are:
 
 - Create a top-level window `top` with a given background color.
 
-- Call  window manager `wm` command to set the title of the top-level window.
+- Call window manager `wm` command to set the title of the top-level window. When specifying
+  tokens or options in commands symbols and strings are equivalent, they can even be mixed.
+  Here or above, `:wm`, `:title`, or `:background` could have been specified as `"wm"`,
+  `"title"`, or `:background`, while ` "darkseagreen"` could have been specified as
+  `:darkseagreen`. The choice is purely a matter of style.
 
 - Create a widget, here a label `lab`, whose parent is `top` to display the image.
 
@@ -104,6 +108,17 @@ It may be noticed that, following Tk conventions, the width and height of an ima
 first and second dimensions. The images provided by the `TestImages` have a different
 convention and we call `permutedims(img)` to cope with that. Using the apostrophe, i.e.
 `img'`, would also do the job.
+
+
+A Tk widget instance can be called to perform widget actions such as (re-)configuring some
+options. For example, let us show the frame of the image with a *sunken* relief:
+
+``` julia-repl
+julia> lab(Nothing, :config,  :borderwidth => 5, :relief => :sunken)
+
+```
+
+The change should be immediate as Tk widgets apply their configuration dynamically.
 
 
 ## Features
