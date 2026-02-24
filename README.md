@@ -59,7 +59,7 @@ This package provides an optimized Julia interface to [Tcl/Tk](http://www.tcl-la
 * Julia functions may be used as Tk callbacks.
 
 
-# Alternatives
+## Alternatives
 
 There exists [another Julia Tk package](http://github.com/JuliaGraphics/Tk.jl) but with
 different design choices and some issues I wanted to avoid (for instance, X conflict with
@@ -67,7 +67,7 @@ PyPlot when using Gtk backend, Qt backend is OK). This is why I started this pro
 would be very happy if, eventually, the two projects merge.
 
 
-# Installation
+## Installation
 
 It is easy to install TclTk from the REPL of Julia's package manager<sup>[[pkg]](#pkg)</sup> as follows:
 
@@ -85,7 +85,6 @@ To update to the last version:
 
 ```julia
 pkg> update TclTk
-pkg> build TclTk
 ```
 
 and perhaps test again...
