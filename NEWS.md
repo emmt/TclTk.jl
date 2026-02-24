@@ -33,6 +33,9 @@ Versioning](https://semver.org).
 - Enumerations can be stored as integer Tcl objects and can be retrieved from integer Tcl
   objects.
 
+- `TkPhoto(arr)` returns a Tk image whose pixels are set according to the elements of the
+  2-dimensional array `arr`.
+
 ### Fixed
 
 - Indexation of lists of Tcl objects by a vector of Booleans.

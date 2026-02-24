@@ -116,6 +116,32 @@ function TkImage(interp::TclInterp, name::TclObj, pairs::Pair...)
     return TkImage(Val(Symbol(type)), interp, name)
 end
 
+"""
+    TkPhoto(host=TclInterp(), [name,] arr::AbstractMatrix) -> img
+
+Return an instance of `TkImage` in the Tcl interpreter specified by `host` (can be a Tk
+widget) and whose pixels are set with the values of `arr`. Optional `name` argument is to
+specify the image's name.
+
+"""
+TkPhoto(arr::AbstractMatrix{<:Colorant}) = TkPhoto(TclInterp(), arr)
+TkPhoto(w::TkWidget, arr::AbstractMatrix{<:Colorant}) = TkPhoto(w.interp, arr)
+function TkPhoto(interp::TclInterp, arr::AbstractMatrix{<:Colorant})
+    (width, height) = size(arr)
+    img = TkPhoto(interp, :width => width, :height => height)
+    img[:,:] = arr
+    return img
+end
+
+TkPhoto(name::Name, arr::AbstractMatrix{<:Colorant}) = TkPhoto(TclInterp(), name, arr)
+TkPhoto(w::TkWidget, name::Name, arr::AbstractMatrix{<:Colorant}) = TkPhoto(w.interp, name, arr)
+function TkPhoto(interp::TclInterp, name::Name, arr::AbstractMatrix{<:Colorant})
+    (width, height) = size(arr)
+    img = TkPhoto(interp, name, :width => width, :height => height)
+    img[:,:] = arr
+    return img
+end
+
 TclInterp(img::TkImage) = img.interp
 
 # For Tcl, an image is identified by its name.
