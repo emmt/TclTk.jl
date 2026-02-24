@@ -16,6 +16,15 @@ const φ = MathConstants.φ
     @test version.major == TCL_MAJOR_VERSION
     @test version.minor == TCL_MINOR_VERSION
 
+    # Path to Tcl library.
+    library = tcl_library()
+    @test isdir(library)
+
+    # Automatic names.
+    p = "some_prefix"
+    s = @inferred TclTk.Impl.auto_name(p)
+    @test startswith(s, p)
+
     # Convert to Boolean.
     @test @inferred(TclTk.bool(true)) === true
     @test @inferred(TclTk.bool(false)) === false
@@ -119,8 +128,9 @@ end
     nul = @inferred TclObj()
     @test pointer(nul) == C_NULL
     @test nul.refcnt < 0
+    @test nul.type == :null
 
-    # copy() yields same but distinct objects
+    # copy() yields same but distinct objects (except for a NULL Tcl object)
     n = x.refcnt
     y = @inferred copy(x)
     @test y isa TclObj
@@ -130,6 +140,10 @@ end
     @test y.ptr !== x.ptr
     @test x == y
     @test isequal(x, y)
+    z = @inferred copy(nul)
+    @test z isa TclObj
+    @test z.type == :null
+    @test z == nul
 
     # length() converts object into a list
     @test length(y) === 2 # there are 2 tokens in the script
@@ -224,6 +238,7 @@ end
     @test x.type == :double
     @test AbstractFloat(x) isa Cdouble
     @test Real(x) isa Cdouble
+    @test x === @inferred convert(TclObj, x)
 
     # Short/long conversion error messages.
     @test_throws ArgumentError convert(Int, TclObj("yes"))
