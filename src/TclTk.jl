@@ -28,10 +28,6 @@ else
     const Memory{T} = Vector{T}
     const BasicVector{T} = Vector{T}
 end
-if !isdefined(Base, :isnothing)
-    isnothing(::Any) = false
-    isnothing(::Nothing) = true
-end
 
 include("libtcl.jl")
 include("libtk.jl")
