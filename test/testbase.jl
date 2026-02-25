@@ -534,6 +534,7 @@ proc $trace {name1 name2 op} {
         else
             @inferred TclTk.exec(TclStatus, "array", "unset", name)
         end
+        @inferred TclTk.exec(TclStatus, "unset", "-nocomplain", name)
 
         # Symbolic variable name.
         key = name isa Tuple ? map(Symbol, name) : Symbol(name)
@@ -601,6 +602,32 @@ proc $trace {name1 name2 op} {
         interp[name] = unset
         @test !haskey(interp, name)
 
+        # Delete with `setvar!` and `unset`.
+        interp[name] = value
+        @test haskey(interp, name)
+        @test nothing === @inferred TclTk.setvar!(interp, name, unset)
+        @test !haskey(interp, name)
+
+        # Use a Tcl object as the variable name.
+        if !(name isa Tuple)
+            key = @inferred TclObj(name)
+            val = @inferred TclObj(value)
+            interp[key] = val
+            @test haskey(interp, key)
+            obj = @inferred interp[key]
+            @test obj isa TclObj
+            @test obj == val
+            obj = @inferred TclTk.getvar(interp, key)
+            @test obj isa TclObj
+            @test obj == val
+            interp[key] = unset
+            @test !haskey(interp, key)
+            @test nothing === @inferred TclTk.setvar!(interp, key, val)
+            @test haskey(interp, key)
+            @test val == @inferred interp[key]
+            @test nothing === @inferred TclTk.setvar!(interp, key, unset)
+            @test !haskey(interp, key)
+        end
     end
 
 end
