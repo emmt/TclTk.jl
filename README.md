@@ -9,16 +9,13 @@ This package provides an optimized Julia interface to [Tcl/Tk](http://www.tcl-la
 The [documentation is available on-line](https://JuliaInterop.github.io/TclTk.jl/) but a few
 examples are given below to whet your appetite.
 
-## Examples of Tcl scripts and commands
+## Tcl scripts and commands
 
-The traditional example:
+The traditional *"Hello world!"* example:
 
 ``` julia-repl
-julia> using TclTk
-
 julia> TclTk.eval(Nothing, "puts {Hello world!}")
 Hello world!
-
 ```
 
 which shows how to evaluate a Tcl script. Here, `Nothing` indicates that we are not
@@ -28,7 +25,6 @@ interest and has a known type:
 ``` julia-repl
 julia> TclTk.eval(Float64, "expr {4*atan(1)}")
 3.141592653589793
-
 ```
 
 If the leading type argument is omitted, a Tcl object is returned which can be reused or
@@ -40,7 +36,6 @@ TclObj("/tmp/data-000123.bin")
 
 julia> String(x) # `string(x)` and `convert(String, x)` work as well
 "/tmp/data-000123.bin"
-
 ```
 
 Spaces and braces are special characters in Tcl and may have to be properly escaped in
@@ -57,10 +52,9 @@ julia> x = TclTk.exec(Nothing, :puts, msg)
 
 julia> x = TclTk.exec(String, "format", "%s/%s/data-%06d.bin", ENV["HOME"], "tmp", 123)
 "/home/eric/tmp/data-000123.bin"
-
 ```
 
-## Examples of widgets and images
+## Widgets and images
 
 Below is a simple example to show an image in a Tk top-level window:
 
@@ -81,7 +75,6 @@ julia> lab = TkLabel(top, :image => TkPhoto(permutedims(img)), :cursor => :targe
 TkLabel(".top1.lab1")
 
 julia> TclTk.pack(Nothing, lab, :side => :top, :padx => 20, :pady => 30)
-
 ```
 
 The different stages are:
@@ -95,7 +88,7 @@ The different stages are:
 - Call window manager `wm` command to set the title of the top-level window. When specifying
   tokens or options in commands symbols and strings are equivalent, they can even be mixed.
   Here or above, `:wm`, `:title`, or `:background` could have been specified as `"wm"`,
-  `"title"`, or `:background`, while ` "darkseagreen"` could have been specified as
+  `"title"`, or `"background"`, while ` "darkseagreen"` could have been specified as
   `:darkseagreen`. The choice is purely a matter of style.
 
 - Create a widget, here a label `lab`, whose parent is `top` to display the image.
@@ -105,10 +98,9 @@ The different stages are:
   command).
 
 It may be noticed that, following Tk conventions, the width and height of an image are its
-first and second dimensions. The images provided by the `TestImages` have a different
-convention and we call `permutedims(img)` to cope with that. Using the apostrophe, i.e.
-`img'`, would also do the job.
-
+respective first and second dimensions. The images provided by the `TestImages` have a
+different convention and we call `permutedims(img)` to cope with that. Using the apostrophe,
+i.e. `img'`, would also do the job.
 
 A Tk widget instance can be called to perform widget actions such as (re-)configuring some
 options. For example, let us show the frame of the image with a *sunken* relief:
@@ -130,7 +122,7 @@ The change should be immediate as Tk widgets apply their configuration dynamical
 * Reading/writing a Tcl variable is as easy as:
 
   ```julia
-  interp = TclInterp()     # get shared interpreter of this thread
+  interp = TclInterp()    # get shared interpreter of this thread
   interp[var]             # read Tcl variable value
   interp[var] = val       # set Tcl variable value
   interp[var] = unset     # unset Tcl variable
