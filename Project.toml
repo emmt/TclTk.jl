@@ -16,6 +16,7 @@ TypeUtils = "c3b1956e-8857-4d84-9b79-890df85b1e67"
 UnsetIndex = "cc9ef2aa-5034-4aa9-a69b-c36694cce9f8"
 
 [compat]
+Aqua = "0.8"
 CEnum = "0.5.0"
 ColorTypes = "0.12.1"
 Colors = "0.13.1"
@@ -30,7 +31,8 @@ UnsetIndex = "0.1.2"
 julia = "1.6"
 
 [extras]
+Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["Test"]
+test = ["Aqua", "Test"]

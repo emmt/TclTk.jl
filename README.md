@@ -4,6 +4,7 @@
 [![License](http://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat)](LICENSE.md)
 [![Build Status](https://github.com/JuliaInterop/TclTk.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/JuliaInterop/TclTk.jl/actions/workflows/CI.yml?query=branch%3Amain)
 [![Coverage](https://codecov.io/gh/juliainterop/TclTk.jl/graph/badge.svg?token=MVOdKu5PQF)](https://codecov.io/gh/juliainterop/TclTk.jl)
+[![Aqua QA](https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg)](https://github.com/JuliaTesting/Aqua.jl)
 
 This package provides an optimized Julia interface to [Tcl/Tk](http://www.tcl-lang.org/).
 The [documentation is available on-line](https://JuliaInterop.github.io/TclTk.jl/) but a few

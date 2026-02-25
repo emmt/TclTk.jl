@@ -36,6 +36,8 @@ Versioning](https://semver.org).
 - `TkPhoto(arr)` returns a Tk image whose pixels are set according to the elements of the
   2-dimensional array `arr`.
 
+- Tests with [`Aqua.jl`](https://github.com/JuliaTesting/Aqua.jl).
+
 ### Fixed
 
 - Indexation of lists of Tcl objects by a vector of Booleans.
