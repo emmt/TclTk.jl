@@ -129,6 +129,8 @@ end
     @test pointer(nul) == C_NULL
     @test nul.refcnt < 0
     @test nul.type == :null
+    @test_throws Exception convert(String, nul)
+    @test tryparse(Int, nul) === nothing
 
     # copy() yields same but distinct objects (except for a NULL Tcl object)
     n = x.refcnt
@@ -179,6 +181,7 @@ end
     @testset "Print/string conversion of $v::$(typeof(v))" for v in values
         x = @inferred TclObj(v)
         @test "$x" == "$v"
+        @test sprint(print, x) == "$v"
         @test summary(x) == sprint(summary, x)
         @test startswith(sprint(show, x), "TclObj(")
         @test startswith(sprint(show, MIME"text/plain"(), x), "TclObj(")
@@ -233,37 +236,92 @@ end
     @test Real(x) isa Bool
     @test Integer(x) isa Bool
     @test_throws Exception AbstractFloat(x) # this is a restriction of Tcl: "true" -> Boolean is ok, but "true" -> other numeric type is not allowed
+    @test tryparse(Bool, x) === true
+    @test tryparse(Integer, x) === true
+    @test tryparse(Real, x) === true
+    @test tryparse(AbstractFloat, x) === nothing
     x = @inferred TclObj("1.25")
     @test Bool(x) === true # this also trigger conversion of internal type
     @test x.type == :double
     @test AbstractFloat(x) isa Cdouble
     @test Real(x) isa Cdouble
+    @test_throws Exception Integer(x)
     @test x === @inferred convert(TclObj, x)
+    @test tryparse(Bool, x) === true
+    @test tryparse(Integer, x) === nothing
+    @test tryparse(Real, x) === 1.25
+    @test tryparse(AbstractFloat, x) === 1.25
+    x = @inferred TclObj("-17.0") # a string that gives a float with no fractional part
+    @test Bool(x) === true # this also trigger conversion of internal type
+    @test x.type == :double
+    @test AbstractFloat(x) === -17.0
+    @test Real(x) === -17.0
+    @test_throws Exception Integer(x) # FIXME?
+    @test x === @inferred convert(TclObj, x)
+    @test tryparse(Bool, x) === true
+    @test tryparse(Integer, x) === nothing
+    @test tryparse(Real, x) === -17.0
+    @test tryparse(AbstractFloat, x) === -17.0
+    @test Base.unsafe_convert(Ptr{TclTk.Impl.Tcl_Obj}, x) === pointer(x)
+    c = 'w' # one byte UTF8 char
+    x = @inferred TclObj(c)
+    @test x.type == :string
+    @test x == string(c)
+    @test convert(Char, x) === c
+    c = 'λ' # multi-byte UTF8 char
+    x = @inferred TclObj(c)
+    @test x.type == :string
+    @test x == string(c)
+    @test convert(Char, x) === c
+    @test_throws Exception convert(Char, TclObj("ab"))
+    @test_throws Exception TclObj(1.0 - 2.3im)
+    @test_throws Exception convert(Complex{Float64}, TclObj(1.0))
 
     # Short/long conversion error messages.
     @test_throws ArgumentError convert(Int, TclObj("yes"))
     @test_throws ArgumentError convert(Int, TclObj("This long string is not an integer and should trigger an exception when attempting to convert it to an integer, you have been warned..."))
 
-    # Tuples.
+    # Symbols as strings.
     x = @inferred TclObj(:hello)
     @test x.type == :string
     @test x == :hello
     @test x == "hello"
-    t = (2, -3, x, 8.0)
+
+    # Tuples.
+    x = @inferred TclObj(:hello)
+    t = (2, -3, x, 8.25) # a short tuple
     @test x.refcnt == 1
     y = @inferred TclObj(t)
     @test x.refcnt == 2
     @test y.type == :list
     @test length(y) == length(t)
+    s = sprint(show, y)
+    @test s == "TclObj((2, -3, \"hello\", 8.25,))"
+    t = (2, -3, x, (0:255)...) # a long tuple
+    y = @inferred TclObj(t)
+    @test y.type == :list
+    @test length(y) == length(t)
+    s = sprint(show, y)
+    @test startswith(s, "TclObj((2, -3, \"hello\", 0, 1,")
+    @test endswith(s, ", 254, 255,))")
+    @test match(r"^TclObj\(\(2, -3, .*, \.\.\., .*, 254, 255,\)\)$", s) !== nothing
+
     # TODO @test y == t
 
     # Dense vector of bytes.
-    v = [0x00, 0x12, 0xff, 0x4a]
+    v = [0x00, 0x12, 0xff, 0x4a] # a short vector of bytes
     x = @inferred TclObj(v)
     @test x.type == :bytearray
     @test sprint(show, x) == "TclObj(UInt8[0x00, 0x12, 0xff, 0x4a])"
     @test v == @inferred convert(Vector{UInt8}, x)
     @test v == @inferred Vector{UInt8}(x)
+    v = collect(typemin(UInt8):typemax(UInt8)) # a long vector of bytes
+    x = @inferred TclObj(v)
+    @test x.type == :bytearray
+    s = sprint(show, x)
+    @test startswith(s, "TclObj(UInt8[0x00, 0x01, 0x02,")
+    @test endswith(s, ", 0xfe, 0xff])")
+    @test match(r"^TclObj\(UInt8\[0x00, 0x01, .*, \.\.\., .*, 0xfe, 0xff\]\)$", s) !== nothing
 
     # Colors.
     c = @inferred TclObj TclObj(colorant"pink")

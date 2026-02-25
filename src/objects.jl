@@ -484,12 +484,14 @@ unsafe_convert(::Type{String}, objptr::ObjPtr) = unsafe_string(objptr)
 new_object(sym::Symbol) = Tcl_NewStringObj(sym, -1)
 
 # Characters are equivalent to Tcl strings of unit length.
-new_object(str::AbstractChar) = new_object(string(char))
+new_object(c::AbstractChar) = new_object(string(c))
 function unsafe_convert(::Type{T}, objptr::ObjPtr) where {T<:AbstractChar}
-    # FIXME Optimize this to avoid allocating a Julia string.
-    val = unsafe_tryparse(String, objptr)
-    (isnothing(val) || length(val) != 1) && unsafe_convert_error(T, objptr)
-    return convert(T, first(val))
+    if !isnull(objptr)
+        # FIXME Optimize this to avoid allocating a Julia string.
+        val = unsafe_string(objptr)
+        length(val) == 1 && return convert(T, first(val))
+    end
+    unsafe_convert_error(T, objptr)
 end
 
 # Reals.
@@ -560,7 +562,7 @@ end
     io = IOBuffer()
     print(io, "cannot convert ")
     if isnull(objptr)
-        print(io, "NULL Tcl object")
+        print(io, "null Tcl object")
     else
         maxlen = 32
         print(io, "Tcl object \"")
