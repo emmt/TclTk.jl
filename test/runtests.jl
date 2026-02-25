@@ -1,2 +1,2 @@
-include("testbase.jl")
-include("aqua.jl")
+include("basetests.jl")
+include("aquatests.jl")
