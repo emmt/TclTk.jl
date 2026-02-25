@@ -77,7 +77,7 @@ function Base.String(obj::TclObj)
 end
 function Base.unsafe_string(objptr::ObjPtr)
     isnull(objptr) && unexpected_null(objptr)
-    # NOTE `unsafe_string` takes care of NULL `ptr`, so we do not check that.
+    # NOTE `unsafe_string` takes care of null `ptr`, so we do not check that.
     len = Ref{Tcl_Size}()
     return unsafe_string(Tcl_GetStringFromObj(objptr, len), len[])
 end
@@ -86,7 +86,7 @@ Base.convert(::Type{TclObj}, obj::TclObj) = obj
 Base.convert(::Type{String}, obj::TclObj) = String(obj)
 function Base.convert(::Type{T}, obj::TclObj) where {T}
     GC.@preserve obj begin
-        # NOTE `unsafe_convert` takes care of NULL object pointer.
+        # NOTE `unsafe_convert` takes care of null object pointer.
         return unsafe_convert(T, pointer(obj))
     end
 end
@@ -235,7 +235,7 @@ function show_value(io::IO, obj::TclObj; maxlen::Integer=50)
     elseif type == :boolean
         write(io, obj)
     elseif type == :null
-        print(io, "#= NULL =#")
+        print(io, "#= null =#")
     else
         show(io, string(obj))
     end
@@ -345,7 +345,7 @@ Attempt to convert a Tcl object `obj` to a Julia value of type `T`. Return a val
 """
 function Base.tryparse(::Type{T}, obj::TclObj) where {T}
     GC.@preserve obj begin
-        return unsafe_tryparse(T, pointer(obj)) # NOTE pointer may be NULL
+        return unsafe_tryparse(T, pointer(obj)) # NOTE pointer may be null
     end
 end
 

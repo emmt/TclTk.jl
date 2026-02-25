@@ -122,7 +122,7 @@ null(ptr::Union{Ptr,Cstring}) = null(typeof(ptr))
 null(::Type{Ptr{T}}) where {T} = Ptr{T}(0)
 null(::Type{Cstring}) = Cstring(C_NULL)
 
-@noinline unexpected_null(str::AbstractString) = assertion_error("unexpected NULL ", str)
+@noinline unexpected_null(str::AbstractString) = assertion_error("unexpected null ", str)
 @noinline unexpected_null(x::Any) = unexpected_null(typeof(x))
 @noinline unexpected_null(::Type{<:Union{TclInterp,InterpPtr}}) =
     unexpected_null("Tcl interpreter")
@@ -302,7 +302,7 @@ the last result in interpreter `interp`.
     GC.@preserve interp begin
         interp_ptr = null_or_checked_pointer(interp)
         if isnull(interp_ptr)
-            mesg = "no error message (NULL interpreter)"
+            mesg = "no error message (null interpreter)"
         else
             mesg = unsafe_string(Tcl_GetStringResult(interp_ptr))
             isempty(mesg) && (mesg = "no error message (empty interpreter result)")

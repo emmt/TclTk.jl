@@ -131,6 +131,7 @@ end
     @test nul.type == :null
     @test_throws Exception convert(String, nul)
     @test tryparse(Int, nul) === nothing
+    @test sprint(show, nul) == "TclObj(#= null =#)"
 
     # copy() yields same but distinct objects (except for a NULL Tcl object)
     n = x.refcnt
