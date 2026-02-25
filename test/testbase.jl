@@ -248,6 +248,7 @@ end
     @test Real(x) isa Cdouble
     @test_throws Exception Integer(x)
     @test x === @inferred convert(TclObj, x)
+    @test x === @inferred convert(Any, x)
     @test tryparse(Bool, x) === true
     @test tryparse(Integer, x) === nothing
     @test tryparse(Real, x) === 1.25

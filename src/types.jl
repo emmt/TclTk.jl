@@ -94,6 +94,9 @@ const FastString = Union{String,SubString{String},Symbol}
 # `sprint`.
 const FasterString = Union{#=Char,=# String, SubString{String}, Symbol}
 
+# Known enumeration types.
+const Enumeration{T} = Union{Enum{T}, CEnum.Cenum{T}}
+
 #-------------------------------------------------------------------------------------------
 # Tk widgets and other Tk objects.
 

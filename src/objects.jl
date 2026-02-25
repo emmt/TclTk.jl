@@ -84,7 +84,13 @@ end
 
 Base.convert(::Type{TclObj}, obj::TclObj) = obj
 Base.convert(::Type{String}, obj::TclObj) = String(obj)
-function Base.convert(::Type{T}, obj::TclObj) where {T}
+function Base.convert(::Type{T}, obj::TclObj) where {T<:Union{AbstractArray,
+                                                              AbstractChar,
+                                                              AbstractString,
+                                                              Colorant,
+                                                              Enumeration,
+                                                              Real,
+                                                              Symbol}}
     GC.@preserve obj begin
         # NOTE `unsafe_convert` takes care of null object pointer.
         return unsafe_convert(T, pointer(obj))
@@ -511,7 +517,6 @@ new_object(val::Integer) = Tcl_NewWideIntObj(val)
 new_object(val::Real) = Tcl_NewDoubleObj(val)
 
 # Enumeration are like integers.
-const Enumeration{T} = Union{Enum{T}, CEnum.Cenum{T}}
 new_object(val::Enumeration{T}) where {T} = new_object(Integer(val))
 unsafe_convert(::Type{T}, objptr::ObjPtr) where {S,T<:Enumeration{S}} =
     T(unsafe_convert(S, objptr))::T
