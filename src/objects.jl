@@ -87,7 +87,7 @@ Base.convert(::Type{String}, obj::TclObj) = String(obj)
 function Base.convert(::Type{T}, obj::TclObj) where {T}
     GC.@preserve obj begin
         # NOTE `unsafe_convert` takes care of NULL object pointer.
-        return unsafe_convert(T, pointer(obj))::T
+        return unsafe_convert(T, pointer(obj))
     end
 end
 
@@ -385,12 +385,12 @@ end
 
 function unsafe_tryparse(::Type{T}, objptr::ObjPtr) where {T<:Integer}
     val = unsafe_tryparse(WideInt, objptr)
-    return isnothing(val) || !(typemin(T) ≤ val ≤ typemax(T)) ? nothing : convert(T, val)::T
+    return val isa WideInt && typemin(T) ≤ val ≤ typemax(T) ? convert(T, val)::T : nothing
 end
 
 function unsafe_tryparse(::Type{T}, objptr::ObjPtr) where {T<:Union{AbstractFloat,Rational}}
     val = unsafe_tryparse(Cdouble, objptr)
-    return isnothing(val) ? nothing : convert(T, val)::T
+    return val isa Cdouble ? convert(T, val)::T : nothing
 end
 
 function unsafe_tryparse(::Type{Integer}, objptr::ObjPtr)
@@ -498,7 +498,7 @@ end
 
 function unsafe_convert(::Type{T}, objptr::ObjPtr) where {T<:Real}
     val = unsafe_tryparse(T, objptr)
-    isnothing(val) && unsafe_convert_error(T, objptr)
+    val isa T || unsafe_convert_error(T, objptr)
     return val
 end
 

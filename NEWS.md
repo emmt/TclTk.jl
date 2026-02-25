@@ -49,6 +49,9 @@ Versioning](https://semver.org).
 
 - Some bug fixed with Tk images.
 
+- Type inference fixed for `TclTk.Impl.unsafe_convert(T, objptr)` which yields a value of
+  type `T` or throws.
+
 ## Version 0.2.0 (2026-02-17)
 
 ### Breaking changes
