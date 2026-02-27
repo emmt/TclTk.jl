@@ -708,4 +708,69 @@ end
 
 end
 
+const callback_counter = Ref{Int}(0)
+
+function count_callback(interp::TclInterp, args::TclObj)
+    global callback_counter
+    callback_counter[] += 1
+end
+
+callback_arguments = nothing
+function simple_callback(interp::TclInterp, args::TclObj)
+    global callback_arguments
+    callback_arguments = args
+    return TCL_OK, length(args)
+end
+
+@testset "Callbacks" begin
+    private = @inferred TclInterp(:private)
+
+    f = @inferred TclTk.Callback(count_callback, private)
+    @test f.interp === private
+    proc = f.fullname
+    @test proc isa String
+    @test startswith(proc, "::jl_func_")
+    s = sprint(show, f)
+    @test match(r"\bCallback:.*::jl_func_.*", s) !== nothing
+    callback_counter[] = 0
+    @test 1 == private(Int, proc)
+    @test 1 == callback_counter[]
+    @test 2 == private(Int, proc, pi)
+    @test 2 == callback_counter[]
+    @test 3 == private(Int, proc)
+    @test 3 == callback_counter[]
+    @test 4 == private(Int, proc, "a", "b", (1, 2))
+    @test 4 == callback_counter[]
+    @test TclTk.deletecommand(f) == true
+    @test TclTk.deletecommand(private, proc) == false
+
+    name = "jl_simple_callback"
+    f = @inferred TclTk.Callback(simple_callback, private, name)
+    @test f.interp === private
+    proc = f.fullname
+    @test proc isa String
+    @test proc == "::"*name
+    # Call simple callback with no arguments.
+    @test 1 == private(Int, proc)
+    @test callback_arguments isa TclObj
+    @test callback_arguments.type == :list
+    @test length(callback_arguments) == 1
+    @test callback_arguments[1] == proc
+    # Call simple callback with 3 arguments.
+    @test 4 == private(Int, proc, "hello", 4.125, true)
+    @test callback_arguments isa TclObj
+    @test callback_arguments.type == :list
+    @test length(callback_arguments) == 4
+    @test callback_arguments[1] == proc
+    @test callback_arguments[2] == "hello"
+    @test callback_arguments[3] == TclObj(4.125)
+    @test callback_arguments[4] == TclObj(true)
+    @test TclTk.deletecommand(private, proc) == true
+    @test TclTk.deletecommand(private, proc) == false
+
+    private = 0
+    GC.gc()
+    sleep(0.01)
+end
+
 end # module
