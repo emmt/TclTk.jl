@@ -561,7 +561,7 @@ end
 @noinline new_object(val::T) where {T} =
     argument_error("cannot convert a Julia value of type `$T` to a Tcl object")
 @noinline unsafe_convert(::Type{T}, objptr::ObjPtr) where {T} =
-    unsafe_convert_error(T, opjptr)
+    unsafe_convert_error(T, objptr)
 
 @noinline function unsafe_convert_error(::Type{T}, objptr::ObjPtr) where {T}
     io = IOBuffer()
