@@ -49,11 +49,17 @@ end
 
 Base.IteratorSize(::Type{TclObj}) = Base.HasShape{1}()
 function Base.length(list::TclObj)
-    len = Ref{Tcl_Size}()
-    status = Tcl_ListObjLength(null(InterpPtr), list, len)
-    status == TCL_OK || invalid_list()
-    return Int(len[])::Int
+    GC.@preserve list begin
+        objptr = pointer(list)
+        isnull(objptr) && return 0
+        len = Ref{Tcl_Size}()
+        Tcl_ListObjLength(null(InterpPtr), objptr, len) == TCL_OK || invalid_list()
+        return Int(len[])::Int
+    end
 end
+
+Base.isempty(list::TclObj) = length(list) < 𝟙
+
 Base.size(list::TclObj) = (length(list),)
 
 # When iterated or indexed, a Tcl object yield Tcl objects.

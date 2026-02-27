@@ -132,6 +132,7 @@ end
     @test_throws Exception convert(String, nul)
     @test tryparse(Int, nul) === nothing
     @test sprint(show, nul) == "TclObj(#= null =#)"
+    @test isempty(nul)
 
     # copy() yields same but distinct objects (except for a NULL Tcl object)
     n = x.refcnt
@@ -407,6 +408,7 @@ end
     @test x isa TclObj
     @test x.type == :list
     @test length(x) == 3
+    @test !isempty(x)
     @test y isa TclObj
     @test length(y) == 5
     @test x == TclTk.list(t...)
