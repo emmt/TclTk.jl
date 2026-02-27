@@ -299,6 +299,18 @@ end
     @test length(y) == length(t)
     s = sprint(show, y)
     @test s == "TclObj((2, -3, \"hello\", 8.25,))"
+    let i = 1, t_i = t[i], T = typeof(t_i) # 1st item is an `Int`
+        @test convert(T, y[i]) == t_i
+        @test y[i => T] === t_i
+        @test y[i, T] === t_i
+        @test y[T, i] === t_i
+    end
+    let i = 4, t_i = t[i], T = typeof(t_i) # 4th item is a `Float64`
+        @test convert(T, y[i]) == t_i
+        @test y[i => T] === t_i
+        @test y[i, T] === t_i
+        @test y[T, i] === t_i
+    end
     t = (2, -3, x, (0:255)...) # a long tuple
     y = @inferred TclObj(t)
     @test y.type == :list
@@ -660,8 +672,8 @@ end
     @test wc[4][2] == TclObj(wa[4][2])
 
     # Out of range index yield "missing".
-    @test missing === @inferred Missing wb[0]
-    @test missing === @inferred Missing wb[length(wb)+1]
+    @test missing === wb[0]
+    @test missing === wb[length(wb)+1]
 
     # Set index in list.
     wb[1] = 3
