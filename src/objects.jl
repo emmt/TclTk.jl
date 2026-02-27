@@ -561,10 +561,15 @@ function unsafe_convert(::Type{T}, objptr::ObjPtr) where {E,T<:BasicVector{E}}
 end
 
 # Convert to fully specified Tuple.
-function unsafe_convert(::Type{T}, objptr::ObjPtr) where {N,T<:NTuple{N,Any}}
-    objc, objv = unsafe_get_list_elements(objptr)
-    (isnull(objptr) || objc != N) && unsafe_convert_error(T, objptr)
-    return ntuple(i -> unsafe_convert(fieldtype(T, i), unsafe_load(objv, i)), Val(N))
+@generated function unsafe_convert(::Type{T}, objptr::ObjPtr) where {N,T<:NTuple{N,Any}}
+    types = fieldtypes(T)
+    expr = Expr(:tuple, [:(unsafe_convert($(types[i]),
+                                          unsafe_load(objv, $i))) for i in 1:N]...,)
+    quote
+        objc, objv = unsafe_get_list_elements(objptr)
+        (isnull(objptr) || objc != N) && unsafe_convert_error(T, objptr)
+        return $expr
+    end
 end
 
 # Generic and error catcher methods for other Julia types.
