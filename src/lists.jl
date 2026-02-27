@@ -73,11 +73,13 @@ Base.last(list::TclObj) = list[lastindex(list)]
 
 function Base.getindex(list::TclObj, index::Integer)
     if index ≥ 𝟙
-        objref = Ref{ObjPtr}()
-        status = Tcl_ListObjIndex(null(InterpPtr), list, index - 𝟙, objref)
-        status == TCL_OK || invalid_list()
-        objptr = objref[]
-        isnull(objptr) || return _TclObj(objptr)
+        GC.@preserve list begin
+            objref = Ref{ObjPtr}()
+            status = Tcl_ListObjIndex(null(InterpPtr), list, index - 𝟙, objref)
+            status == TCL_OK || invalid_list()
+            objptr = objref[]
+            isnull(objptr) || return _TclObj(objptr)
+        end
     end
     return missing
 end
