@@ -7,8 +7,9 @@
 [![Aqua QA](https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg)](https://github.com/JuliaTesting/Aqua.jl)
 
 This package provides an optimized Julia interface to [Tcl/Tk](http://www.tcl-lang.org/).
-The [documentation is available on-line](https://JuliaInterop.github.io/TclTk.jl/) but a few
-examples are given below to whet your appetite.
+The [documentation is available on-line](https://JuliaInterop.github.io/TclTk.jl/) and
+extended examples are given in the [examples](./examples) directory. To whet your appetite,
+a few examples are given below.
 
 ## Tcl scripts and commands
 
