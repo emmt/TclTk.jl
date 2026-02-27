@@ -43,6 +43,8 @@ Versioning](https://semver.org).
   two advantages: type-stability (the type of the result is inferable) and, compared to
   `convert(T, list[i])`, speed (this avoids allocating a mutable `TclObj` instance).
 
+- `convert` can convert a Tcl list object to a n-tuple.
+
 ### Fixed
 
 - Indexation of lists of Tcl objects by a vector of Booleans.

@@ -73,7 +73,7 @@ Base.last(list::TclObj) = list[lastindex(list)]
 
 function Base.getindex(list::TclObj, index::Integer)
     GC.@preserve list begin
-        objptr = unsafe_get_index(list, index)
+        objptr = unsafe_getindex(list, index)
         return isnull(objptr) ? missing : _TclObj(objptr)
     end
 end
@@ -86,12 +86,12 @@ Base.getindex(list::TclObj, ::Type{T}, index::Integer) where {T} =
 
 function Base.getindex(list::TclObj, index::Integer, ::Type{T}) where {T}
     GC.@preserve list begin
-        objptr = unsafe_get_index(list, index)
+        objptr = unsafe_getindex(list, index)
         return isnull(objptr) ? convert(T, missing) : unsafe_convert(T, objptr)
     end
 end
 
-function unsafe_get_index(list::Union{TclObj,ObjPtr}, index::Integer)
+function unsafe_getindex(list::Union{TclObj,ObjPtr}, index::Integer)
     objref = Ref{ObjPtr}(0)
     if index ≥ 𝟙
         status = Tcl_ListObjIndex(null(InterpPtr), list, index - 𝟙, objref)

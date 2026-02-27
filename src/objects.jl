@@ -90,6 +90,7 @@ function Base.convert(::Type{T}, obj::TclObj) where {T<:Union{AbstractArray,
                                                               Colorant,
                                                               Enumeration,
                                                               Real,
+                                                              Tuple,
                                                               Symbol}}
     GC.@preserve obj begin
         # NOTE `unsafe_convert` takes care of null object pointer.
@@ -557,6 +558,13 @@ function unsafe_convert(::Type{T}, objptr::ObjPtr) where {E,T<:BasicVector{E}}
         vec[i] = unsafe_convert(E, unsafe_load(objv, i))
     end
     return vec
+end
+
+# Convert to fully specified Tuple.
+function unsafe_convert(::Type{T}, objptr::ObjPtr) where {N,T<:NTuple{N,Any}}
+    objc, objv = unsafe_get_list_elements(objptr)
+    (isnull(objptr) || objc != N) && unsafe_convert_error(T, objptr)
+    return ntuple(i -> unsafe_convert(fieldtype(T, i), unsafe_load(objv, i)), Val(N))
 end
 
 # Generic and error catcher methods for other Julia types.

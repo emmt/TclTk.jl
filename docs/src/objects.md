@@ -96,11 +96,11 @@ julia> convert(String, x)
 
 ```
 
-Conversion of a Tcl object to a vector is also supported. For basic vector types (`Vector`
-or `Memory`), conversion by the constructor is also implemented. If the element type is
-`UInt8`, a vector of bytes representing the raw content of the Tcl object is returned. For
-other element types, the Tcl object is treated as a list whose elements are converted to the
-element type. For example:
+Conversion of a Tcl object to a n-tuple or to a vector is also supported. For basic vector
+types (`Vector` or `Memory`), conversion by the constructor is also implemented. If the
+element type is `UInt8`, a vector of bytes representing the raw content of the Tcl object is
+returned. For other element types, the Tcl object is treated as a list whose elements are
+converted to the element type. For example:
 
 ```julia-repl
 julia> t = (false, true, -1, 12)
@@ -108,6 +108,12 @@ julia> t = (false, true, -1, 12)
 
 julia> x = TclObj(t)
 TclObj((0, 1, -1, 12,))
+
+julia> convert(NTuple{4,Integer}, x)
+(0, 1, -1, 12)
+
+julia> convert(Tuple{Bool,Bool,Int,Int}, x)
+(false, true, -1, 12)
 
 julia> Vector{Int16}(x)
 4-element Vector{Int16}:

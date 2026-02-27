@@ -311,6 +311,7 @@ end
         @test y[i, T] === t_i
         @test y[T, i] === t_i
     end
+    @test convert(typeof(t), y) == t
     t = (2, -3, x, (0:255)...) # a long tuple
     y = @inferred TclObj(t)
     @test y.type == :list
