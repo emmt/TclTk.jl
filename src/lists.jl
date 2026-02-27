@@ -72,16 +72,32 @@ Base.first(list::TclObj) = list[firstindex(list)]
 Base.last(list::TclObj) = list[lastindex(list)]
 
 function Base.getindex(list::TclObj, index::Integer)
-    if index ≥ 𝟙
-        GC.@preserve list begin
-            objref = Ref{ObjPtr}()
-            status = Tcl_ListObjIndex(null(InterpPtr), list, index - 𝟙, objref)
-            status == TCL_OK || invalid_list()
-            objptr = objref[]
-            isnull(objptr) || return _TclObj(objptr)
-        end
+    GC.@preserve list begin
+        objptr = unsafe_get_index(list, index)
+        return isnull(objptr) ? missing : _TclObj(objptr)
     end
-    return missing
+end
+
+@inline Base.getindex(list::TclObj, pair::Pair{<:Integer,<:DataType}) =
+    getindex(list, pair...)
+
+Base.getindex(list::TclObj, ::Type{T}, index::Integer) where {T} =
+    getindex(list, index, T)
+
+function Base.getindex(list::TclObj, index::Integer, ::Type{T}) where {T}
+    GC.@preserve list begin
+        objptr = unsafe_get_index(list, index)
+        return isnull(objptr) ? convert(T, missing) : unsafe_convert(T, objptr)
+    end
+end
+
+function unsafe_get_index(list::Union{TclObj,ObjPtr}, index::Integer)
+    objref = Ref{ObjPtr}(0)
+    if index ≥ 𝟙
+        status = Tcl_ListObjIndex(null(InterpPtr), list, index - 𝟙, objref)
+        status == TCL_OK || invalid_list()
+    end
+    return objref[]
 end
 
 function Base.getindex(list::TclObj, indices::AbstractVector{<:Integer})

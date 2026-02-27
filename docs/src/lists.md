@@ -45,6 +45,18 @@ TclObj(("b c", "1", "3.141592653589793", -1,))
 
 ```
 
+Indexing a Tcl list object with a scalar index can also take a type `T` to convert the
+retrieved item to that type:
+
+```julia
+list[i, T]   # yields i-th item of list converted to type T
+list[T, i]   # idem
+list[i => T] # idem
+```
+
+This has two advantages: type-stability (the type of the result is inferable) and, compared
+to `convert(T, list[i])`, speed (this avoids allocating a mutable `TclObj` instance).
+
 To follow Tcl behavior, out of range indices yield `missing` when indexing a list with a
 scalar index and are simply ignored when indexing a list with an index range or a vector of
 indices:

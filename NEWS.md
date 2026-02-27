@@ -38,6 +38,11 @@ Versioning](https://semver.org).
 
 - Tests with [`Aqua.jl`](https://github.com/JuliaTesting/Aqua.jl).
 
+- Indexing a Tcl list object can take a type `T` to convert the result to that type. This is
+  done by the following statements: `list[i,T]`, `list[T,i]`, or `list[i => T]`. There are
+  two advantages: type-stability (the type of the result is inferable) and, compared to
+  `convert(T, list[i])`, speed (this avoids allocating a mutable `TclObj` instance).
+
 ### Fixed
 
 - Indexation of lists of Tcl objects by a vector of Booleans.
