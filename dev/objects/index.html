@@ -28,11 +28,17 @@ julia&gt; string(x)
 
 julia&gt; convert(String, x)
 &quot;1.234&quot;
-</code></pre><p>Conversion of a Tcl object to a vector is also supported. For basic vector types (<code>Vector</code> or <code>Memory</code>), conversion by the constructor is also implemented. If the element type is <code>UInt8</code>, a vector of bytes representing the raw content of the Tcl object is returned. For other element types, the Tcl object is treated as a list whose elements are converted to the element type. For example:</p><pre><code class="language-julia-repl hljs">julia&gt; t = (false, true, -1, 12)
+</code></pre><p>Conversion of a Tcl object to a n-tuple or to a vector is also supported. For basic vector types (<code>Vector</code> or <code>Memory</code>), conversion by the constructor is also implemented. If the element type is <code>UInt8</code>, a vector of bytes representing the raw content of the Tcl object is returned. For other element types, the Tcl object is treated as a list whose elements are converted to the element type. For example:</p><pre><code class="language-julia-repl hljs">julia&gt; t = (false, true, -1, 12)
 (false, true, -1, 12)
 
 julia&gt; x = TclObj(t)
 TclObj((0, 1, -1, 12,))
+
+julia&gt; convert(NTuple{4,Integer}, x)
+(0, 1, -1, 12)
+
+julia&gt; convert(Tuple{Bool,Bool,Int,Int}, x)
+(false, true, -1, 12)
 
 julia&gt; Vector{Int16}(x)
 4-element Vector{Int16}:
@@ -131,4 +137,4 @@ true
 
 julia&gt; c == &quot;GREEN&quot;
 false
-</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../">« Introduction</a><a class="docs-footer-nextpage" href="../lists/">Lists of Tcl objects »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Friday 27 February 2026 11:58">Friday 27 February 2026</span>. Using Julia version 1.12.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../">« Introduction</a><a class="docs-footer-nextpage" href="../lists/">Lists of Tcl objects »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Friday 27 February 2026 14:19">Friday 27 February 2026</span>. Using Julia version 1.12.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
