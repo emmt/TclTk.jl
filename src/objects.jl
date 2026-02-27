@@ -309,8 +309,8 @@ function set_pointer!(obj::TclObj, newptr::ObjPtr)
     oldptr = getfield(obj, :ptr)
     if newptr != oldptr
         isnull(newptr) || Tcl_IncrRefCount(newptr)
-        isnull(oldptr) || Tcl_DecrRefCount(oldptr)
         setfield!(obj, :ptr, newptr)
+        isnull(oldptr) || Tcl_DecrRefCount(oldptr)
     end
     nothing
 end
