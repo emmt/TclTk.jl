@@ -369,7 +369,7 @@ function unsafe_append_list end
 for (jl, (c, mesg)) in (:unsafe_append_element => (:(Tcl_ListObjAppendElement),
                                                    "failed to append item to Tcl list"),
                         :unsafe_append_list => (:(Tcl_ListObjAppendList),
-                                                "failed to concatenate list to Tcl list"),
+                                                "failed to concatenate Tcl lists"),
                         )
     @eval begin
         $jl(list::ObjPtr, arg) = $jl(null(InterpPtr), list, arg)
@@ -387,7 +387,7 @@ for (jl, (c, mesg)) in (:unsafe_append_element => (:(Tcl_ListObjAppendElement),
                 # does not exists.
                 tcl_error("appending a callback is not yet implemented")
             else
-                Tcl_IncrRefCount(new_object(arg))
+                Tcl_IncrRefCount(unsafe_objptr(arg))
             end
             status = $c(interp, list, objptr)
             arg isa WrappedObject || Tcl_DecrRefCount(objptr)

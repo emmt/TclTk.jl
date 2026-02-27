@@ -333,14 +333,16 @@ Optional `descr` provides a description of the argument `arg` for error messages
 
 """
 unsafe_objptr(obj::TclObj) = checked_pointer(obj)
-function unsafe_objptr(obj::TclObj, descr::AbstractString)
-    ptr = pointer(obj)
-    isnull(ptr) && unexpected_null(descr)
-    return ptr
-end
+unsafe_objptr(obj::TclObj, descr::AbstractString) = unsafe_objptr(pointer(obj), descr)
 
 unsafe_objptr(val::Any) = new_object(val)
 unsafe_objptr(val::Any, descr::AbstractString) = unsafe_objptr(val)
+
+unsafe_objptr(objptr::ObjPtr) = unsafe_objptr(objptr, "Tcl object pointer")
+function unsafe_objptr(objptr::ObjPtr, descr::AbstractString)
+    isnull(objptr) && unexpected_null(descr)
+    return objptr
+end
 
 """
     tryparse(T, obj::TclObj)::Union{T,Nothing}
