@@ -46,7 +46,7 @@ optional leading type) is a single Tcl token:
 
 ``` julia-repl
 julia> msg = "- - } Hello world! { - -"
-"- -} Hello world! { - -"
+"- - } Hello world! { - -"
 
 julia> x = TclTk.exec(Nothing, :puts, msg)
 - - } Hello world! { - -
@@ -67,7 +67,7 @@ julia> img = testimage("mandrill"); # read some image data
 julia> tk_start() # make sure Tk package is loaded and event loop is running
 Tcl interpreter (address: 0x0000000017dc33e0, threadid: 1)
 
-julia> top = TkToplevel(:background => "darkseagreen")
+julia> top = TkToplevel(:background => "#282c34")
 TkToplevel(".top1")
 
 julia> TclTk.exec(Nothing, :wm, :title, top, "A Nice Image")
