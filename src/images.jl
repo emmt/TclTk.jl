@@ -362,9 +362,10 @@ end
 function photo_resize!(img::TkPhoto, width::Integer, height::Integer)
     width ≥ 𝟘 || argument_error("width must be nonnegative, got $width")
     height ≥ 𝟘 || argument_error("height must be nonnegative, got $height")
-    GC.@preserve interp name begin
-        handle = unsafe_find_photo(interp, name)
-        old_width, old_height = unsafe_photo_get_size(handle)
+    GC.@preserve img begin
+        interp = checked_pointer(img.interp)
+        handle = unsafe_find_photo(interp, img.name)
+        old_width, old_height = unsafe_get_photo_size(handle)
         if width != old_width || height != old_height
             # Not clear (from Tcl/Tk doc.) why the following should be done and I had to
             # dive into the source code TkImgPhoto.c to figure out how to actually resize
