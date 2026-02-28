@@ -759,6 +759,17 @@ end
     @test 3 == callback_counter[]
     @test 4 == private(Int, proc, "a", "b", (1, 2))
     @test 4 == callback_counter[]
+
+    # Rename the callback in the same namespace and then in another namespace.
+    newname = "jl_some_other_func_name"
+    f.interp(Nothing, :rename, f.name, newname)
+    @test f.name == "::"*newname
+    ns = "another::namespace"
+    f.interp.eval(Nothing, "namespace eval ::$ns {}")
+    f.interp(Nothing, :rename, f.name, ns*"::"*newname)
+    @test f.name == "::"*ns*"::"*newname
+
+    # Delete command.
     @test TclTk.deletecommand(f) == true
     @test TclTk.deletecommand(private, proc) == false
 
