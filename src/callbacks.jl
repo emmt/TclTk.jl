@@ -62,12 +62,12 @@ Callback(func::Function, interp::TclInterp, name::Name = callback_default_name()
 
 callback_default_name() = auto_name("jl_func_")
 
-Base.propertynames(f::Callback) = (:interp, :token, :func, :fullname)
+Base.propertynames(f::Callback) = (:interp, :token, :func, :name)
 function Base.getproperty(f::Callback, key::Symbol)
     key === :interp ? getfield(f, :interp) :
     key === :token ? getfield(f, :token) :
     key === :func ? getfield(f, :func) :
-    key === :fullname ? get_fullname(f) :
+    key === :name ? get_name(f) :
     throw(KeyError(key))
 end
 @noinline function Base.setproperty!(f::Callback, key::Symbol, val)
@@ -75,19 +75,19 @@ end
     error("attempt to set read-only field `$key`")
 end
 
-function get_fullname(f::Callback)
+function get_name(f::Callback)
     GC.@preserve f begin
         objptr = Tcl_NewStringObj("", 0)
         Tcl_GetCommandFullName(f.interp, f.token, Tcl_IncrRefCount(objptr))
-        fullname = unsafe_string(objptr)
+        name = unsafe_string(objptr)
         Tcl_DecrRefCount(objptr)
-        return fullname
+        return name
     end
 end
 
 Base.show(io::IO, ::MIME"text/plain", f::Callback) = show(io, f)
 Base.show(io::IO, f::Callback) =
-    print(io, "TclTk.Callback: `", nameof(f.func), "` (in Julia) => \"", f.fullname, "\" (in Tcl)")
+    print(io, "TclTk.Callback: `", nameof(f.func), "` (in Julia) => \"", f.name, "\" (in Tcl)")
 
 const release_object_proc = Ref{Ptr{Cvoid}}() # set by __init__
 const eval_command_proc = Ref{Ptr{Cvoid}}() # set by __init__

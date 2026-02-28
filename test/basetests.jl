@@ -745,7 +745,7 @@ end
 
     f = @inferred TclTk.Callback(count_callback, private)
     @test f.interp === private
-    proc = f.fullname
+    proc = f.name
     @test proc isa String
     @test startswith(proc, "::jl_func_")
     s = sprint(show, f)
@@ -765,7 +765,7 @@ end
     name = "jl_simple_callback"
     f = @inferred TclTk.Callback(simple_callback, private, name)
     @test f.interp === private
-    proc = f.fullname
+    proc = f.name
     @test proc isa String
     @test proc == "::"*name
     # Call simple callback with no arguments.
