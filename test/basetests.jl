@@ -799,12 +799,14 @@ end
     @test A.interp === TclInterp()
     A.interp.eval(Nothing, "unset -nocomplain $(A.name)")
     @test TclTk.exists(A) == false
+    @test isassigned(A) == false
     s = sprint(show, MIME"text/plain"(), A)
     @test startswith(s, "TclTk.Variable{")
     @test endswith(s, ", value: #undef)")
     A[] = 0
     @test @inferred(A[]) === 0
     @test TclTk.exists(A) == true
+    @test isassigned(A) == true
     s = sprint(show, MIME"text/plain"(), A)
     @test startswith(s, "TclTk.Variable{")
     @test endswith(s, ", value: 0)")
@@ -826,14 +828,32 @@ end
     let private = @inferred TclInterp(:private)
         C = @inferred TclTk.Variable{eltype(A)}(private, A.name)
         A[] = 1
-        @test TclTk.exists(C) == false
+        @test isassigned(C) == false
         C[] = -1
         @test A[] === +1
         @test C[] === -1
-        @test TclTk.exists(C) == true
+        @test isassigned(C) == true
         @test @inferred(private(eltype(C), :set, C.name)) === -1
     end
     GC.gc() # to finalize private interpreter
+
+    # Test various ways to unset a variable.
+    delete!(A)
+    @test !isassigned(A)
+    delete!(A) # delete more than once is allowed
+    @test !isassigned(A)
+    A[] = 0
+    @test isassigned(A)
+    TclTk.unsetvar!(A)
+    @test !isassigned(A)
+    @test_throws Exception TclTk.unsetvar!(A) # unset more than once is not allowed
+    A[] = 0
+    @test isassigned(A)
+    A[] = unset
+    @test !isassigned(A)
+    A[] = 0
+    @test isassigned(A)
+
 end
 
 end # module

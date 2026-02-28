@@ -7,15 +7,18 @@ Build an object `A` which is linked to the variable named `name` in Tcl interpre
 
 Type parameter `T` is the assumed Julia type of the value that can be stored in this
 variable. If not specified, `TclObj` is assumed for `T`, hence the variable may store any
-type of Tcl object. Call `eltype(A)` to retrieve the type of `A`. If variable type parameter
-is `T = TclObj`, expression `A[S]`, with `S` a type, can also be used to convert the value
-of the variable to type `S`.
+type of Tcl object. If variable type parameter is `T = TclObj`, expression `A[S]`, with `S`
+a type, can also be used to convert the value of the variable to type `S`.
 
 Currently, `name` must refer to a simple Tcl variable or to a single element of a Tcl array,
 not to a Tcl array name.
 
 Properties `A.name` and `A.interp` respectively yield the name of the Tcl variable and the
 interpreter where it lives.
+
+Call `eltype(A)` to retrieve the type of `A` and `isassigned(A)` or [`TclTk.exists(A)`](@ref
+TclTk.exists) to check whether `A` has a value. To unset the value of `A`, call
+`delete!(A)`, [`TclTk.unsetvar!(A)`](@ref TclTk.unsetvar!), or do `A[] = unset`.
 
 Example:
 
@@ -59,22 +62,23 @@ end
 
 Base.eltype(::Type{Variable{T}}) where {T} = T
 
-Base.getindex(A::Variable{T}) where {T} = getvar(T, A.interp, A.name)
-Base.getindex(A::Variable{TclObj}, ::Type{T}) where {T} = getvar(T, A.interp, A.name)
-
-function Base.setindex!(A::Variable, x)
-    setvar!(Nothing, A.interp, A.name, x)
-    return A
-end
-
+Base.isassigned(A::Variable) = exists(A)
 exists(A::Variable) = exists(A.interp, A.name)
 
+Base.getindex(A::Variable{T}) where {T} = getvar(T, A.interp, A.name)
+Base.getindex(A::Variable{TclObj}, ::Type{T}) where {T} = getvar(T, A.interp, A.name)
 getvar(A::Variable{T}) where {T} = getvar(T, A)
 getvar(::Type{T}, A::Variable{<:Union{T,TclObj}}) where {T} = getvar(T, A.interp, A.name)
 
+function Base.setindex!(A::Variable, x)
+    setvar!(A, x)
+    return A
+end
 setvar!(A::Variable, x) = setvar!(Nothing, A, x)
-setvar!(::Type{T}, A::Variable, x) where {T} =
-    setvar!(T, A.interp, A.name, x)
+setvar!(::Type{T}, A::Variable, x) where {T} = setvar!(T, A.interp, A.name, x)
+
+Base.delete!(A::Variable) = unsetvar!(A; nocomplain=true)
+unsetvar!(A::Variable; kwds...) = unsetvar!(A.interp, A.name; kwds...)
 
 """
     TclTk.exists(interp=TclInterp(), name)
@@ -221,11 +225,14 @@ setvar!(::Type{T}, name::VarName, value; kwds...) where {T} =
 setvar!(interp::TclInterp, name::VarName, value; kwds...) =
     setvar!(Nothing, interp, name, value; kwds...)
 
-setvar!(interp::TclInterp, name::VarName, ::Unset; kwds...) =
-    unsetvar!(interp, name; nocomplain=true, kwds...)
+setvar!(::Type{T}, interp::TclInterp, name::VarName, ::Unset; kwds...) where {T} =
+    convert(T, unsetvar!(interp, name; nocomplain=true, kwds...))
 
-function setvar!(::Type{T}, interp::TclInterp, name::Name, value;
-                 flags::Integer = setvar_default_flags) where {T}
+setvar!(::Type{T}, interp::TclInterp, name::VarName, value; kwds...) where {T} =
+    _setvar!(T, interp, name, value; kwds...)
+
+function _setvar!(::Type{T}, interp::TclInterp, name::Name, value;
+                  flags::Integer = setvar_default_flags) where {T}
     GC.@preserve interp name value begin
         interp_ptr = checked_pointer(interp)
         name_ptr = null(ObjPtr)
@@ -250,8 +257,8 @@ function setvar!(::Type{T}, interp::TclInterp, name::Name, value;
     end
 end
 
-function setvar!(::Type{T}, interp::TclInterp, (part1, part2)::NTuple{2,Name}, value;
-                 flags::Integer = setvar_default_flags) where {T}
+function _setvar!(::Type{T}, interp::TclInterp, (part1, part2)::NTuple{2,Name}, value;
+                  flags::Integer = setvar_default_flags) where {T}
     GC.@preserve interp part1 part2 value begin
         interp_ptr = checked_pointer(interp)
         part1_ptr = null(ObjPtr)

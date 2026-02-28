@@ -161,13 +161,13 @@ TclObj("THRESHOLD")
 julia> A.interp # get the Tcl interpreter where lives the variable
 Tcl interpreter (address: 0x000000003b05c2a0, threadid: 1)
 
-julia> TclTk.exists(A) # does the variable have a value?
+julia> isassigned(A) # does the variable have a value?
 false
 
 julia> A[] = 3.125 # let us give it a value
 3.125
 
-julia> TclTk.exists(A) # now does it have a value?
+julia> isassigned(A) # now does it have a value?
 true
 
 julia> A

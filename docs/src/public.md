@@ -33,6 +33,7 @@ tcl_error
 ## Variables
 
 ```@docs
+TclTk.Variable
 TclTk.exists
 TclTk.getvar
 TclTk.setvar!
