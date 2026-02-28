@@ -102,6 +102,7 @@ for sym in (
     :TclInterp,
     :TclObj,
     :TclStatus,
+    :Value,
     :WideInt,
 
     # Version.

@@ -83,15 +83,11 @@ function Base.unsafe_string(objptr::ObjPtr)
 end
 
 Base.convert(::Type{TclObj}, obj::TclObj) = obj
-Base.convert(::Type{String}, obj::TclObj) = String(obj)
-function Base.convert(::Type{T}, obj::TclObj) where {T<:Union{AbstractArray,
-                                                              AbstractChar,
-                                                              AbstractString,
-                                                              Colorant,
-                                                              Enumeration,
-                                                              Real,
-                                                              Tuple,
-                                                              Symbol}}
+Base.convert(::Type{TclObj}, val::Value) = TclObj(val)::TclObj
+
+Base.convert(::Type{String}, obj::TclObj) = String(obj)::String
+Base.convert(::Type{Symbol}, obj::TclObj) = Symbol(obj)::Symbol
+function Base.convert(::Type{T}, obj::TclObj) where {T<:Value}
     GC.@preserve obj begin
         # NOTE `unsafe_convert` takes care of null object pointer.
         return unsafe_convert(T, pointer(obj))

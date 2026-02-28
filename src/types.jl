@@ -97,6 +97,16 @@ const FasterString = Union{#=Char,=# String, SubString{String}, Symbol}
 # Known enumeration types.
 const Enumeration{T} = Union{Enum{T}, CEnum.Cenum{T}}
 
+"""
+    TclTk.Value
+
+Union of *extern* types (i.e. not defined by the `TclTk` package) that can be converted into
+a Tcl object and conversely.
+
+"""
+const Value = Union{AbstractArray, AbstractChar, AbstractString,
+                    Colorant, Enumeration, Real, Tuple, Symbol}
+
 #-------------------------------------------------------------------------------------------
 # Tk widgets and other Tk objects.
 

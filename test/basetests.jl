@@ -211,6 +211,9 @@ end
         else
             @test y.type == :double
         end
+        z = @inferred convert(TclObj, x)
+        @test z.type == y.type # same type
+        @test z == y           # same content
         if T == Bool
             @test (@inferred Bool convert(Bool, y)) == !iszero(x)
         elseif T <: Integer
@@ -254,11 +257,12 @@ end
     @test tryparse(Integer, x) === nothing
     @test tryparse(Real, x) === 1.25
     @test tryparse(AbstractFloat, x) === 1.25
-    x = @inferred TclObj("-17.0") # a string that gives a float with no fractional part
+    s = "-17.0" # a string that gives a float with no fractional part
+    x = @inferred TclObj(s)
     @test Bool(x) === true # this also trigger conversion of internal type
     @test x.type == :double
-    @test AbstractFloat(x) === -17.0
-    @test Real(x) === -17.0
+    @test AbstractFloat(x) === parse(Cdouble, s)
+    @test Real(x) === parse(Cdouble, s)
     @test_throws Exception Integer(x) # FIXME?
     @test x === @inferred convert(TclObj, x)
     @test tryparse(Bool, x) === true
@@ -270,12 +274,18 @@ end
     x = @inferred TclObj(c)
     @test x.type == :string
     @test x == string(c)
-    @test convert(Char, x) === c
+    @test c === @inferred convert(Char, x)
+    y = @inferred convert(TclObj, c)
+    @test y.type == x.type # same type
+    @test y == x           # same content
     c = 'λ' # multi-byte UTF8 char
     x = @inferred TclObj(c)
     @test x.type == :string
     @test x == string(c)
-    @test convert(Char, x) === c
+    @test c === @inferred convert(Char, x)
+    y = @inferred convert(TclObj, c)
+    @test y.type == x.type # same type
+    @test y == x           # same content
     @test_throws Exception convert(Char, TclObj("ab"))
     @test_throws Exception TclObj(1.0 - 2.3im)
     @test_throws Exception convert(Complex{Float64}, TclObj(1.0))
@@ -285,10 +295,16 @@ end
     @test_throws ArgumentError convert(Int, TclObj("This long string is not an integer and should trigger an exception when attempting to convert it to an integer, you have been warned..."))
 
     # Symbols as strings.
-    x = @inferred TclObj(:hello)
+    sym = :hello
+    x = @inferred TclObj(sym)
     @test x.type == :string
-    @test x == :hello
-    @test x == "hello"
+    @test x == sym
+    @test x == string(sym)
+    @test sym === @inferred convert(Symbol, x)
+    @test sym === @inferred convert(Symbol, x)
+    y = @inferred convert(TclObj, sym)
+    @test y.type == x.type # same type
+    @test y == x           # same content
 
     # Tuples.
     x = @inferred TclObj(:hello)
