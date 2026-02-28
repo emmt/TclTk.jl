@@ -1,9 +1,10 @@
 """
-    TclTk.CallBack(f, name=TclTk.auto_name("jl_func_"), interp=TclInterp()) -> callback
-    TclTk.CallBack(f, interp=TclInterp(), name=TclTk.auto_name("jl_func_")) -> callback
+    callback = TclTk.Callback(f, name=TclTk.auto_name("jl_func_"), interp=TclInterp())
+    callback = TclTk.Callback(f, interp=TclInterp(), name=TclTk.auto_name("jl_func_"))
 
 Create a command implemented by the function `f` in Tcl interpreter `interp`. The command is
-initially named `name` (the command may be renamed).
+initially named `name` (`callback.name` gives the actual command name even though the
+command is renamed).
 
 The Tcl command will call the Julia function `f` as:
 
@@ -62,12 +63,12 @@ Callback(func::Function, interp::TclInterp, name::Name = callback_default_name()
 
 callback_default_name() = auto_name("jl_func_")
 
-Base.propertynames(f::Callback) = (:interp, :token, :func, :name)
+Base.propertynames(f::Callback) = (:func, :token, :interp, :name)
 function Base.getproperty(f::Callback, key::Symbol)
+    key === :func   ? getfield(f, :func) :
     key === :interp ? getfield(f, :interp) :
-    key === :token ? getfield(f, :token) :
-    key === :func ? getfield(f, :func) :
-    key === :name ? get_name(f) :
+    key === :name   ? get_name(f) :
+    key === :token  ? getfield(f, :token) :
     throw(KeyError(key))
 end
 @noinline function Base.setproperty!(f::Callback, key::Symbol, val)

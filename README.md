@@ -115,58 +115,6 @@ julia> lab(Nothing, :config,  :borderwidth => 5, :relief => :sunken)
 The change should be immediate as Tk widgets apply their configuration dynamically.
 
 
-## Features
-
-* As many Tcl interpreters as needed can be started. A shared interpreter is automatically
-  created when needed and serves as the default interpreter for the thread. Just call
-  `TclInterp()` to retrieve the shared interpreter of the thread.
-
-* Reading/writing a Tcl variable is as easy as:
-
-  ```julia
-  interp = TclInterp()    # get shared interpreter of this thread
-  interp[var]             # read Tcl variable value
-  interp[var] = val       # set Tcl variable value
-  interp[var] = unset     # unset Tcl variable
-  delete!(interp, var)    # idem
-  ```
-
-  where `interp` is a Tcl interpreter, `var` is the name of the Tcl variable and `val` is
-  its value. Variable name can also be given in 2 parts:
-
-  ```julia
-  interp[part1,part2]             # read Tcl array value
-  interp[part1,part2] = val       # set Tcl array value
-  interp[part1,part2] = unset     # unset Tcl array
-  delete!(interp, part1, part2)   # idem
-  ```
-
-* In Tcl, anything can be equivalently expressed as a string but, for efficiency, everything
-  is stored in Tcl objects. Such objects can be manipulated directly in Julia, as instances
-  of `TclObj`, and may be converted to Julia values (strings, integers, floats, or vectors
-  of these) as needed. By avoiding systematic string conversion, faster communication with
-  Tcl/Tk is achieved.
-
-* Tcl scripts can be specified by strings but Tcl commands can also be expressed using a
-  syntax which is closer to Julia. For instance, `key => val` pairs are converted to Tcl
-  options. Tcl scripts and commands can also be built as efficient lists of Tcl objects.
-  Evaluating a script is done by:
-
-  ```julia
-  TclTk.eval(script)         # evaluate Tcl script in initial interpreter
-  TclTk.eval(interp, script) # evaluate Tcl script with specific interpreter
-  interp.eval(script)        # idem
-  ```
-
-* A number of wrappers are provided to simplify building and using widgets.
-
-* Julia arrays can be used to set the pixels of Tk images and conversely. A number of
-  methods are provided to apply pseudo-colormaps. Temporaries and copies are avoided if
-  possible.
-
-* Julia functions may be used as Tk callbacks.
-
-
 ## Alternatives
 
 There exists [another Julia Tk package](http://github.com/JuliaGraphics/Tk.jl) but with

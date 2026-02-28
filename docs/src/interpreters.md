@@ -178,6 +178,8 @@ julia> TclTk.eval(Nothing, "set $(A.name) 12.5") # call Tcl to change the variab
 julia> A[] # get the variable value
 12.5
 
+julia> delete!(A) # unset the variable value
+
 ```
 
 As can be guessed from the above example, `A[]` yields the value of the Tcl variable
