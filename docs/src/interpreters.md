@@ -143,6 +143,47 @@ variable is done by the method [`TclTk.unsetvar!(interp=TclInterp(), name)`](@re
 TclTk.unsetvar!). All these methods apply to the shared interpreter of the thread if no
 interpreter is specified.
 
+## Linked variables
+
+The [`TclTk.Variable`](@ref) constructor yields an object tightly linked to a global Tcl
+variable. For example:
+
+```julia-repl
+julia> A = TclTk.Variable{Float64}("THRESHOLD")
+TclTk.Variable{Float64}(name: "THRESHOLD", value: #undef)
+
+julia> eltype(A)
+Float64
+
+julia> A.name # get the name of the Tcl variable
+TclObj("THRESHOLD")
+
+julia> A.interp # get the Tcl interpreter where lives the variable
+Tcl interpreter (address: 0x000000003b05c2a0, threadid: 1)
+
+julia> TclTk.exists(A) # does the variable have a value?
+false
+
+julia> A[] = 3.125 # let us give it a value
+3.125
+
+julia> TclTk.exists(A) # now does it have a value?
+true
+
+julia> A
+TclTk.Variable{Float64}(name: "THRESHOLD", value: 3.125)
+
+julia> TclTk.eval(Nothing, "set $(A.name) 12.5") # call Tcl to change the variable value
+
+julia> A[] # get the variable value
+12.5
+
+```
+
+As can be guessed from the above example, `A[]` yields the value of the Tcl variable
+(converted to the type of the variable, here `Float64`) while `A[] = x` mutates the value of
+the variable.
+
 
 ## Properties
 

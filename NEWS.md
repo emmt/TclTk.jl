@@ -45,6 +45,10 @@ Versioning](https://semver.org).
 
 - `convert` can convert a Tcl list object to a n-tuple.
 
+- `A = TclTk.Variable{T}(name)` yields an object `A` representing the Tcl variable `name`
+  with value type `T`. Then, `A[]` yields the value of the Tcl variable (converted to `T`)
+  while `A[] = x` mutates the value of the variable.
+
 ### Fixed
 
 - Indexation of lists of Tcl objects by a vector of Booleans.

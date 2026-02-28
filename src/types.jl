@@ -60,6 +60,11 @@ mutable struct Callback{F<:Function}
     func::F
 end
 
+struct Variable{T}
+    interp::TclInterp
+    name::TclObj
+end
+
 # Floating-point types.
 const FloatingPoint = Union{Irrational,Rational,AbstractFloat}
 

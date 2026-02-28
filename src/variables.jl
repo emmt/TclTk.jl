@@ -1,4 +1,82 @@
 """
+   A = TclTk.Variable{T}(name, interp=TclInterp())
+   A = TclTk.Variable{T}(interp, name)
+
+Build an object `A` which is linked to the variable named `name` in Tcl interpreter
+`interp`. The variable value is given by `A[]` and can be set by `A[] = x`.
+
+Type parameter `T` is the assumed Julia type of the value that can be stored in this
+variable. If not specified, `TclObj` is assumed for `T`, hence the variable may store any
+type of Tcl object. Call `eltype(A)` to retrieve the type of `A`. If variable type parameter
+is `T = TclObj`, expression `A[S]`, with `S` a type, can also be used to convert the value
+of the variable to type `S`.
+
+Currently, `name` must refer to a simple Tcl variable or to a single element of a Tcl array,
+not to a Tcl array name.
+
+Properties `A.name` and `A.interp` respectively yield the name of the Tcl variable and the
+interpreter where it lives.
+
+Example:
+
+```julia-repl
+julia> A = TclTk.Variable{Int}("::GLOBAL_COUNTER")
+TclTk.Variable{Int64}(name: "::GLOBAL_COUNTER", value: #undef)
+
+julia> A[] = 0
+0
+
+julia> A
+TclTk.Variable{Int64}(name: "::GLOBAL_COUNTER", value: 0)
+
+julia> A.interp(Nothing, :incr, A.name, 4) # increment variable with Tcl `incr` command
+
+julia> A[]
+4
+
+```
+
+"""
+Variable(name::VarName, interp::TclInterp=TclInterp()) = Variable(interp, name)
+Variable(interp::TclInterp, name::VarName) = Variable{TclObj}(interp, name)
+Variable{T}(name::VarName, interp::TclInterp=TclInterp()) where {T} =
+    Variable{T}(interp, name)
+Variable{T}(interp::TclInterp, name::Tuple{2,Name}) where {T} =
+    Variable{T}(interp, TclObj("$(name[1])($(name[2]))"))
+
+Base.show(io::IO, ::MIME"text/plain", A::Variable) = show(io, A)
+function Base.show(io::IO, A::Variable{T}) where {T}
+    print(io, "TclTk.Variable{", T, "}(name: \"")
+    escape_string(io, string(A.name))
+    print(io, "\", value: ")
+    if exists(A)
+        show(io, A[])
+    else
+        print(io, "#undef")
+    end
+    print(io, ")")
+end
+
+Base.eltype(::Type{Variable{T}}) where {T} = T
+
+Base.getindex(A::Variable{T}) where {T} = getvar(T, A.interp, A.name)
+Base.getindex(A::Variable{TclObj}, ::Type{T}) where {T} = getvar(T, A.interp, A.name)
+
+function Base.setindex!(A::Variable, x)
+    setvar!(Nothing, A.interp, A.name, x)
+    return A
+end
+
+exists(A::Variable) = exists(A.interp, A.name)
+
+getvar(A::Variable{T}) where {T} = getvar(T, A)
+getvar(::Type{T}, A::Variable{<:Union{T,TclObj}}) where {T} = getvar(T, A.interp, A.name)
+
+setvar!(A::Variable, x) = setvar!(Nothing, A, x)
+setvar!(::Type{T}, A::Variable, x) where {T} =
+    setvar!(T, A.interp, A.name, x)
+
+"""
     TclTk.exists(interp=TclInterp(), name)
     haskey(interp, name)
 

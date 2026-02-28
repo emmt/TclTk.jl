@@ -19,11 +19,13 @@ mesg = TkMessage(bar, :text => """
 Click on an empty location to add a marker.
 Click on a marker to delete it.""", :aspect => 600)
 
-# Create a label to display a count. The counter is in the global Tcl variable
-# "NUMBER_OF_MARKERS".
+# Create a Tcl variable to track the number of markers.
+counter = TclTk.Variable{Int}(interp, "::NUMBER_OF_MARKERS")
+counter[] = 0
+
+# Create a label to display the number of markers.
 count = TkLabel(bar, :background => :white, :borderwidth => 1, :relief => :sunken,
-                :width => 5, :text => 0, :textvariable => "NUMBER_OF_MARKERS")
-interp["NUMBER_OF_MARKERS"] = 0
+                :width => 5, :text => 0, :textvariable => counter.name)
 
 # Arrange widgets in their parent.
 TclTk.pack(Nothing, canvas, :side => :top, :expand => true, :fill => :both)
@@ -72,12 +74,11 @@ function on_click(interp::TclInterp, args::TclObj)
     list = interp(canvas, :find, :withtag, "current && marker")
     if isempty(list)
         add_marker(interp, canvas, x, y; adjust=false)
-        number_of_markers += 1
+        counter[] += 1
     else
         interp(canvas, :delete, list[1])
-        number_of_markers -= 1
+        counter[] -= 1
     end
-    interp["NUMBER_OF_MARKERS"] = number_of_markers
 end
 
 # Create the counterpart of the callback in the Tcl interpreter.

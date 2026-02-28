@@ -791,4 +791,49 @@ end
     sleep(0.01)
 end
 
+@testset "Linked variables" begin
+    name = "::GLOBAL_COUNTER"
+    A = @inferred TclTk.Variable{Int}(name)
+    @test eltype(A) === Int
+    @test A.name == name
+    @test A.interp === TclInterp()
+    A.interp.eval(Nothing, "unset -nocomplain $(A.name)")
+    @test TclTk.exists(A) == false
+    s = sprint(show, MIME"text/plain"(), A)
+    @test startswith(s, "TclTk.Variable{")
+    @test endswith(s, ", value: #undef)")
+    A[] = 0
+    @test @inferred(A[]) === 0
+    @test TclTk.exists(A) == true
+    s = sprint(show, MIME"text/plain"(), A)
+    @test startswith(s, "TclTk.Variable{")
+    @test endswith(s, ", value: 0)")
+    A[] += 3
+    @test @inferred(A[]) === 3
+    @test TclTk.getvar(eltype(A), A.interp, A.name) == 3
+    A.interp.eval(Nothing, "incr $(A.name) -2")
+    @test @inferred(A[]) === 1
+    B = @inferred TclTk.Variable(A.name, A.interp) # same variable but no given type
+    @test @inferred(B[]) isa TclObj
+    @test @inferred(convert(eltype(A), B[])) === A[]
+    @test @inferred(B[eltype(A)]) === A[]
+    x = A[]
+    B[] = x + 7
+    @test @inferred(A[]) === x + 7
+    @test @inferred(B[eltype(A)]) === x + 7
+
+    # Another variable: same name and type but in another interpreter.
+    let private = @inferred TclInterp(:private)
+        C = @inferred TclTk.Variable{eltype(A)}(private, A.name)
+        A[] = 1
+        @test TclTk.exists(C) == false
+        C[] = -1
+        @test A[] === +1
+        @test C[] === -1
+        @test TclTk.exists(C) == true
+        @test @inferred(private(eltype(C), :set, C.name)) === -1
+    end
+    GC.gc() # to finalize private interpreter
+end
+
 end # module
