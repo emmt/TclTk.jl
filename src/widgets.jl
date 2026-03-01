@@ -129,7 +129,7 @@ end
 @TkWidget TkToplevel      Toplevel      "::toplevel"          ".top"
 @TkWidget TkMenu          Menu          "::menu"              ".mnu"
 
-# Tk widgets.
+# Classic Tk widgets.
 @TkWidget TkButton        Button        "::button"            "btn"
 @TkWidget TkCanvas        Canvas        "::canvas"            "cnv"
 @TkWidget TkCheckbutton   Checkbutton   "::checkbutton"       "cbt"
@@ -147,7 +147,7 @@ end
 @TkWidget TkSpinbox       Spinbox       "::spinbox"           "sbx"
 @TkWidget TkText          Text          "::text"              "txt"
 
-# Ttk (Themed Tk) widgets.
+# Themed Tk widgets.
 @TkWidget TtkButton       TButton       "::ttk::button"       "btn"
 @TkWidget TtkCheckbutton  TCheckbutton  "::ttk::checkbutton"  "cbt"
 @TkWidget TtkCombobox     TCombobox     "::ttk::combobox"     "cbx"
@@ -165,7 +165,7 @@ end
 @TkWidget TtkSeparator    TSeparator    "::ttk::separator"    "sep"
 @TkWidget TtkSizegrip     TSizegrip     "::ttk::sizegrip"     "szg"
 @TkWidget TtkSpinbox      TSpinbox      "::ttk::spinbox"      "sbx"
-@TkWidget TtkTreeview     TTreeview     "::ttk::treeview"     "trv"
+@TkWidget TtkTreeview     Treeview      "::ttk::treeview"     "trv"
 
 # Window "." has a special class in Tk.
 register_widget_class("Tk", TkToplevel)
