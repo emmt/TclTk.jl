@@ -484,6 +484,7 @@ function new_object(str::Union{String,SubString{String}})
 end
 
 unsafe_convert(::Type{String}, objptr::ObjPtr) = unsafe_string(objptr)
+unsafe_convert(::Type{Symbol}, objptr::ObjPtr) = Symbol(unsafe_string(objptr))
 
 # Symbols are considered as Tcl strings.
 new_object(sym::Symbol) = Tcl_NewStringObj(sym, -1)

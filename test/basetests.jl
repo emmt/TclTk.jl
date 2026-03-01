@@ -337,6 +337,7 @@ end
     @test startswith(s, "TclObj((2, -3, \"hello\", 0, 1,")
     @test endswith(s, ", 254, 255,))")
     @test match(r"^TclObj\(\(2, -3, .*, \.\.\., .*, 254, 255,\)\)$", s) !== nothing
+    @test @inferred(convert(Tuple{Symbol,Int}, TclObj(("hello", 1)))) === (:hello, 1)
 
     # TODO @test y == t
 
