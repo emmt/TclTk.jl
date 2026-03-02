@@ -6,13 +6,15 @@ using Colors
 using Colors: FixedPointNumbers
 
 function compute_significant_bits(::Type{T}) where {T<:AbstractFloat}
+    isbitstype(T) || throw(ArgumentError("type `$T` is not a bits type"))
     nmax = 8*sizeof(T) - 1 # at least one bit for sign
-    for nbits in nmax:-1:0
+    for nbits in 0:nmax
         try
             i = one(Int128) << nbits
-            convert(T, i) == i && convert(T, i - 1) == i - 1 && return nbits
+            x = convert(T, i)
+            x == i && x - one(x) == i - one(i) || return nbits - 1
         catch ex
-            nothing
+            return nbits - 1
         end
     end
     error("cannot determine the number of bits in the mantissa of `$T`")
@@ -22,7 +24,7 @@ end
     @test compute_significant_bits(Float16) == TclTk.Impl.significant_bits(Float16)
     @test compute_significant_bits(Float32) == TclTk.Impl.significant_bits(Float32)
     @test compute_significant_bits(Float64) == TclTk.Impl.significant_bits(Float64)
-    @test compute_significant_bits(BigFloat) == TclTk.Impl.significant_bits(BigFloat)
+    @test typemax(Int128) == TclTk.Impl.max_exact_int(BigFloat)
 end
 
 @testset "Tk Images" begin

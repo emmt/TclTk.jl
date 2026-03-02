@@ -124,7 +124,7 @@ end
 
 function unsafe_colorize!(dst::Array{C,N}, src::Array{<:Any,N},
                           cmap::AbstractVector{C}, cmin::C, cmax::C, cbad::C,
-                          f, ::Type{T}) where {C,N,T<:Union{Float32,Float64,BigFloat}}
+                          f, ::Type{T}) where {C,N,T<:Union{Float32,Float64}}
     # The value of `round(Int, t, r)` when `t = i ± 1/2` with `i` integer depends on the
     # rounding mode `r`, on the sign and on the parity of `i`. To avoid these odds for
     # enforcing index bounds, we compute upper and lower thresholds, `tmin` and `tmax` with
@@ -159,11 +159,10 @@ end
 # type `T`.
 max_exact_int(::Type{T}) where {T<:AbstractFloat} = Int(1) << significant_bits(T)
 max_exact_int(::Type{T}) where {T<:Float64} = Int64(1) << significant_bits(T)
-max_exact_int(::Type{T}) where {T<:BigFloat} = Int128(1) << significant_bits(T)
+max_exact_int(::Type{T}) where {T<:BigFloat} = typemax(Int128)
 max_exact_int(::Type{T}) where {T<:Integer} = typemax(signed(T))
 
 # Number of significant bits in floating-point type.
 significant_bits(::Type{Float16}) = 11
 significant_bits(::Type{Float32}) = 24
 significant_bits(::Type{Float64}) = 53
-significant_bits(::Type{BigFloat}) = 63
