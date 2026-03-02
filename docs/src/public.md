@@ -77,6 +77,5 @@ TclTk.place
 ```@docs
 TkImage
 TkBitmap
-TkPixmap
 TkPhoto
 ```

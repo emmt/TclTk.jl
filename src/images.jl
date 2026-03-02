@@ -13,7 +13,7 @@ const PhotoColorant = Union{Gray{N0f8},GrayA{N0f8},AGray{N0f8},
     TkImage{type}(host=TclInterp(), option => value, ...) -> img
     TkImage{type}(host=TclInterp(), name, option => value, ...) -> img
 
-Return a Tk image of given `type` (e.g., `:bitmap`, `:pixmap`, or `:photo`).
+Return a Tk image of given `type` (e.g., `:bitmap` or `:photo`).
 
 !!! note
     `Tk` extension must have been loaded in the interpreter before creating an image.
@@ -45,15 +45,14 @@ img.height   # the height of the image in pixels
 size(img, 2) # idem
 img.size     # (width, height)
 size(img)    # idem
-img.type     # the symbolic type of the image (`:bitmap`, `:pixmap`, `:photo`, etc.)
+img.type     # the symbolic type of the image (`:bitmap`, `:photo`, etc.)
 img.name     # the image name in its interpreter
 img.interp   # the interpreter hosting the image
 ```
 
 # See also
 
-[`TkBitmap`](@ref), [`TkPhoto`](@ref), and [`TkPixmap`](@ref) are aliases for specific image
-types.
+[`TkBitmap`](@ref) and [`TkPhoto`](@ref) are aliases for specific image types.
 
 [`tk_start`](@ref), and [`TclInterp`](@ref).
 
@@ -157,8 +156,6 @@ function Base.show(io::IO, img::T) where {T<:TkImage}
         print(io, "TkBitmap (alias for TkImage{:bitmap})")
     elseif T == TkPhoto
         print(io, "TkPhoto (alias for TkImage{:photo})")
-    elseif T == TkPixmap
-        print(io, "TkPixmap (alias for TkImage{:pixmap})")
     else
         print(io, T)
     end

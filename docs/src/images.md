@@ -17,8 +17,8 @@ TkImage{type}(host=TclInterp(), option => value, ...) -> img
 TkImage{type}(host=TclInterp(), name, option => value, ...) -> img
 ```
 
-Parameter `type` is the symbolic image type. Types `:bitmap`, `:pixmap`, and `:photo` are
-provided by the base Tk package but other packages may implement additional image types.
+Parameter `type` is the symbolic image type. Types `:bitmap` and `:photo` are provided by
+the base Tk package but other packages may implement additional image types.
 
 Argument `host` is used to infer the Tcl interpreter where lives the image. It is the shared
 interpreter of the thread if omitted. It can be a widget instance to create the image in the
@@ -50,7 +50,6 @@ TkImage(host=TclInterp(), name, option => value, ...) -> img
 ```julia
 const TkBitmap = TkImage{:bitmap}
 const TkPhoto  = TkImage{:photo}
-const TkPixmap = TkImage{:pixmap}
 ```
 
 ## Properties
@@ -68,7 +67,7 @@ A Tk image has a number of properties:
 - `img.size` yields the iamge size as `(width, height)` in pixels. This is the same as
   `size(img)` or `(img.width, img.height)`.
 
-- `img.type` yields the symbolic type of the image (`:bitmap`, `:pixmap`, `:photo`, etc.).
+- `img.type` yields the symbolic type of the image (`:bitmap`, `:photo`, etc.).
 
 - `img.name` yields the image name in its interpreter.
 

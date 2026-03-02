@@ -170,7 +170,6 @@ for sym in (
     :TkBitmap,
     :TkImage,
     :TkPhoto,
-    :TkPixmap,
 
     # Tk widgets.
     :TkButton,

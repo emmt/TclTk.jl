@@ -147,14 +147,5 @@ Return a Tk *photo* image. See [`TkImage`](@ref) for more information.
 """
 const TkPhoto  = TkImage{:photo}
 
-"""
-    TkPixmap(args...) -> img
-    TkImage{:pixmap}(args...) -> img
-
-Return a Tk *pixmap* image. See [`TkImage`](@ref) for more information.
-
-"""
-const TkPixmap = TkImage{:pixmap}
-
 # Alias for specifying an index range in an image/array view.
 const ViewRange{T<:Integer} = Union{Colon,AbstractUnitRange{<:T}}
