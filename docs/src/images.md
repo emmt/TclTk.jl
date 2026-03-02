@@ -52,7 +52,45 @@ const TkBitmap = TkImage{:bitmap}
 const TkPhoto  = TkImage{:photo}
 ```
 
-## Properties
+## Image configuration
+
+Image configurable options are available by indexing the image with the option name
+(without the leading hyphen) specified as a string or as a symbol.
+
+For example:
+
+```julia-repl
+julia> using TclTk, Colors
+
+julia> tk_start();
+
+julia> img = TkBitmap(:data => """"#define rule_width 32
+       #define rule_height 17
+       static char rule_bits[] = {0x00, 0x00, 0x00, 0x00, 0xfe, 0xff, 0xff, 0x7f,
+       0xfe, 0xff, 0xff, 0x7f, 0x98, 0x99, 0x99, 0x19, 0x98, 0x99, 0x99, 0x19,
+       0x18, 0x80, 0x01, 0x18, 0x18, 0x80, 0x01, 0x18, 0x00, 0x00, 0x00, 0x00,
+       0x1c, 0x80, 0x01, 0x1c, 0x36, 0xc0, 0x01, 0x36, 0x36, 0x80, 0x01, 0x36,
+       0x36, 0x80, 0x01, 0x30, 0x36, 0x80, 0x01, 0x18, 0x36, 0x80, 0x01, 0x04,
+       0x36, 0x80, 0x01, 0x3e, 0x1c, 0xc0, 0x03, 0x3e, 0x00, 0x00, 0x00, 0x00};
+       """)
+TkBitmap (alias for TkImage{:bitmap}) name = "image7", size = (32, 17)
+
+julia> img[:foreground]
+TclObj("#000000")
+
+julia> img[:background] = colorant"cyan"
+RGB{N0f8}(0.0, 1.0, 1.0)
+
+julia> img[:background]
+TclObj("#00FFFF")
+
+```
+
+Accessing to the image configuration can also be done by the `cget` and `configure`
+sub-commands described below.
+
+
+## Image properties
 
 A Tk image has a number of properties:
 

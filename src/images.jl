@@ -209,6 +209,54 @@ _getproperty(img::TkImage{T}, ::Val{:type}) where {T} = T
 _getproperty(img::TkImage, ::Val{:width}) = image_width(img)
 _getproperty(img::TkImage, ::Val{key}) where {key} = throw(KeyError(key))
 
+#--------------------------------------------------------------------- Image configuration -
+
+# Image configurable options are available by indexing the image with the option name
+# without the leading hyphen and specified as a string or as a symbol.
+
+const image_options = Pair{Symbol,Vector{String}}[]
+
+function get_options(img::TkImage{type}) where {type}
+    global image_options
+    for (key,opts) in image_options
+        key === type && return opts
+    end
+    opts = String[stripfirst(spec[1 => String]) for spec in img(:configure)]
+    push!(image_options, type => opts)
+    return opts
+end
+
+function stripfirst(s::AbstractString)
+    start = firstindex(s)
+    stop = lastindex(s)
+    start ≤ stop && (start = nextind(s, start))
+    return SubString(s, start, stop)
+end
+
+function Base.haskey(img::TkImage, key::Union{String,SubString{String},Symbol})
+    GC.@preserve key begin
+        ptr = Base.unsafe_convert(Ptr{UInt8}, key)
+        for opt in get_options(img)
+            iszero(@ccall strcmp(ptr::Ptr{UInt8}, opt::Ptr{UInt8})::Cint) && return true
+        end
+    end
+    return false
+end
+
+Base.getindex(img::TkImage, opt::Union{String,SubString{String},Symbol}) =
+    img(:cget, with_hyphen(opt))
+
+@inline function Base.getindex(img::TkImage,
+                               (opt,T)::Pair{<:Union{String,SubString{String},Symbol},
+                                             <:DataType})
+    return img(T, :cget, with_hyphen(opt))
+end
+
+function Base.setindex!(img::TkImage, val, opt::Union{String,SubString{String},Symbol})
+    img(Nothing, :configure, with_hyphen(opt), val)
+    return img
+end
+
 #----------------------------------------------------------- Abstract array API for images -
 
 # 32-bit RGBA is the pixel format used by Tk for its photo images.

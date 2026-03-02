@@ -381,10 +381,13 @@ function unsafe_append_exec_arg(interp::InterpPtr, list::ObjPtr, arg)
 end
 
 function unsafe_append_exec_arg(interp::InterpPtr, list::ObjPtr, (key,val)::Pair)
-    unsafe_append_element(interp, list, "-"*string(key))
+    unsafe_append_element(interp, list, with_hyphen(key))
     unsafe_append_element(interp, list, val)
     return nothing
 end
+
+with_hyphen(opt::Union{String,SubString{String}}) = "-"*opt
+with_hyphen(opt::Symbol) = with_hyphen(string(opt))
 
 """
     TclTk.eval(T=TclObj, interp=TclInterp(), args...) -> res::T

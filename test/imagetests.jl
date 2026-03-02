@@ -29,17 +29,71 @@ end
 
 @testset "Tk Images" begin
     interp = @inferred tk_start()
-    img = @inferred TkPhoto(interp, "m51", :file => joinpath(@__DIR__, "m51-tiny.png"))
-    @test img isa TkPhoto
-    @test img.type === :photo
-    @test img.interp === interp
-    @test img.inuse === false
-    @test img.name == "m51"
-    @test img.width == 48
-    @test img.height == 64
-    @test img.size == (48, 64)
-    @test @inferred(size(img)) == (48, 64)
-    @test @inferred(eltype(img)) == RGBA{FixedPointNumbers.N0f8}
+    props = sort!([:height, :interp, :inuse, :name, :size, :type, :width])
+
+    # Bitmap image.
+    xbm = @inferred TkBitmap(:file=>joinpath(@__DIR__, "rule.xbm"))
+
+    # Image properties.
+    @test sort!(collect(propertynames(xbm))) == props
+    @test xbm.type === :bitmap
+    @test xbm.interp === interp
+    @test xbm.inuse === false
+    @test xbm.name isa TclObj
+    @test startswith(string(xbm.name), "image")
+    @test xbm.width === 32
+    @test xbm.height === 17
+    @test xbm.size === (32, 17)
+    @test_throws KeyError xbm.non_existing_property
+
+    # Image keys.
+    @test haskey(xbm, :data) === true
+    @test haskey(xbm, :file) === true
+    @test haskey(xbm, :foreground) === true
+    @test haskey(xbm, :maskdata) === true
+    @test haskey(xbm, :maskfile) === true
+    @test haskey(xbm, :non_existing_option) === false
+    path = convert(String, @inferred xbm[:file])
+    @test isfile(path)
+    @test endswith(path, "rule.xbm")
+
+    # Change content.
+    xbm[:file] = joinpath(@__DIR__, "letters.xbm")
+    @test xbm.size === (47, 35)
+    path = convert(String, @inferred xbm[:file])
+    @test isfile(path)
+    @test endswith(path, "letters.xbm")
+
+    # Photo image.
+    png = @inferred TkPhoto(interp, "m51", :file => joinpath(@__DIR__, "m51-tiny.png"))
+    @test png isa TkPhoto
+
+    # Image properties.
+    @test sort!(collect(propertynames(png))) == props
+    @test png.type === :photo
+    @test png.interp === interp
+    @test png.inuse === false
+    @test png.name == "m51"
+    @test png.width === 48
+    @test png.height === 64
+    @test png.size === (48, 64)
+    @test_throws KeyError png.non_existing_property
+
+    # Image keys.
+    @test haskey(png, :non_existing_option) === false
+    @test haskey(png, :file) === true
+    path = convert(String, @inferred png[:file])
+    @test isfile(path)
+    @test endswith(path, "m51-tiny.png")
+
+    # Abstract array API for photo images.
+    @test @inferred(ndims(png)) === 2
+    @test @inferred(ndims(typeof(png))) === 2
+    @test @inferred(eltype(png)) === RGBA{FixedPointNumbers.N0f8}
+    @test @inferred(eltype(typeof(png))) === RGBA{FixedPointNumbers.N0f8}
+    @test @inferred(size(png)) === png.size
+    @test @inferred(length(png)) === prod(png.size)
+
 end
 
 end # module
