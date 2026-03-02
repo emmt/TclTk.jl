@@ -36,7 +36,7 @@ jobs:
           - os: ubuntu-latest
             prefix: xvfb-run # see README.md in https://github.com/julia-actions/julia-runtest/
             arch: x64
-            version: 'min'
+            version: ['min', 'lts', '1']
     steps:
       - uses: actions/checkout@v6
       - uses: julia-actions/setup-julia@v2
