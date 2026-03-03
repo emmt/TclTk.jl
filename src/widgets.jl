@@ -473,7 +473,7 @@ Change some options of widget or image `w`. Trailing `pairs...` arguments and ke
 [`TclTk.cget`](@ref) and [`TkWidget`](@ref).
 
 """
-configure(w::TkObject, pairs...; kwds...) = configure(TclObject, w, pairs...; kwds...)
+configure(w::TkObject, pairs...; kwds...) = configure(TclObj, w, pairs...; kwds...)
 configure(::Type{T}, w::TkObject, pairs...; kwds...) where {T} =
     exec(T, w, :configure, pairs...; kwds...)
 

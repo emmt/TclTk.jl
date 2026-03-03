@@ -26,7 +26,7 @@ If the image `name` is omitted, it is automatically generated. If `name` is spec
 image with this name already exists in the interpreter, it is re-used and, if options are
 specified, it is reconfigured.
 
-Trailing `paris...` arguments and keywords `kwds...` are interpreted as image configuration
+Trailing `pairs...` arguments and keywords `kwds...` are interpreted as image configuration
 options. Possible options depend on the image types.
 
 A Tk image can then be used in any Tcl/Tk script or command where an image is expected.
