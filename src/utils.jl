@@ -142,6 +142,18 @@ function unsafe_memcpy(a, b, nbytes)
     return @ccall memcpy(a::Ptr{Cvoid}, b::Ptr{Cvoid}, nbytes::Csize_t)::Ptr{Cvoid}
 end
 
+#----------------------------------------------------- Prefixed functions and sub-commands -
+
+(f::PrefixedFunction)(args...; kwds...) = f.func(f.arg1, args...; kwds...)
+
+SubCommand{C}(caller::W) where {C,W} = SubCommand{C,W}(caller)
+
+# NOTE A sub-command may be specialized on its symbolic name (and caller type)
+#      to implement specific syntax.
+(f::SubCommand{C})(args...; kwds...) where {C} = f.caller(C, args...; kwds...)
+(f::SubCommand{C})(::Type{T}, args...; kwds...) where {C,T} =
+    f.caller(T, C, args...; kwds...)
+
 #---------------------------------------------------------------------------- Quote string -
 
 """

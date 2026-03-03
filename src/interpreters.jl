@@ -386,8 +386,15 @@ function unsafe_append_exec_arg(interp::InterpPtr, list::ObjPtr, (key,val)::Pair
     return nothing
 end
 
-with_hyphen(opt::Union{String,SubString{String}}) = "-"*opt
-with_hyphen(opt::Symbol) = with_hyphen(string(opt))
+with_hyphen(s::Name) = with_hyphen(string(s))
+with_hyphen(s::String) = (startswith(s, '-') ? s : "-"*s)::String
+
+without_hyphen(s::Name) = without_hyphen(string(s))
+function without_hyphen(s::AbstractString)
+    start, stop = firstindex(s), lastindex(s)
+    return (start > stop || s[start] != '-') ? string(s) :
+        string(SubString(s, nextind(s, start), stop))
+end
 
 """
     TclTk.eval(T=TclObj, interp=TclInterp(), args...) -> res::T

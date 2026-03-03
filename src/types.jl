@@ -72,7 +72,10 @@ struct PrefixedFunction{F,T}
     func::F
     arg1::T
 end
-(f::PrefixedFunction)(args...; kwds...) = f.func(f.arg1, args...; kwds...)
+
+struct SubCommand{C,W}
+    caller::W
+end
 
 # `Name` is anything that can be understood as the name of a variable or of a
 # command.
@@ -80,6 +83,8 @@ const Name = Union{AbstractString,Symbol,Real,TclObj}
 
 # A Tcl variable name can be specified as `(part1,part2)`.
 const VarName = Union{Name,Tuple{Name,Name}}
+
+const OptionName = Union{AbstractString,Symbol}
 
 """
     TclTk.Impl.FastString
@@ -114,6 +119,10 @@ const Value = Union{AbstractArray, AbstractChar, AbstractString,
 
 #-------------------------------------------------------------------------------------------
 # Tk widgets and other Tk objects.
+#
+# Objects of type derived from `TkObject` (i.e., widgets and images) can be indexed by
+# option name to access and mutate their configurable options, they also implement
+# sub-commands by the syntax `obj.cmd(args...; kwds...)`.
 
 abstract type TkObject     <: WrappedObject end
 abstract type TkWidget     <: TkObject      end

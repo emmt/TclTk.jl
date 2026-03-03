@@ -44,7 +44,6 @@ end
     @test xbm.width === 32
     @test xbm.height === 17
     @test xbm.size === (32, 17)
-    @test_throws KeyError xbm.non_existing_property
 
     # Image keys.
     @test haskey(xbm, :data) === true
@@ -56,6 +55,27 @@ end
     path = convert(String, @inferred xbm[:file])
     @test isfile(path)
     @test endswith(path, "rule.xbm")
+    @test path == @inferred xbm["file"]
+    @test path == @inferred xbm["-file"]
+    @test path == @inferred xbm[String, "file"]
+    @test path == @inferred xbm["file", String]
+    @test path == @inferred xbm.cget(:file)
+    @test path == @inferred xbm.cget(String, :file)
+    @test path == @inferred xbm.cget("file")
+    @test path == @inferred xbm.cget(String, "file")
+    @test path == @inferred xbm.cget("-file")
+    @test path == @inferred xbm.cget(String, "-file")
+    @test path == xbm[:file => String]
+    @test path == xbm["file" => String]
+    color = "red"
+    @inferred xbm.configure(Nothing, :foreground => color)
+    @test color == @inferred xbm.cget(:foreground)
+    color = "green"
+    @inferred xbm.configure(Nothing, "foreground" => color)
+    @test color == @inferred xbm.cget("foreground")
+    color = "blue"
+    @inferred xbm.configure(Nothing, "-foreground", color)
+    @test color == @inferred xbm.cget("-foreground")
 
     # Change content.
     xbm[:file] = joinpath(@__DIR__, "letters.xbm")
@@ -77,7 +97,6 @@ end
     @test png.width === 48
     @test png.height === 64
     @test png.size === (48, 64)
-    @test_throws KeyError png.non_existing_property
 
     # Image keys.
     @test haskey(png, :non_existing_option) === false

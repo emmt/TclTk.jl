@@ -170,12 +170,14 @@ for f in (:isequal, :(==))
     end
 end
 
-#-------------------------------------------------------------------------- Image commands -
+#---------------------------------------------------------------------- Image sub-commands -
 
-# Make Tk image objects callable.
-(img::TkImage)(args...; kwds...) = TclTk.exec(img.interp, img, args...; kwds...)
+# Make Tk image objects callable to evaluate sub-commands.
+(img::TkImage)(args...; kwds...) = exec(img.interp, img, args...; kwds...)
 (img::TkImage)(::Type{T}, args...; kwds...) where {T} =
-    TclTk.exec(T, img.interp, img, args...; kwds...)
+    exec(T, img.interp, img, args...; kwds...)
+
+#-------------------------------------------------------------------------- Image commands -
 
 # Reproduce Tk `image command ...`.
 for (prop, type) in (:delete => :Nothing,
@@ -199,6 +201,7 @@ image_height(img::TkPhoto) = size(img, 2)
 #------------------------------------------------------------------------ Image properties -
 
 Base.propertynames(img::TkImage) = (:height, :interp, :inuse, :name, :size, :type, :width,)
+
 @inline Base.getproperty(img::TkImage, key::Symbol) = _getproperty(img, Val(key))
 _getproperty(img::TkImage, ::Val{:height}) = image_height(img)
 _getproperty(img::TkImage, ::Val{:interp}) = getfield(img, :interp)
@@ -207,7 +210,6 @@ _getproperty(img::TkImage, ::Val{:name}) = getfield(img, :name)
 _getproperty(img::TkImage, ::Val{:size}) = size(img)
 _getproperty(img::TkImage{T}, ::Val{:type}) where {T} = T
 _getproperty(img::TkImage, ::Val{:width}) = image_width(img)
-_getproperty(img::TkImage, ::Val{key}) where {key} = throw(KeyError(key))
 
 #--------------------------------------------------------------------- Image configuration -
 
@@ -241,20 +243,6 @@ function Base.haskey(img::TkImage, key::Union{String,SubString{String},Symbol})
         end
     end
     return false
-end
-
-Base.getindex(img::TkImage, opt::Union{String,SubString{String},Symbol}) =
-    img(:cget, with_hyphen(opt))
-
-@inline function Base.getindex(img::TkImage,
-                               (opt,T)::Pair{<:Union{String,SubString{String},Symbol},
-                                             <:DataType})
-    return img(T, :cget, with_hyphen(opt))
-end
-
-function Base.setindex!(img::TkImage, val, opt::Union{String,SubString{String},Symbol})
-    img(Nothing, :configure, with_hyphen(opt), val)
-    return img
 end
 
 #----------------------------------------------------------- Abstract array API for images -

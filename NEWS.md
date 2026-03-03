@@ -49,6 +49,11 @@ Versioning](https://semver.org).
   with value type `T`. Then, `A[]` yields the value of the Tcl variable (converted to `T`)
   while `A[] = x` mutates the value of the variable.
 
+- Widgets and images can be indexed by option name (leading hyphen can be omitted) to access
+  and mutate their configurable options.
+
+- Widgets and images implement sub-commands by the syntax `obj.cmd(args...; kwds...)`.
+
 ### Fixed
 
 - Indexation of lists of Tcl objects by a vector of Booleans.

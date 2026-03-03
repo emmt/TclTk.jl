@@ -382,6 +382,35 @@ for f in (:isequal, :(==))
     end
 end
 
+# Properties.
+Base.propertynames(w::TkRootWidget) = (:interp, :path)
+Base.propertynames(w::TkWidget) = (:interp, :parent, :path)
+@inline Base.getproperty(w::TkWidget, key::Symbol) = _getproperty(w, Val(key))
+_getproperty(w::TkWidget, ::Val{:interp}) = getfield(w, :interp)
+_getproperty(w::TkWidget, ::Val{:parent}) = getfield(w, :parent)
+_getproperty(w::TkWidget, ::Val{:path}) = getfield(w, :path)
+
+# For Tk objects, syntax `obj.comd(...)` invokes sub-command.
+_getproperty(w::TkObject, ::Val{cmd}) where {cmd} = SubCommand{cmd}(w)
+
+# Some sub-commands are special.
+for cmd in (:cget, :configure)
+    @eval begin
+        (f::SubCommand{$(QuoteNode(cmd)),<:TkObject})(::Type{T}, args...; kwds...) where T =
+            $cmd(T, f.caller, args...; kwds...)
+        (f::SubCommand{$(QuoteNode(cmd)),<:TkObject})(args...; kwds...) =
+            $cmd(f.caller, args...; kwds...)
+    end
+end
+for cmd in (:grid, :pack, :place)
+    @eval begin
+        (f::SubCommand{$(QuoteNode(cmd)),<:TkWidget})(::Type{T}, args...; kwds...) where T =
+            $cmd(T, f.caller, args...; kwds...)
+        (f::SubCommand{$(QuoteNode(cmd)),<:TkWidget})(args...; kwds...) =
+            $cmd(f.caller, args...; kwds...)
+    end
+end
+
 """
     tk_start(interp = TclInterp()) -> interp
 
@@ -439,14 +468,15 @@ way to change the settings is:
 [`TclTk.cget`](@ref) and [`TkWidget`](@ref).
 
 """
-configure(w::TkObject, pairs...) = exec(w, :configure, pairs...)
+configure(w::TkObject, pairs...) = configure(TclObject, w, pairs...)
+configure(::Type{T}, w::TkObject, pairs...) where {T} = exec(T, w, :configure, pairs...)
 
 """
     TclTk.cget(w, opt)
 
 Return the value of the option `opt` for Tk object (widget or image) `w`. Option `opt` may
-be specified as a string or as a `Symbol` and shall corresponds to a Tk option name without
-the leading "-". Another way to obtain an option value is:
+be specified as a string or as a `Symbol` and shall corresponds to a Tk option name (the
+leading hyphen may be omitted). Another way to obtain an option value is:
 
     w[opt]
 
@@ -455,17 +485,16 @@ the leading "-". Another way to obtain an option value is:
 [`TclTk.configure`](@ref) and [`TkWidget`](@ref).
 
 """
-cget(w::TkObject, opt::Name) = exec(w, :cget, "-"*string(opt))
-cget(::Type{T}, w::TkObject, opt::Name) where {T} =
-    exec(T, w, :cget, "-"*string(opt))
-cget(w::TkObject, ::Type{T}, opt::Name) where {T} = cget(T, w, opt)
+cget(w::TkObject, opt::OptionName) = cget(TclObj, w, opt)
+cget(w::TkObject, ::Type{T}, opt::OptionName) where {T} = cget(T, w, opt)
+cget(::Type{T}, w::TkObject, opt::OptionName) where {T} = exec(T, w, :cget, with_hyphen(opt))
 
-Base.getindex(w::TkWidget, key::Name) = cget(w, key)
-Base.getindex(w::TkWidget, (key,T)::Pair{<:Name,DataType}) = cget(T, w, key)
-Base.getindex(w::TkWidget, ::Type{T}, key::Name) where {T} = cget(T, w, key)
-Base.getindex(w::TkWidget, key::Name, ::Type{T}) where {T} = cget(T, w, key)
-function Base.setindex!(w::TkWidget, value, key::Name)
-    exec(w, :configure, key => value)
+Base.getindex(w::TkObject, key::OptionName) = cget(w, key)
+@inline Base.getindex(w::TkObject, (key,T)::Pair{<:OptionName,DataType}) = cget(T, w, key)
+Base.getindex(w::TkObject, ::Type{T}, key::OptionName) where {T} = cget(T, w, key)
+Base.getindex(w::TkObject, key::OptionName, ::Type{T}) where {T} = cget(T, w, key)
+function Base.setindex!(w::TkObject, val, key::OptionName)
+    exec(Nothing, w, :configure, key => val)
     return w
 end
 
