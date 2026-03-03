@@ -20,7 +20,17 @@ Versioning](https://semver.org).
 
 - The package uses artifacts `Tcl_jll` and `Tk_jll` to avoid a build step.
 
+- Using a leading underscore for a keyword in calls to `TclTk.exec` (and all methods based
+  on it) is no longer a mean to specify an option that is a reserved Julia word. There are
+  different possibilities: (i) specify 2 arguments `"-option"` followed by `value` or (ii)
+  specify a pair `"option" => value` or `:option => value`.
+
 ### Added
+
+- Tcl/Tk options `-key val` in commands can be produced by `key => val` pair arguments or by
+  keywords `key=val` in calls to `TclTk.exec` where `key` is a string or a symbol. Using
+  pairs instead of keywords may be a matter of style but also a way to specify options that
+  are reserved Julia words and, thus, cannot be used for keywords in function calls.
 
 - Abstract vector API for lists of Tcl objects.
 
@@ -87,10 +97,6 @@ Versioning](https://semver.org).
 - `Tcl.getinterp()` has been replaced by `TclInterp()`.
 
 - `Tcl.setresult` has been replaced by `Tcl.setresult!`.
-
-- Tcl/Tk options `-key val` in commands are produced by `key => val` pairs in Julia code
-  where `key` is a string or a symbol. Previously it was done for keywords in function calls
-  but, then, `key` cannot be a reserved Julia keyword.
 
 ### Fixed
 

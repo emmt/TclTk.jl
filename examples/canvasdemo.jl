@@ -4,35 +4,34 @@ using Colors, TclTk
 interp = tk_start()
 
 # Top-level widget with title.
-top = TkToplevel(:background => "#282c34")
+top = TkToplevel(background="#282c34")
 interp(Nothing, :wm, :title, top, "Canvas demo")
 
 # Create a canvas widget. The "closeenough" settings (in pixels) is to facilitate the
 # selection of a marker to delete.
-canvas = TkCanvas(top, :cursor => :target, :background => "#282c34", :closeenough => 7)
+canvas = TkCanvas(top, cursor=:target, background="#282c34", closeenough=7)
 
 # Frame widget for the message and counter.
-bar = TkFrame(top, :borderwidth => 1, :relief => :raised)
+bar = TkFrame(top, borderwidth=1, relief=:raised)
 
 # Create a message widget.
-mesg = TkMessage(bar, :text => """
+mesg = TkMessage(bar, text="""
 Click on an empty location to add a marker.
-Click on a marker to delete it.""", :aspect => 600)
+Click on a marker to delete it.""", aspect=600)
 
 # Create a Tcl variable to track the number of markers.
 counter = TclTk.Variable{Int}(interp, "::NUMBER_OF_MARKERS")
 counter[] = 0
 
 # Create a label to display the number of markers.
-count = TkLabel(bar, :background => :white, :borderwidth => 1, :relief => :sunken,
-                :width => 5, :text => 0, :textvariable => counter.name)
+count = TkLabel(bar, background="white", borderwidth=1, relief=:sunken,
+                width=5, text=0, textvariable=counter.name)
 
 # Arrange widgets in their parent.
-TclTk.pack(Nothing, canvas, :side => :top, :expand => true, :fill => :both)
-TclTk.pack(Nothing, bar, :side => :bottom, :expand => false, :fill => :x)
-TclTk.pack(Nothing, mesg, :side => :left, :expand => true, :fill => :both)
-TclTk.pack(Nothing, count, :side => :right, :expand => false, :fill => :both,
-           :padx => 5, :pady => 5)
+canvas.pack(Nothing, side=:top, expand=true, fill=:both)
+bar.pack(Nothing, side=:bottom, expand=false, fill=:x)
+mesg.pack(Nothing, side=:left, expand=true, fill=:both)
+count.pack(Nothing, side=:right, expand=false, fill=:both, padx=5, pady=5)
 
 # Function to add a marker in a canvas.
 add_marker(canvas::TkCanvas, xm, ym; kwds...) =
@@ -53,8 +52,7 @@ function add_marker(interp::TclInterp, canvas, xm, ym;
         y = convert(Float64, ym)
     end
     return interp(Int, canvas, :create, :rectangle, x - r, y - r, x + r, y + r,
-                  :tags => tag, :fill => fill, :width => 0,
-                  :activefill => activefill, :activewidth => 0)
+                  tags=tag, fill=fill, width=0, activefill=activefill, activewidth=0)
 end
 
 # Callback function to be called with: %W %x %y.
@@ -85,4 +83,4 @@ end
 on_click_callback = TclTk.Callback(on_click, interp, "on_click")
 
 # Bind event to callback.
-interp(:bind, canvas, "<ButtonPress-1>", "on_click %W %x %y")
+interp(Nothing, :bind, canvas, "<ButtonPress-1>", "on_click %W %x %y")

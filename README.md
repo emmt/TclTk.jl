@@ -68,15 +68,16 @@ julia> img = testimage("mandrill"); # read some image data
 julia> tk_start() # make sure Tk package is loaded and event loop is running
 Tcl interpreter (address: 0x0000000017dc33e0, threadid: 1)
 
-julia> top = TkToplevel(:background => "#282c34")
+julia> top = TkToplevel(background="#282c34")
 TkToplevel(".top1")
 
 julia> TclTk.exec(Nothing, :wm, :title, top, "A Nice Image")
 
-julia> lab = TkLabel(top, :image => TkPhoto(permutedims(img)), :cursor => :target)
+julia> lab = TkLabel(top, image=TkPhoto(permutedims(img)), cursor="target")
 TkLabel(".top1.lab1")
 
-julia> TclTk.pack(Nothing, lab, :side => :top, :padx => 20, :pady => 30)
+julia> lab.pack(Nothing, side="top", padx=20, pady=30)
+
 ```
 
 The different stages are:
@@ -89,9 +90,8 @@ The different stages are:
 
 - Call window manager `wm` command to set the title of the top-level window. When specifying
   tokens or options in commands symbols and strings are equivalent, they can even be mixed.
-  Here or above, `:wm`, `:title`, or `:background` could have been specified as `"wm"`,
-  `"title"`, or `"background"`, while ` "darkseagreen"` could have been specified as
-  `:darkseagreen`. The choice is purely a matter of style.
+  Here or above, `:wm` or `:title` could have been specified as `"wm"` or `"title"`, while
+  `"target"` could have been specified as `:target`. The choice is purely a matter of style.
 
 - Create a widget, here a label `lab`, whose parent is `top` to display the image.
 

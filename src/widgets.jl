@@ -28,21 +28,22 @@ macro TkWidget(_type, class, command, prefix)
             struct $type <: TkRootWidget
                 interp::TclInterp
                 path::TclObj # Tk window path and Tcl widget command
-                function $type(interp::TclInterp, name::Name, pairs::Pair...)
+                function $type(interp::TclInterp, name::Name, pairs::Pair...; kwds...)
                     # It is sufficient to ensure that Tk is loaded for root widgets because
                     # other widgets must have a parent.
                     tk_start(interp)
                     path = create_widget(
-                        $type, interp, $command, widget_path(name), pairs...)
+                        $type, interp, $command, widget_path(name), pairs...; kwds...)
                     return new(interp, path)
                 end
             end
 
             # Supply optional arguments.
-            $type(pairs::Pair...) = $type(TclInterp(), pairs...)
-            $type(name::Name, pairs::Pair...) = $type(TclInterp(), name, pairs...)
-            $type(interp::TclInterp, pairs::Pair...) =
-                $type(interp, widget_auto_name(interp, nothing, $prefix), pairs...)
+            $type(pairs::Pair...; kwds...) = $type(TclInterp(), pairs...; kwds...)
+            $type(name::Name, pairs::Pair...; kwds...) =
+                $type(TclInterp(), name, pairs...; kwds...)
+            $type(interp::TclInterp, pairs::Pair...; kwds...) =
+                $type(interp, widget_auto_name(interp, nothing, $prefix), pairs...; kwds...)
 
             # Make the widget callable.
             (w::$type)(args...; kwds...) = exec(w, args...; kwds...)
@@ -57,27 +58,28 @@ macro TkWidget(_type, class, command, prefix)
                 parent::TkWidget
                 interp::TclInterp
                 path::TclObj # Tk window path and Tcl widget command
-                function $type(parent::TkWidget, child::Name, pairs::Pair...)
+                function $type(parent::TkWidget, child::Name, pairs::Pair...; kwds...)
                     interp = parent.interp
                     path = create_widget(
-                        $type, interp, $command, widget_path(parent, child), pairs...)
+                        $type, interp, $command, widget_path(parent, child),
+                        pairs...; kwds...)
                     return new(parent, interp, path)
                 end
             end
 
             # Supply widget name arguments.
-            $type(parent::TkWidget, pairs::Pair...) =
-                $type(parent, widget_auto_name(parent.interp, parent, $prefix), pairs...)
+            $type(parent::TkWidget, pairs::Pair...; kwds...) =
+                $type(parent, widget_auto_name(parent.interp, parent, $prefix), pairs...; kwds...)
 
             # Recover parent widget from its name.
-            $type(parent::Name, child::Name, pairs::Pair...) =
-                $type(TkWidget(parent), child, pairs...)
-            $type(parent::Name, pairs::Pair...) =
-                $type(TkWidget(parent), pairs...)
-            $type(interp::TclInterp, parent::Name, child::Name, pairs::Pair...) =
-                $type(TkWidget(interp, parent), child, pairs...)
-            $type(interp::TclInterp, parent::Name, pairs::Pair...) =
-                $type(TkWidget(interp, parent), pairs...)
+            $type(parent::Name, child::Name, pairs::Pair...; kwds...) =
+                $type(TkWidget(parent), child, pairs...; kwds...)
+            $type(parent::Name, pairs::Pair...; kwds...) =
+                $type(TkWidget(parent), pairs...; kwds...)
+            $type(interp::TclInterp, parent::Name, child::Name, pairs::Pair...; kwds...) =
+                $type(TkWidget(interp, parent), child, pairs...; kwds...)
+            $type(interp::TclInterp, parent::Name, pairs::Pair...; kwds...) =
+                $type(TkWidget(interp, parent), pairs...; kwds...)
 
             # Make the widget callable.
             (w::$type)(args...; kwds...) = exec(w, args...; kwds...)
@@ -317,7 +319,7 @@ end
 
 # Private method called to create a widget.
 function create_widget(::Type{T}, interp::TclInterp, cmd::Name, path::Name,
-                       pairs::Pair...) where {T}
+                       pairs::Pair...; kwds...) where {T}
     if winfo_exists(interp, path)
         # If widget already exists, it will be simply re-used, so we just apply
         # configuration options if any.
@@ -326,13 +328,13 @@ function create_widget(::Type{T}, interp::TclInterp, cmd::Name, path::Name,
             "attempt to call constructor `$T` on a Tk widget of type `$W`")
         widget = TclObj(path)
         if length(pairs) > 0
-            status = interp.exec(TclStatus, widget, :configure, pairs...)
+            status = interp.exec(TclStatus, widget, :configure, pairs...; kwds...)
             status == TCL_OK || tcl_error(interp)
         end
         return widget
     else
         # Widget does not already exists, create it with configuration options.
-        status = interp.exec(TclStatus, cmd, path, pairs...)
+        status = interp.exec(TclStatus, cmd, path, pairs...; kwds...)
         status == TCL_OK || tcl_error(interp)
         return interp.result(TclObj)
     end
@@ -358,9 +360,12 @@ TclObj(w::TkWidget) = w.path
 Base.convert(::Type{TclObj}, w::TkWidget) = TclObj(w)::TclObj
 unsafe_objptr(w::TkWidget) = unsafe_objptr(TclObj(w), "Tk widget") # used in `exec`
 
-exec(w::TkWidget, args...) = exec(w.interp, w.path, args...)
-exec(w::TkWidget, ::Type{T}, args...) where {T} = exec(T, w.interp, w.path, args...)
-exec(::Type{T}, w::TkWidget, args...) where {T} = exec(T, w.interp, w.path, args...)
+exec(w::TkWidget, args...; kwds...) =
+    exec(w.interp, w.path, args...; kwds...)
+exec(w::TkWidget, ::Type{T}, args...; kwds...) where {T} =
+    exec(T, w.interp, w.path, args...; kwds...)
+exec(::Type{T}, w::TkWidget, args...; kwds...) where {T} =
+    exec(T, w.interp, w.path, args...; kwds...)
 
 # We want to have the object type and path both printed in the REPL but want
 # only the object path with the `string` method or for string interpolation.
@@ -453,12 +458,12 @@ end
 Return all the options of Tk object (widget or image) `w`.
 
 ---
-    TclTk.configure(w, opt1 => val1, opt2 => val2)
-    w(:configure, opt1 => val1, opt2 => val2)
+    TclTk.configure(w, pairs...; kwds...)
+    w(:configure, pairs...; kwds...)
+    w.configure(pairs...; kwds...)
 
-Change some options of widget `w`. Options names (`opt1`, `opt2`, ...) may be specified as
-string or `Symbol` and shall correspond to Tk option names without the leading "-". Another
-way to change the settings is:
+Change some options of widget or image `w`. Trailing `pairs...` arguments and keywords
+`kwds...` are interpreted as configuration options. Another way to change the settings is:
 
     w[opt1] = val1
     w[opt2] = val2
@@ -468,8 +473,9 @@ way to change the settings is:
 [`TclTk.cget`](@ref) and [`TkWidget`](@ref).
 
 """
-configure(w::TkObject, pairs...) = configure(TclObject, w, pairs...)
-configure(::Type{T}, w::TkObject, pairs...) where {T} = exec(T, w, :configure, pairs...)
+configure(w::TkObject, pairs...; kwds...) = configure(TclObject, w, pairs...; kwds...)
+configure(::Type{T}, w::TkObject, pairs...; kwds...) where {T} =
+    exec(T, w, :configure, pairs...; kwds...)
 
 """
     TclTk.cget(w, opt)
@@ -504,6 +510,11 @@ end
 Call Tk *grid* geometry manager. One of the arguments must be a widget (that is an instance
 of `TkWidget`). All widgets in `args...` must live in the same interpreter.
 
+
+To specify the gridding options for a single widget `w`, another possible syntax is:
+
+    w.grid(args...; kwds...)
+
 # See also
 
 [`TclTk.pack`](@ref) and [`TclTk.place`](@ref).
@@ -512,10 +523,14 @@ of `TkWidget`). All widgets in `args...` must live in the same interpreter.
 function grid end
 
 """
-    TclTk.pack(args...)
+    TclTk.pack(args...; kwds...)
 
 Call Tk *packer* geometry manager. One of the arguments must be a widget (that is an
 instance of `TkWidget`). All widgets in `args...` must live in the same interpreter.
+
+To specify the packing options for a single widget `w`, another possible syntax is:
+
+    w.pack(args...; kwds...; kwds..)
 
 For example:
 
@@ -524,8 +539,8 @@ using TclTk
 tk_start()
 top = TkToplevel()
 TclTk.exec(Nothing, :wm, :title, top, "A simple example")
-btn = TkButton(top, :text => "Click me", :command => "puts {ouch!}")
-TclTk.pack(Nothing, btn, :side => :bottom, :padx => 30, :pady => 5)
+btn = TtkButton(top, text = "Click me", command = "puts {ouch!}")
+TclTk.pack(Nothing, btn, side = :bottom, padx = 30, pady = 5)
 ```
 
 # See also
@@ -536,10 +551,14 @@ TclTk.pack(Nothing, btn, :side => :bottom, :padx => 30, :pady => 5)
 function pack end
 
 """
-    TclTk.place(args...)
+    TclTk.place(args...; kwds..)
 
 Call Tk *placer* geometry manager. One of the arguments must be a widget (that is an
 instance of `TkWidget`). All widgets in `args...` must live in the same interpreter.
+
+To specify the placing options for a single widget `w`, another possible syntax is:
+
+    w.place(args...; kwds...)
 
 # See also
 
@@ -550,11 +569,11 @@ function place end
 
 for cmd in (:grid, :pack, :place)
     @eval begin
-        $cmd(args...) = $cmd(TclObj, args...)
-        function $cmd(::Type{T}, args...) where {T}
+        $cmd(args...; kwds...) = $cmd(TclObj, args...; kwds...)
+        function $cmd(::Type{T}, args...; kwds...) where {T}
             interp = common_interpreter(nothing, args...)
             interp == nothing && argument_error("missing a widget argument")
-            return exec(T, interp, $(QuoteNode(cmd)), args...)
+            return exec(T, interp, $(QuoteNode(cmd)), args...; kwds...)
         end
     end
 end

@@ -10,8 +10,8 @@ const PhotoColorant = Union{Gray{N0f8},GrayA{N0f8},AGray{N0f8},
                             BGR{N0f8},BGRA{N0f8},ABGR{N0f8}}
 
 """
-    TkImage{type}(host=TclInterp(), option => value, ...) -> img
-    TkImage{type}(host=TclInterp(), name, option => value, ...) -> img
+    TkImage{type}(host=TclInterp(), pairs...; kwds...) -> img
+    TkImage{type}(host=TclInterp(), name, pairs...; kwds...) -> img
 
 Return a Tk image of given `type` (e.g., `:bitmap` or `:photo`).
 
@@ -26,8 +26,8 @@ If the image `name` is omitted, it is automatically generated. If `name` is spec
 image with this name already exists in the interpreter, it is re-used and, if options are
 specified, it is reconfigured.
 
-There may be any `option => value` pairs to (re)configure the image. Options depend on the
-image types.
+Trailing `paris...` arguments and keywords `kwds...` are interpreted as image configuration
+options. Possible options depend on the image types.
 
 A Tk image can then be used in any Tcl/Tk script or command where an image is expected.
 
@@ -57,61 +57,62 @@ img.interp   # the interpreter hosting the image
 [`tk_start`](@ref), and [`TclInterp`](@ref).
 
 """
-function TkImage{type}(pairs::Pair...) where {type}
-    return TkImage{type}(TclInterp(), pairs...)
+function TkImage{type}(pairs::Pair...; kwds...) where {type}
+    return TkImage{type}(TclInterp(), pairs...; kwds...)
 end
-function TkImage{type}(name::Name, pairs::Pair...) where {type}
-    return TkImage{type}(TclInterp(), name, pairs...)
+function TkImage{type}(name::Name, pairs::Pair...; kwds...) where {type}
+    return TkImage{type}(TclInterp(), name, pairs...; kwds...)
 end
-function TkImage{type}(w::TkWidget, pairs::Pair...) where {type}
-    return TkImage{type}(w.interp, name, pairs...)
+function TkImage{type}(w::TkWidget, pairs::Pair...; kwds...) where {type}
+    return TkImage{type}(w.interp, name, pairs...; kwds...)
 end
-function TkImage{type}(w::TkWidget, name::Name, pairs::Pair...) where {type}
-    return TkImage{type}(w.interp, name, pairs...)
+function TkImage{type}(w::TkWidget, name::Name, pairs::Pair...; kwds...) where {type}
+    return TkImage{type}(w.interp, name, pairs...; kwds...)
 end
 
 # Create a new image of a given type and automatically named.
-function TkImage{type}(interp::TclInterp, pairs::Pair...) where {type}
+function TkImage{type}(interp::TclInterp, pairs::Pair...; kwds...) where {type}
     type isa Symbol || argument_error("image type must be a symbol")
-    name = interp.exec(:image, :create, type, pairs...)
+    name = interp.exec(:image, :create, type, pairs...; kwds...)
     return TkImage(Val(type), interp, name)
 end
 
 # Create a new image of a given type and name. If an image of the same name already exists,
 # it is re-wrapped.
-TkImage{type}(interp::TclInterp, name::Name, pairs::Pair...) where {type} =
-    TkImage{type}(interp, TclObj(name), pairs...)
+TkImage{type}(interp::TclInterp, name::Name, pairs::Pair...; kwds...) where {type} =
+    TkImage{type}(interp, TclObj(name), pairs...; kwds...)
 
-function TkImage{type}(interp::TclInterp, name::TclObj, pairs::Pair...) where {type}
+function TkImage{type}(interp::TclInterp, name::TclObj, pairs::Pair...; kwds...) where {type}
     type isa Symbol || argument_error("image type must be a symbol")
     if interp.exec(TclStatus, :image, :type, name) == TCL_OK
         # Image already exists. Possibly configure it and re-wrap it.
         interp.result(TclObj) == type || tcl_error(
             "image already exists with a different type")
-        length(pairs) > 0 && interp.exec(Nothing, name, :configure, pairs...)
+        length(pairs) > 0 && interp.exec(Nothing, name, :configure, pairs...; kwds...)
         return TkImage(Val(type), interp, name)
     else
         # Image does not exists. Create a new one and wrap it.
-        interp.exec(:image, :create, type, name, pairs...)
+        interp.exec(:image, :create, type, name, pairs...; kwds...)
         return TkImage(Val(type), interp, name)
     end
 end
 
 """
-    TkImage(host=TclInterp(), name, option => value, ...) -> img
+    TkImage(host=TclInterp(), name, pairs...; kwds...) -> img
 
 Return an instance of `TkImage` managing Tk image named `name` in the Tcl interpreter
-specified by `host` (can be a Tk widget) and after applying any options specified by the
-trailing `option => value, ...` pairs.
+specified by `host` (can be a Tk widget) and after applying any options specified by
+`pairs...` and `kwds...`.
 
 """
-TkImage(name::Name, pairs::Pair...) = TkImage(TclInterp(), name, pairs...)
-TkImage(w::TkWidget, name::Name, pairs::Pair...) = TkImage(w.interp, name, pairs...)
-TkImage(interp::TclInterp, name::Name, pairs::Pair...) =
-    TkImage(interp, TclObj(name), pairs...)
-function TkImage(interp::TclInterp, name::TclObj, pairs::Pair...)
+TkImage(name::Name, pairs::Pair...; kwds...) = TkImage(TclInterp(), name, pairs...; kwds...)
+TkImage(w::TkWidget, name::Name, pairs::Pair...; kwds...) =
+    TkImage(w.interp, name, pairs...; kwds...)
+TkImage(interp::TclInterp, name::Name, pairs::Pair...; kwds...) =
+    TkImage(interp, TclObj(name), pairs...; kwds...)
+function TkImage(interp::TclInterp, name::TclObj, pairs::Pair...; kwds...)
     type = interp.exec(String, :image, :type, name)
-    length(pairs) > 0 && interp.exec(Nothing, name, :configure, pairs...)
+    length(pairs) > 0 && interp.exec(Nothing, name, :configure, pairs...; kwds...)
     return TkImage(Val(Symbol(type)), interp, name)
 end
 

@@ -7,32 +7,43 @@
 A top-level or a menu widget are created by:
 
 ```julia
-top = TkToplevel(interp=TclInterp(), [path,] option => value, ...)
-menu = TkMenu(interp=TclInterp(), [path,] option => value, ...)
+top = TkToplevel(interp=TclInterp(), [path,] pairs...; kwds...)
+menu = TkMenu(interp=TclInterp(), [path,] pairs...; kwds...)
 ```
 
 where `interp` is the interpreter where to create the widget (the shared interpreter of the
 thread by default), `path` is a string like `".top"` or `".menu"` (it must start with a dot
-and have no other dots) and `option => value, ...` denotes any number of settings with
-`option` an option name (a string or a symbol without a leading hyphen) and `value` the
-option value. The `path` argument is optional; if omitted, a widget path is automatically
-generated in the form `".$(pfx)$(num)"` where `pfx` is a short prefix specific to the widget
-class and `num` is a unique number.
+and have no other dots). Arguments `pairs...` and keywords `kwds...` denotes any number of
+settings specified as `option => value` pair or `option=value` keyword with `option` an
+option name and `value` the option value (for pairs, `option` may be a string or a symbol
+and the leading hyphen can be omitted). The `path` argument is optional; if omitted, a
+widget path is automatically generated in the form `".$(pfx)$(num)"` where `pfx` is a short
+prefix specific to the widget class and `num` is a unique number.
 
 The widget path (given by `w.path` for a widget `w`) is also the name of the Tcl command
 implementing the widget behavior and is used for any reference to the widget.
 
-For example:
+For example, using keywords:
 
 ```julia-repl
-julia> top = TkToplevel(:relief => :sunken, :borderwidth => 5, :background => :cyan)
+julia> top = TkToplevel(relief="sunken", borderwidth=5, background="cyan")
 TkToplevel(".top3")
 
 ```
 
-Symbols like `:relief` and `:sunken` can also be specified as literal strings (or
-as Tcl objects but this is less common): `:relief => :sunken`, `"relief" => "sunken"`, or
-`:relief => "sunken"` are all the same.
+or using pairs:
+
+```julia-repl
+julia> top = TkToplevel(:relief => "sunken", :borderwidth => 5, :background => "cyan")
+TkToplevel(".top3")
+
+```
+
+Mixing configuration options specified as pairs and keywords but is allowed but not
+recommended for readability.
+
+Symbols can also be specified as literal strings and conversely. Thus, `:relief => :sunken`,
+`"relief" => "sunken"`, and `:relief => "sunken"` are all the same.
 
 
 ### Other widgets
@@ -41,7 +52,7 @@ Non-top level widgets have a parent (a top-level widget, a frame, etc.) which mu
 provided to the constructor. For example, a label is created by something like:
 
 ```julia
-lab = TkLabel(parent, [child,] option => value, ...)
+lab = TkLabel(parent, [child,] pairs...; kwds...)
 ```
 
 where `child` is the path of the widget relative to its parent, it must have no dots. The
@@ -117,10 +128,10 @@ done by:
 
 ```julia
 interp = tk_start()
-top = TkToplevel(interp, :background => "darkseagreen")
-lab = TkLabel(top, :text => "Some label", :background => "lightblue")
-btn = TkButton(top, :text => "Click me", :background => "goldenrod", :command => "puts {Hello world!}")
-TclTk.pack(Nothing, btn, lab, :side => :bottom, :padx => 90, :pady => 5)
+top = TkToplevel(interp, background="darkseagreen")
+lab = TkLabel(top, text="Some label", background="lightblue")
+btn = TkButton(top, text="Click me", background="goldenrod", command="puts {Hello world!}")
+TclTk.pack(Nothing, btn, lab, side=:bottom, padx=90, pady=5)
 interp(Nothing, :wm, :title, top, "Tk `pack` example")
 ```
 
@@ -139,9 +150,9 @@ button `btn` widgets as follows:
 using TclTk
 tk_start()
 top = TkToplevel()
-lab = TkLabel(top, :text => "Some label", :background => "lightblue")
-btn = TkButton(top, :text => "Please push me...", :command => "puts {Button pushed!}")
-TclTk.pack(Nothing, btn, :side => :top, :padx => 70, :pady => 5)
+lab = TkLabel(top, text="Some label", background="lightblue")
+btn = TkButton(top, text="Please push me...", command="puts {Button pushed!}")
+TclTk.pack(Nothing, btn, side=:top, padx=70, pady=5)
 ```
 
 This shows how `option => value` pairs can be used at widget creation to set some
@@ -208,7 +219,7 @@ For an existing widget, re-configuration can be done by via the `configure` sub-
 (often abbreviated to `config`) of the widget:
 
 ```julia-repl
-julia> TclTk.exec(btn, :config, :background => "darkseagreen")
+julia> TclTk.exec(btn, :config, background = "darkseagreen")
 TclObj("")
 
 ```
@@ -216,7 +227,7 @@ TclObj("")
 or equivalently:
 
 ```julia-repl
-julia> btn(:config, :background => "darkseagreen")
+julia> btn(:config, background = "darkseagreen")
 TclObj("")
 
 ```
@@ -226,7 +237,7 @@ configuring one or more options yields an empty result, `Nothing` may be specifi
 expected result type:
 
 ```julia-repl
-julia> btn(Nothing, :config, :foreground => "firebrick", :background => "darkseagreen")
+julia> btn(Nothing, :config, foreground="firebrick", background"darkseagreen")
 
 ```
 

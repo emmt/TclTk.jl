@@ -32,7 +32,7 @@ end
     props = sort!([:height, :interp, :inuse, :name, :size, :type, :width])
 
     # Bitmap image.
-    xbm = @inferred TkBitmap(:file=>joinpath(@__DIR__, "rule.xbm"))
+    xbm = @inferred TkBitmap(file=joinpath(@__DIR__, "rule.xbm"))
 
     # Image properties.
     @test sort!(collect(propertynames(xbm))) == props
@@ -67,6 +67,9 @@ end
     @test path == @inferred xbm.cget(String, "-file")
     @test path == xbm[:file => String]
     @test path == xbm["file" => String]
+    color = "cyan"
+    @inferred xbm.configure(Nothing, foreground = color)
+    @test color == @inferred xbm.cget(:foreground)
     color = "red"
     @inferred xbm.configure(Nothing, :foreground => color)
     @test color == @inferred xbm.cget(:foreground)

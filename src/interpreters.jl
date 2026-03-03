@@ -352,28 +352,46 @@ result:
 See [`TclTk.list`](@ref) for the rules to build a list (apart from the accounting of pairs).
 
 See [`TclTk.eval`](@ref) for another way to evaluate a Tcl script. The difference with
-[`TclTk.eval`](@ref) is that each input argument is interpreted as a different *token* of the
-Tcl command.
+[`TclTk.eval`](@ref) is that each input argument is interpreted as a different *token* of
+the Tcl command and the accounting of `key => val` pairs.
 
 """
-function exec(::Type{T}, interp::TclInterp, args...) where {T}
+function exec(::Type{T}, interp::TclInterp, args...; kwds...) where {T}
     GC.@preserve interp begin
         interp_ptr = checked_pointer(interp)
-        list_ptr = unsafe_new_list(unsafe_append_exec_arg, interp_ptr, args...)
-        status = Tcl_EvalObjEx(interp_ptr, Tcl_IncrRefCount(list_ptr),
-                               TCL_EVAL_DIRECT | TCL_EVAL_GLOBAL)
-        Tcl_DecrRefCount(list_ptr)
+        list_ptr = Tcl_IncrRefCount(new_list())
+        status = try
+            for arg in args
+                unsafe_append_exec_arg(interp_ptr, list_ptr, arg)
+            end
+            for (key, val) in kwds
+                unsafe_append_element(interp_ptr, list_ptr, with_hyphen(key))
+                unsafe_append_element(interp_ptr, list_ptr, val)
+            end
+            Tcl_EvalObjEx(interp_ptr, list_ptr, TCL_EVAL_DIRECT | TCL_EVAL_GLOBAL)
+        finally
+            Tcl_DecrRefCount(list_ptr) # free list object
+        catch
+            rethrow()
+        end
         return unsafe_eval_result(T, status, interp_ptr)
+
+        #list_ptr = unsafe_new_list(unsafe_append_exec_arg, interp_ptr, args...)
+        #status = Tcl_EvalObjEx(interp_ptr, Tcl_IncrRefCount(list_ptr),
+        #                       TCL_EVAL_DIRECT | TCL_EVAL_GLOBAL)
+        #Tcl_DecrRefCount(list_ptr)
+        #return unsafe_eval_result(T, status, interp_ptr)
     end
 end
 
 # Provide optional leading arguments.
-exec(args...) = exec(TclInterp(), args...)
-exec(::Type{T}, args...) where {T} = exec(T, TclInterp(), args...)
-exec(interp::TclInterp, args...) = exec(TclObj, interp, args...)
+exec(args...; kwds...) = exec(TclInterp(), args...; kwds...)
+exec(::Type{T}, args...; kwds...) where {T} = exec(T, TclInterp(), args...; kwds...)
+exec(interp::TclInterp, args...; kwds...) = exec(TclObj, interp, args...; kwds...)
 
 # Re-order leading arguments.
-exec(interp::TclInterp, ::Type{T}, args...) where {T} = exec(T, interp, args...)
+exec(interp::TclInterp, ::Type{T}, args...; kwds...) where {T} =
+    exec(T, interp, args...; kwds...)
 
 function unsafe_append_exec_arg(interp::InterpPtr, list::ObjPtr, arg)
     unsafe_append_element(interp, list, arg)
