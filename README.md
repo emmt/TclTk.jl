@@ -16,6 +16,7 @@ a few examples are given below.
 The traditional *"Hello world!"* example:
 
 ``` julia-repl
+julia> using TclTk
 julia> TclTk.eval(Nothing, "puts {Hello world!}")
 Hello world!
 ```
