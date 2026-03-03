@@ -330,8 +330,8 @@ issafe(interp::TclInterp=TclInterp()) =
 
 Make a list out of the arguments `args...`, evaluate this list as a Tcl command with
 interpreter `interp`, and return a value of type `T`. Any `key => val` pair in `args...` is
-converted in the pair of arguments `-key` and `val` in the command list (note the hyphen
-before the key name).
+converted in the pair of arguments `-key` and `val` in the command list (where the leading
+hyphen before the key name is added if needed).
 
 The evaluation of a Tcl command stores a result (or an error message) in the interpreter and
 returns a status. The behavior of `TclTk.exec` depends on the type `T` of the expected
@@ -380,7 +380,8 @@ function unsafe_append_exec_arg(interp::InterpPtr, list::ObjPtr, arg)
     return nothing
 end
 
-function unsafe_append_exec_arg(interp::InterpPtr, list::ObjPtr, (key,val)::Pair)
+function unsafe_append_exec_arg(interp::InterpPtr, list::ObjPtr,
+                                (key, val)::Pair{<:OptionName,<:Any})
     unsafe_append_element(interp, list, with_hyphen(key))
     unsafe_append_element(interp, list, val)
     return nothing
@@ -401,9 +402,7 @@ end
     interp.eval(T=TclObj, args...) -> res::T
 
 Concatenate arguments `args...` into a list, evaluate this list as a Tcl script with
-interpreter `interp`, and return a value of type `T`.Any `key => val` pair in `args...` is
-converted in the pair of arguments `-key` and `val` in the script list (note the hyphen
-before the key name).
+interpreter `interp`, and return a value of type `T`.
 
 The evaluation of a Tcl script stores a result (or an error message) in the interpreter and
 returns a status. The behavior of `TclTk.eval` depend on the type `T` of the expected result:
@@ -478,12 +477,6 @@ end
 
 function unsafe_append_eval_arg(interp::InterpPtr, list::ObjPtr, arg)
     unsafe_append_list(interp, list, arg)
-    return nothing
-end
-
-function unsafe_append_eval_arg(interp::InterpPtr, list::ObjPtr, (key,val)::Pair)
-    unsafe_append_element(interp, list, "-"*string(key))
-    unsafe_append_element(interp, list, val)
     return nothing
 end
 
