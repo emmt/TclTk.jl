@@ -18,7 +18,7 @@ macro TkWidget(structname, class, command, prefix)
 
     type = esc(structname) # constructor must be in the caller's module
     class isa Union{Symbol,String} || error("`class` must be a symbol or a string literal")
-    class isa String || (class = String(class)::String)
+    class = QuoteNode(Symbol(class)::Symbol)
     command isa String || error("`command` must be a string literal")
     prefix isa String || error("`prefix` must be a string literal")
 
@@ -41,9 +41,10 @@ macro TkWidget(structname, class, command, prefix)
     end
 end
 
-const widget_classes = Dict{String,Type{<:TkWidget}}()
+const widget_classes = Dict{Symbol,Type{<:TkWidget}}()
 
-function register_widget_class(class::String, ::Type{T}) where {T<:TkWidget}
+function register_widget_class(class::Union{Symbol,AbstractString}, ::Type{T}) where {T<:TkWidget}
+    class isa Symbol || (class = Symbol(class)::Symbol)
     if haskey(widget_classes, class)
         S = widget_classes[class]
         isequal(S, T) || error("attempt to register widget class `$class` for type `$T` ",
@@ -60,7 +61,7 @@ end
 
 function widget_constructor_from_class(class::Name)
     # In the database of widget classes, the class is a string.
-    class isa AbstractString || (class = String(class)::String)
+    class isa Symbol || (class = Symbol(class)::Symbol)
     constructor = get(widget_classes, class, nothing)
     isnothing(constructor) && argument_error("unregistered widget class \"$class\"")
     return constructor
@@ -108,9 +109,6 @@ end
 @TkWidget TtkSpinbox      TSpinbox      "::ttk::spinbox"      "sbx"
 @TkWidget TtkTreeview     Treeview      "::ttk::treeview"     "trv"
 
-# Window "." has a special class in Tk.
-register_widget_class("Tk", TkToplevel)
-
 """
     TkWidget(interp=TclInterp(), path)
 
@@ -129,25 +127,171 @@ function TkWidget(interp::TclInterp, path::Name)
     return T(interp, Verified(path))
 end
 
+"""
+    TclTk.winfo(T=TclObj, interp=TclInterp(), what, args...) -> res::T
+
+Return information `what` related to Tk window(s) as a value of type `T`.
+
+"""
+winfo(interp::TclInterp, what::Name, args...) = winfo(TclObj, interp, what, args...)
+winfo(::Type{T}, interp::TclInterp, what::Name, args...) where {T} =
+    interp(T, "::winfo", what, args...)
+
+"""
+    TclTk.winfo(T=TclObj, w::TkWidget, what) -> res::T
+
+Return information `what` related to widget `w` as a value of type `T`.
+
+"""
+winfo(w::TkWidget, what::Name) = winfo(what, w)
+winfo(what::Name, w::TkWidget) = winfo(TclObj, w, what)
+winfo(::Type{T}, w::TkWidget, what::Name) where {T} = winfo(T, what, w)
+winfo(::Type{T}, what::Name, w::TkWidget) where {T} = winfo(T, w.interp, what, w.path)
+
 winfo_exists(w::TkWidget) = winfo_exists(w.interp, w.path)
-winfo_exists(interp::TclInterp, path::Name) = interp.exec(Bool, :winfo, :exists, path)
+winfo_exists(interp::TclInterp, path::Name) = winfo(Bool, interp, :exists, path)
 
 winfo_parent(w::TkWidget) = winfo_parent(w.interp, w.path)
-winfo_parent(interp::TclInterp, path::Name) = interp.exec(:winfo, :parent, path)
+winfo_parent(interp::TclInterp, path::Name) = winfo(String, interp, :parent, path)
 
 winfo_name(w::TkWidget) = winfo_name(w.interp, w.path)
-winfo_name(interp::TclInterp, path::Name) = interp.exec(:winfo, :name, path)
+winfo_name(interp::TclInterp, path::Name) = winfo(String, interp, :name, path)
 
 winfo_class(w::TkWidget) = winfo_class(w.interp, w.path)
 function winfo_class(interp::TclInterp, path::Name)
     # `winfo class .` yields the name of the application which is not what we want. So, we
     # must specifically consider the case of the "." window.
-    return winfo_isroot(path) ? TclObj(:Toplevel) : interp.exec(:winfo, :class, path)
+    return isrootwidget(path) ? :Toplevel : winfo(Symbol, interp, :class, path)
     # TODO for Tix widgets, we may instead use: class = string(interp(path, :configure, "-class")[4])
 end
 
+winfo_interps(w::TkWidget) =
+    winfo(Vector{String}, w.interp, :interps, "-displayof", w)
+
+winfo_visualsavailable(w::TkWidget) =
+    winfo(Vector{Tuple{Symbol,Int}}, w.interp, :visualsavailable, w)
+
+winfo_visualsavailable_includeids(w::TkWidget) =
+     winfo(Vector{Tuple{Symbol,Int,UInt32}}, w.interp, :visualsavailable, w, :includeids)
+
+winfo_atom(w::TkWidget) = PrefixedFunction(winfo_atom, w)
+winfo_atom(w::TkWidget, name) = winfo(UInt32, w.interp, :atom, "-displayof", w, name)
+
+winfo_atomname(w::TkWidget) = PrefixedFunction(winfo_atomname, w)
+winfo_atomname(w::TkWidget, id) = winfo(String, w.interp, :atomname, "-displayof", w, id)
+
+winfo_containing(w::TkWidget) = PrefixedFunction(winfo_containing, w)
+winfo_containing(w::TkWidget, rootx, rooty) =
+     winfo(String, w.interp, :containing, "-displayof", w, rootx, rooty)
+
+winfo_fpixels(w::TkWidget) = PrefixedFunction(winfo_fpixels, w)
+winfo_fpixels(w::TkWidget, number) = winfo(Float64, w.interp, :fpixels, w, number)
+
+winfo_pathname(w::TkWidget) = PrefixedFunction(winfo_pathname, w)
+winfo_pathname(w::TkWidget, id) = winfo(String, w.interp, :pathname, "-displayof", w, id)
+
+winfo_pixels(w::TkWidget) = PrefixedFunction(winfo_pixels, w)
+winfo_pixels(w::TkWidget, number) = winfo(Int, w.interp, :pixels, w, number)
+
+winfo_rgb(w::TkWidget) = PrefixedFunction(winfo_rgb, w)
+winfo_rgb(w::TkWidget, color) = winfo(NTuple{3,UInt16}, w.interp, :rgb, w, color) # FIXME -> colorant
+
+const WINFO = (
+    :atom             => (false, typeof(winfo_atom)),
+    :atomname         => (false, typeof(winfo_atomname)),
+    :cells            => (true,  Int),
+    :children         => (true,  Vector{String}), # TODO iterable list of strings
+    :class            => (true,  typeof(winfo_class)),
+    :colormapfull     => (true,  Bool),
+    :containing       => (false, typeof(winfo_containing)),
+    :depth            => (true,  Int),
+    :exists           => (true,  Bool),
+    :fpixels          => (false, typeof(winfo_fpixels)),
+    :geometry         => (true,  String), # TODO parse "widthxheight+x+y" in pixels
+    :height           => (true,  Int),
+    :id               => (true,  UInt32),
+    :interp           => (true,  typeof(getfield)),
+    :interps          => (true,  typeof(winfo_interps)),
+    :ismapped         => (true,  Bool),
+    :manager          => (true,  Symbol),
+    :name             => (true,  String),
+    :parent           => (true,  String),
+    :path             => (true,  typeof(getfield)),
+    :pathname         => (false, typeof(winfo_pathname)),
+    :pixels           => (false, typeof(winfo_pixels)),
+    :pointerx         => (true,  Int),
+    :pointerxy        => (true,  NTuple{2,Int}),
+    :pointery         => (true,  Int),
+    :reqheight        => (true,  Int),
+    :reqwidth         => (true,  Int),
+    :rgb              => (false, typeof(winfo_rgb)),
+    :rootx            => (true,  Int),
+    :rooty            => (true,  Int),
+    :screen           => (true,  String),
+    :screencells      => (true,  Int),
+    :screendepth      => (true,  Int),
+    :screenheight     => (true,  Int),
+    :screenmmheight   => (true,  Float64), # NOTE here float seems more appropriate than integer
+    :screenmmwidth    => (true,  Float64), # NOTE  here float seems more appropriate than integer
+    :screenvisual     => (true,  Symbol),
+    :screenwidth      => (true,  Int),
+    :server           => (true,  String),
+    :toplevel         => (true,  String),
+    :viewable         => (true,  Bool),
+    :visual           => (true,  Symbol),
+    :visualid         => (true,  UInt32),
+    :visualsavailable => (true,  typeof(winfo_visualsavailable)),
+    :visualsavailable_includeids => (true,  typeof(winfo_visualsavailable_includeids)),
+    :vrootheight      => (true,  Int),
+    :vrootwidth       => (true,  Int),
+    :vrootx           => (true,  Int),
+    :vrooty           => (true,  Int),
+    :width            => (true,  Int),
+    :x                => (true,  Int),
+    :y                => (true,  Int),
+)
+
+@inline Base.getproperty(w::TkWidget, key::Symbol) = _getproperty(w, Val(key))
+
+let props = Symbol[]
+    for (sym, (flag, T)) in WINFO
+        key = QuoteNode(sym)
+        if T === typeof(getfield)
+            @eval _getproperty(w::TkWidget, ::Val{$key}) = getfield(w, $key)
+        elseif T <: Function
+            @eval _getproperty(w::TkWidget, ::Val{$key}) = $(T.instance)(w)
+        else
+            @eval _getproperty(w::TkWidget, ::Val{$key}) = winfo($T, w, $key)
+
+        end
+        flag && push!(props, sym)
+    end
+    @eval Base.propertynames(w::TkWidget) = $(Tuple(sort!(props)))
+end
+
+# For Tk objects, syntax `obj.comd(...)` invokes sub-command.
+_getproperty(w::TkObject, ::Val{cmd}) where {cmd} = SubCommand{cmd}(w)
+
+# Some sub-commands are special.
+for cmd in (:cget, :configure)
+    @eval begin
+        (f::SubCommand{$(QuoteNode(cmd)),<:TkObject})(::Type{T}, args...; kwds...) where T =
+            $cmd(T, f.caller, args...; kwds...)
+        (f::SubCommand{$(QuoteNode(cmd)),<:TkObject})(args...; kwds...) =
+            $cmd(f.caller, args...; kwds...)
+    end
+end
+for cmd in (:grid, :pack, :place)
+    @eval begin
+        (f::SubCommand{$(QuoteNode(cmd)),<:TkWidget})(::Type{T}, args...; kwds...) where T =
+            $cmd(T, f.caller, args...; kwds...)
+        (f::SubCommand{$(QuoteNode(cmd)),<:TkWidget})(args...; kwds...) =
+            $cmd(f.caller, args...; kwds...)
+    end
+end
+
 """
-    TclTk.Impl.winfo_isroot(w) -> bool
+    TclTk.Impl.isrootwidget(w) -> bool
 
 Return whether `w` is the Tk root widget of window path.
 
@@ -156,23 +300,23 @@ specifically. For example, `winfo parent .` yields an empty result while `winfo 
 yields the name of the application.
 
 """
-winfo_isroot(path::Symbol) = (path == :(.))
-winfo_isroot(path::Name) = path == "."
-winfo_isroot(w::TkToplevel) = winfo_isroot(w.path)
-winfo_isroot(w::TkWidget) = false
+isrootwidget(path::Symbol) = (path == :(.))
+isrootwidget(path::Name) = path == "."
+isrootwidget(w::TkToplevel) = isrootwidget(w.path)
+isrootwidget(w::TkWidget) = false
 
 # Supply interpreter.
-function build(::Type{T}, class::String, command::String, prefix::String,
+function build(::Type{T}, class::Symbol, command::String, prefix::String,
                pairs::Pair...; kwds...) where {T<:TkWidget}
     return build(T, class, command, prefix, TclInterp(), pairs...; kwds...)
 end
-function build(::Type{T}, class::String, command::String, prefix::String,
+function build(::Type{T}, class::Symbol, command::String, prefix::String,
                path::Name, pairs::Pair...; kwds...) where {T<:TkWidget}
     return build(T, class, command, prefix, TclInterp(), path, pairs...; kwds...)
 end
 
 # Build a top-level widget with automatic name.
-function build(::Type{T}, class::String, command::String, prefix::String,
+function build(::Type{T}, class::Symbol, command::String, prefix::String,
                interp::TclInterp, pairs::Pair...; kwds...) where {T<:TkWidget}
     startswith(prefix, '.') || argument_error("missing parent widget")
     tk_start() # make sure Tk has been loaded
@@ -181,7 +325,7 @@ function build(::Type{T}, class::String, command::String, prefix::String,
 end
 
 # Build a widget given its full path.
-function build(::Type{T}, class::String, command::String, prefix::String,
+function build(::Type{T}, class::Symbol, command::String, prefix::String,
                interp::TclInterp, path::Name, pairs::Pair...; kwds...) where {T<:TkWidget}
     # If top-level widget, make sure Tk has been loaded.
     startswith(prefix, '.') && tk_start()
@@ -202,7 +346,7 @@ function build(::Type{T}, class::String, command::String, prefix::String,
 end
 
 # Build a child widget given its parent and its name.
-function build(::Type{T}, class::String, command::String, prefix::String,
+function build(::Type{T}, class::Symbol, command::String, prefix::String,
                parent::TkWidget, name::Name, pairs::Pair...; kwds...) where {T<:TkWidget}
     name isa String || (name = String(name)::String)
     isempty(match(r"^[A-Z_a-z][0-9A-Z_a-z]*$", name)) && argument_error(
@@ -213,7 +357,7 @@ function build(::Type{T}, class::String, command::String, prefix::String,
 end
 
 # Build a child widget given its parent and with automatic name.
-function build(::Type{T}, class::String, command::String, prefix::String,
+function build(::Type{T}, class::Symbol, command::String, prefix::String,
                parent::TkWidget, pairs::Pair...; kwds...) where {T<:TkWidget}
     interp = parent.interp
     path = widget_auto_path(interp, String(parent.path)::String, prefix)
@@ -289,36 +433,6 @@ for f in (:isequal, :(==))
         return $f(a.interp, b.interp) && $f(a.path, b.path)
     end
 end
-
-# Properties.
-Base.propertynames(w::TkWidget) = (:class, :interp, :parent, :path)
-@inline Base.getproperty(w::TkWidget, key::Symbol) = _getproperty(w, Val(key))
-_getproperty(w::TkWidget, ::Val{:class}) = winfo_class(w)
-_getproperty(w::TkWidget, ::Val{:interp}) = getfield(w, :interp)
-_getproperty(w::TkWidget, ::Val{:parent}) = winfo_parent(w)
-_getproperty(w::TkWidget, ::Val{:path}) = getfield(w, :path)
-
-# For Tk objects, syntax `obj.comd(...)` invokes sub-command.
-_getproperty(w::TkObject, ::Val{cmd}) where {cmd} = SubCommand{cmd}(w)
-
-# Some sub-commands are special.
-for cmd in (:cget, :configure)
-    @eval begin
-        (f::SubCommand{$(QuoteNode(cmd)),<:TkObject})(::Type{T}, args...; kwds...) where T =
-            $cmd(T, f.caller, args...; kwds...)
-        (f::SubCommand{$(QuoteNode(cmd)),<:TkObject})(args...; kwds...) =
-            $cmd(f.caller, args...; kwds...)
-    end
-end
-for cmd in (:grid, :pack, :place)
-    @eval begin
-        (f::SubCommand{$(QuoteNode(cmd)),<:TkWidget})(::Type{T}, args...; kwds...) where T =
-            $cmd(T, f.caller, args...; kwds...)
-        (f::SubCommand{$(QuoteNode(cmd)),<:TkWidget})(args...; kwds...) =
-            $cmd(f.caller, args...; kwds...)
-    end
-end
-
 """
     tk_start(interp = TclInterp()) -> interp
 

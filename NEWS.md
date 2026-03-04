@@ -68,6 +68,11 @@ Versioning](https://semver.org).
   `T(interp=TclInterp(), path)` where `path` is the full widget path. `T` may be `TkWidget`
   or a concrete type corresponding to the class of the existing widget.
 
+- Widgets have many more properties reflecting all information that can be given by `winfo`.
+  For example, `w.children` yields the ames of the children of `w` or `w.containing(x, y)`
+  yields the path name of the widget containing the point at pixel `(x, y)` in the screen of
+  `w`.
+
 
 ### Fixed
 

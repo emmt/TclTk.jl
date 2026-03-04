@@ -60,8 +60,10 @@ TclTk.suspend
 
 ```@docs
 TkWidget
+TkToplevel
 TclTk.cget
 TclTk.configure
+TclTk.winfo
 ```
 
 ## Geometry managers

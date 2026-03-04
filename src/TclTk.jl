@@ -165,6 +165,7 @@ for sym in (
     :tk_start,
     :unsetvar!,
     :unsetvar, # FIXME deprecated
+    :winfo,
 
     # Tk images.
     :TkBitmap,

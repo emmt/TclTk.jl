@@ -21,6 +21,7 @@ makedocs(
         "interpreters.md",
         "callbacks.md",
         "widgets.md",
+        "winfo.md",
         "dialogs.md",
         "images.md",
         "public.md",
