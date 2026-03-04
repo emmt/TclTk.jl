@@ -4,7 +4,7 @@ This page describes the most important changes in `Tcl`. The format is based on 
 Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic
 Versioning](https://semver.org).
 
-## Unreleased
+## Version 0.3.0 (2026-03-04)
 
 ### Breaking changes
 
