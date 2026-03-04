@@ -46,7 +46,7 @@ using Colors: FixedPointNumbers
     @test w.height isa Int
     #
     @test :id ∈ propertynames(w)
-    @test w.id isa UInt32
+    @test w.id isa UInt
     #
     @test :interp ∈ propertynames(w)
     @test w.interp isa TclInterp
