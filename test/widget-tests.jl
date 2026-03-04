@@ -70,8 +70,10 @@ using Colors: FixedPointNumbers
     @test w.path isa TclObj
     #
     @test :pathname ∉ propertynames(w)
-    @test @inferred(w.pathname(w.id)) isa String
-    @test @inferred(w.pathname(w.id)) == w.path
+    if !Sys.iswindows()
+        @test @inferred(w.pathname(w.id)) isa String
+        @test @inferred(w.pathname(w.id)) == w.path
+    end
     #
     @test :pixels ∉ propertynames(w)
     @test @inferred(w.pixels(123.4)) isa Int
