@@ -42,4 +42,4 @@ for w in frame.children
     interp(:grid, :configure, w, padx=5, pady=5)
 end
 interp(:focus, feet)
-interp(:bind, top, "<Return>", calc_callback.name)
+bind(top, "<Return>", calc_callback.name)

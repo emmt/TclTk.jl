@@ -84,4 +84,4 @@ end
 on_click_callback = TclTk.Callback(on_click, interp, "on_click")
 
 # Bind event to callback.
-interp(:bind, canvas, "<ButtonPress-1>", "on_click %W %x %y")
+bind(canvas, "<ButtonPress-1>", "on_click %W %x %y")

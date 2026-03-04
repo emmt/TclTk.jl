@@ -290,6 +290,8 @@ for cmd in (:grid, :pack, :place)
     end
 end
 
+(f::SubCommand{:find, TkCanvas})(spec::Word, args...) = f(TclObj, spec, args...)
+
 """
     TclTk.Impl.isrootwidget(w) -> bool
 
@@ -645,7 +647,7 @@ where `classname` is the name of the widget class (a string or a symbol).
 
 """
 Base.bind(::Type{T}, w::TkWidget, args...) where {T} =
-    exec(T, w.interp, w, args...)
+    exec(T, w.interp, "::bind", w, args...)
 
 # Supply return type.
 Base.bind(w::TkWidget) = bind(TclObj, w)
