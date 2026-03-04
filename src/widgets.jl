@@ -490,9 +490,15 @@ Change some options of widget or image `w`. Trailing `pairs...` arguments and ke
 [`TclTk.cget`](@ref) and [`TkWidget`](@ref).
 
 """
-configure(w::TkObject, pairs...; kwds...) = configure(TclObj, w, pairs...; kwds...)
 configure(::Type{T}, w::TkObject, pairs...; kwds...) where {T} =
     exec(T, w, :configure, pairs...; kwds...)
+configure(::Type{T}, w::TkObject, opt::Union{OptionName,TclObj}) where {T} =
+    exec(T, w, :configure, with_hyphen(opt))
+
+# Default result type depends on the number of arguments.
+configure(w::TkObject) = configure(TclObj, w)
+configure(w::TkObject, opt::Union{OptionName,TclObj}) = configure(TclObj, w, opt)
+configure(w::TkObject, pairs...; kwds...) = configure(Nothing, w, pairs...; kwds...)
 
 """
     TclTk.cget(w, opt)

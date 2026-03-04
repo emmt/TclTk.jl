@@ -109,7 +109,7 @@ A Tk widget instance can be called to perform widget actions such as (re-)config
 options. For example, let us show the frame of the image with a *sunken* relief:
 
 ``` julia-repl
-julia> lab.configure(Nothing, borderwidth=5, relief=:sunken)
+julia> lab.configure(borderwidth=5, relief=:sunken)
 
 ```
 

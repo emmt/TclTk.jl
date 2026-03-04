@@ -68,16 +68,16 @@ end
     @test path == xbm[:file => String]
     @test path == xbm["file" => String]
     color = "cyan"
-    @inferred xbm.configure(Nothing, foreground = color)
+    @inferred xbm.configure(foreground = color)
     @test color == @inferred xbm.cget(:foreground)
     color = "red"
-    @inferred xbm.configure(Nothing, :foreground => color)
+    @inferred xbm.configure(:foreground => color)
     @test color == @inferred xbm.cget(:foreground)
     color = "green"
-    @inferred xbm.configure(Nothing, "foreground" => color)
+    @inferred xbm.configure("foreground" => color)
     @test color == @inferred xbm.cget("foreground")
     color = "blue"
-    @inferred xbm.configure(Nothing, "-foreground", color)
+    @inferred xbm.configure("-foreground", color)
     @test color == @inferred xbm.cget("-foreground")
 
     # Change content.

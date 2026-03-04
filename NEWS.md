@@ -73,6 +73,11 @@ Versioning](https://semver.org).
   yields the path name of the widget containing the point at pixel `(x, y)` in the screen of
   `w`.
 
+- More meaningful return value for the `configure` (sub-)command: `TclObj` for
+  `w.configure()` or `w.configure(opt)` since a result is expected. `Nothing` for other
+  cases (i.e., when there are specified options). This also fixes a bug in
+  `TclTk.configure`.
+
 
 ### Fixed
 

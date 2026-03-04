@@ -132,7 +132,7 @@ julia> function on_click(interp::TclInterp, args::TclObj)
            y = win.canvasy(Float64, ym)
            # Set message.
            s = "Mouse clicked at ($xm, $ym) with canvas coordinates ($x, $y)."
-           mesg.configure(Nothing, text=s)
+           mesg.configure(text=s)
        end
 on_click (generic function with 1 method)
 
