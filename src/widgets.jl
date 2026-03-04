@@ -494,12 +494,12 @@ Change some options of widget or image `w`. Trailing `pairs...` arguments and ke
 """
 configure(::Type{T}, w::TkObject, pairs...; kwds...) where {T} =
     exec(T, w, :configure, pairs...; kwds...)
-configure(::Type{T}, w::TkObject, opt::Union{OptionName,TclObj}) where {T} =
+configure(::Type{T}, w::TkObject, opt::Word) where {T} =
     exec(T, w, :configure, with_hyphen(opt))
 
 # Default result type depends on the number of arguments.
 configure(w::TkObject) = configure(TclObj, w)
-configure(w::TkObject, opt::Union{OptionName,TclObj}) = configure(TclObj, w, opt)
+configure(w::TkObject, opt::Word) = configure(TclObj, w, opt)
 configure(w::TkObject, pairs...; kwds...) = configure(Nothing, w, pairs...; kwds...)
 
 """
@@ -516,15 +516,15 @@ leading hyphen may be omitted). Another way to obtain an option value is:
 [`TclTk.configure`](@ref) and [`TkWidget`](@ref).
 
 """
-cget(w::TkObject, opt::OptionName) = cget(TclObj, w, opt)
-cget(w::TkObject, ::Type{T}, opt::OptionName) where {T} = cget(T, w, opt)
-cget(::Type{T}, w::TkObject, opt::OptionName) where {T} = exec(T, w, :cget, with_hyphen(opt))
+cget(w::TkObject, opt::Word) = cget(TclObj, w, opt)
+cget(w::TkObject, ::Type{T}, opt::Word) where {T} = cget(T, w, opt)
+cget(::Type{T}, w::TkObject, opt::Word) where {T} = exec(T, w, :cget, with_hyphen(opt))
 
-Base.getindex(w::TkObject, key::OptionName) = cget(w, key)
-@inline Base.getindex(w::TkObject, (key,T)::Pair{<:OptionName,DataType}) = cget(T, w, key)
-Base.getindex(w::TkObject, ::Type{T}, key::OptionName) where {T} = cget(T, w, key)
-Base.getindex(w::TkObject, key::OptionName, ::Type{T}) where {T} = cget(T, w, key)
-function Base.setindex!(w::TkObject, val, key::OptionName)
+Base.getindex(w::TkObject, key::Word) = cget(w, key)
+@inline Base.getindex(w::TkObject, (key,T)::Pair{<:Word,DataType}) = cget(T, w, key)
+Base.getindex(w::TkObject, ::Type{T}, key::Word) where {T} = cget(T, w, key)
+Base.getindex(w::TkObject, key::Word, ::Type{T}) where {T} = cget(T, w, key)
+function Base.setindex!(w::TkObject, val, key::Word)
     exec(Nothing, w, :configure, key => val)
     return w
 end

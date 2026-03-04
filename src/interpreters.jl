@@ -399,16 +399,16 @@ function unsafe_append_exec_arg(interp::InterpPtr, list::ObjPtr, arg)
 end
 
 function unsafe_append_exec_arg(interp::InterpPtr, list::ObjPtr,
-                                (key, val)::Pair{<:OptionName,<:Any})
+                                (key, val)::Pair{<:Word,<:Any})
     unsafe_append_element(interp, list, with_hyphen(key))
     unsafe_append_element(interp, list, val)
     return nothing
 end
 
-with_hyphen(s::Name) = with_hyphen(string(s))
+with_hyphen(s::Word) = with_hyphen(String(s)::String)
 with_hyphen(s::String) = (startswith(s, '-') ? s : "-"*s)::String
 
-without_hyphen(s::Name) = without_hyphen(string(s))
+without_hyphen(s::Word) = without_hyphen(String(s)::String)
 function without_hyphen(s::AbstractString)
     start, stop = firstindex(s), lastindex(s)
     return (start > stop || s[start] != '-') ? string(s) :

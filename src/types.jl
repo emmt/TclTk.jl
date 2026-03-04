@@ -82,17 +82,14 @@ struct SubCommand{C,W}
     caller::W
 end
 
-# A "word" in a command (must not be a number).
+# A "word" in a command (must not be a number) also used for option names.
 const Word = Union{AbstractString,Symbol,TclObj}
 
-# `Name` is anything that can be understood as the name of a variable or of a
-# command.
+# `Name` is anything that can be understood as the name of a variable or of a command.
 const Name = Union{Word,Real}
 
 # A Tcl variable name can be specified as `(part1,part2)`.
-const VarName = Union{Name,Tuple{Name,Name}}
-
-const OptionName = Union{AbstractString,Symbol}
+const VarName = Union{Name,NTuple{2,Name}}
 
 """
     TclTk.Impl.FastString
