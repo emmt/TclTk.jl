@@ -136,9 +136,9 @@ abstract type TkWidget <: TkObject      end
 struct TkImage{T} <: TkObject
     interp::TclInterp
     name::TclObj
-    function TkImage(::Val{T}, interp::TclInterp, name::TclObj) where {T}
+    function TkImage{T}(interp::TclInterp, name::Verified{TclObj}) where {T}
         T isa Symbol || argument_error("image type must be a symbol")
-        return new{T}(interp, name)
+        return new{T}(interp, name.value)
     end
 end
 

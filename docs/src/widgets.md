@@ -79,8 +79,8 @@ Tk widgets may be invoked to execute sub-commands (the list of which depend on t
 type). There are different two equivalent ways to call a widget sub-command:
 
 ```julia
-TclTk.exec(T=TclObj, widget, subcmd, args...)
-widget(T=TclObj, subcmd, args...)
+TclTk.exec(T=Nothing, widget, subcmd, args...)
+widget(T=Nothing, subcmd, args...)
 ```
 
 where `widget` is a widget instance, optional leading argument `T` is the expected type of
@@ -131,8 +131,8 @@ interp = tk_start()
 top = TkToplevel(interp, background="darkseagreen")
 lab = TkLabel(top, text="Some label", background="lightblue")
 btn = TkButton(top, text="Click me", background="goldenrod", command="puts {Hello world!}")
-TclTk.pack(Nothing, btn, lab, side=:bottom, padx=90, pady=5)
-interp(Nothing, :wm, :title, top, "Tk `pack` example")
+TclTk.pack(btn, lab, side=:bottom, padx=90, pady=5)
+interp(:wm, :title, top, "Tk `pack` example")
 ```
 
 which gives:
@@ -152,7 +152,7 @@ tk_start()
 top = TkToplevel()
 lab = TkLabel(top, text="Some label", background="lightblue")
 btn = TkButton(top, text="Please push me...", command="puts {Button pushed!}")
-TclTk.pack(Nothing, btn, side=:top, padx=70, pady=5)
+TclTk.pack(btn, side=:top, padx=70, pady=5)
 ```
 
 This shows how `option => value` pairs can be used at widget creation to set some
@@ -220,7 +220,6 @@ For an existing widget, re-configuration can be done by via the `configure` sub-
 
 ```julia-repl
 julia> TclTk.exec(btn, :config, background = "darkseagreen")
-TclObj("")
 
 ```
 
@@ -228,16 +227,13 @@ or equivalently:
 
 ```julia-repl
 julia> btn(:config, background = "darkseagreen")
-TclObj("")
 
 ```
 
-Any number of option settings can be specified for `configure` sub-command but since
-configuring one or more options yields an empty result, `Nothing` may be specified as the
-expected result type:
+Any number of option settings can be specified for the `configure`:
 
 ```julia-repl
-julia> btn(Nothing, :config, foreground="firebrick", background"darkseagreen")
+julia> btn(:config, foreground="firebrick", background"darkseagreen")
 
 ```
 
@@ -252,7 +248,10 @@ julia> btn[:background] = "darkseagreen"
 Without any `option => value` pairs, the `configure` sub-command yields a list of all current settings:
 
 ```julia-repl
-julia> btn(:config)
+julia> btn(TclObj, :config)
 TclObj((("-activebackground", "activeBackground", "Foreground", "#ececec", "#ececec",), ("-activeforeground", "activeForeground", "Background", "#000000", "#000000",), ("-anchor", "anchor", "Anchor", "center", "center",), ("-background", "background", "Background", "#d9d9d9", "darkseagreen",), ("-bd", "-borderwidth",), ("-bg", "-background",), ("-bitmap", "bitmap", "Bitmap", "", "",), ("-borderwidth", "borderWidth", "BorderWidth", 1, 1,), ("-command", "command", "Command", "", "puts {Button pushed!}",), ("-compound", "compound", "Compound", "none", "none",), ("-cursor", "cursor", "Cursor", "", "",), ("-default", "default", "Default", "disabled", "disabled",), ("-disabledforeground", "disabledForeground", "DisabledForeground", "#a3a3a3", "#a3a3a3",), ("-fg", "-foreground",), ("-font", "font", "Font", "TkDefaultFont", "TkDefaultFont",), ("-foreground", "foreground", "Foreground", "#000000", "firebrick",), ("-height", "height", "Height", 0, 0,), ("-highlightbackground", "highlightBackground", "HighlightBackground", "#d9d9d9", "#d9d9d9",), ("-highlightcolor", "highlightColor", "HighlightColor", "#000000", "#000000",), ("-highlightthickness", "highlightThickness", "HighlightThickness", 1, 1,), ("-image", "image", "Image", "", "",), ("-justify", "justify", "Justify", "center", "center",), ("-overrelief", "overRelief", "OverRelief", "", "",), ("-padx", "padX", "Pad", "3m", "3m",), ("-pady", "padY", "Pad", "1m", "1m",), ("-relief", "relief", "Relief", "raised", "raised",), ("-repeatdelay", "repeatDelay", "RepeatDelay", 0, 0,), ("-repeatinterval", "repeatInterval", "RepeatInterval", 0, 0,), ("-state", "state", "State", "normal", "normal",), ("-takefocus", "takeFocus", "TakeFocus", "", "",), ("-text", "text", "Text", "", "Please push me...",), ("-textvariable", "textVariable", "Variable", "", "",), ("-underline", "underline", "Underline", "", "",), ("-width", "width", "Width", 0, 0,), ("-wraplength", "wrapLength", "WrapLength", 0, 0,),))
 
 ```
+
+Above, first argument `TclObj` of the `btn(...)` call is to specify the type of the result;
+otherwise this type is `Nothing` and the result is `nothing`.

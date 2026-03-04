@@ -32,7 +32,7 @@ julia> A[] = 0
 julia> A
 TclTk.Variable{Int64}(name: "::GLOBAL_COUNTER", value: 0)
 
-julia> A.interp(Nothing, :incr, A.name, 4) # increment variable with Tcl `incr` command
+julia> A.interp(:incr, A.name, 4) # increment variable with Tcl `incr` command
 
 julia> A[]
 4

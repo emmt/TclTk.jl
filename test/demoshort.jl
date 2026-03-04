@@ -57,7 +57,7 @@ end
 function labelframedemo()
     interp = tk_start()
     wname = ".labelframe"
-    interp.eval(Nothing, "catch {destroy $wname}")
+    interp.eval("::catch {destroy $wname}")
     w = Toplevel(wname)
     interp(:wm,:title,w,"Labelframe Demonstration")
     interp(:wm,:iconname,w,"labelframe")
@@ -88,7 +88,7 @@ function labelframedemo()
     end
 
     # Using a label window to control a group of options.
-    interp.eval(Nothing, raw"""
+    interp.eval(raw"""
             proc lfEnableButtons {w} {
                 foreach child [winfo children $w] {
                     if {$child == "$w.cb"} continue
@@ -120,11 +120,11 @@ end
 function runtests2()
     interp = tk_start()
     if false
-        name = interp.eval("image create photo -file /home/eric/work/code/CImg/CImg-1.5.5/examples/img/lena.pgm")
+        name = interp.eval(TclObj, "image create photo -file /home/eric/work/code/CImg/CImg-1.5.5/examples/img/lena.pgm")
         interp.eval("pack [button .b -image $name]")
         d = TclTk.getpixels(interp, name, Val{:red});
     else
-        name = TclTk.eval("image create photo -file /home/eric/work/code/CImg/CImg-1.5.5/examples/img/lena.pgm")
+        name = TclTk.eval(TclObj, "image create photo -file /home/eric/work/code/CImg/CImg-1.5.5/examples/img/lena.pgm")
         TclTk.eval("pack [button .b -image $name]")
         d = TclTk.getpixels(name, Val{:red});
     end

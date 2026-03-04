@@ -6,7 +6,7 @@ Versioning](https://semver.org).
 
 ## Unreleased
 
-### Changed
+### Breaking changes
 
 - `TclTk.setvar!` and `TclTk.unsetvar!` replace `TclTk.setvar` and `TclTk.unsetvar` which
   are deprecated.
@@ -24,6 +24,14 @@ Versioning](https://semver.org).
   on it) is no longer a mean to specify an option that is a reserved Julia word. There are
   different possibilities: (i) specify 2 arguments `"-option"` followed by `value` or (ii)
   specify a pair `"option" => value` or `:option => value`.
+
+- If a result is expected and wanted by the caller of `TclTk.eval` and `TclTk.exec`, the
+  return type **must** be specified as a first argument; otherwise, `Nothing` is assumed.
+  Specific methods that call `TclTk.exec` may have another default type which follows
+  logically from the behavior of the method. For example and for a widget `w`,
+  `w.configure()` and `w.configure(opt)` return a `TclObj` instance by default as a result
+  is expected, while `w.configure(opt=val,...)` returns `nothing`, `TclTk.cget` returns a
+  `TclObj` by default, etc. This simplifies a lot of (optimized) calls to these methods.
 
 ### Added
 

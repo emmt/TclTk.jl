@@ -39,9 +39,9 @@ The resources associated with a Tcl interpreter are automatically released when 
 Execution of a Tcl command may be done in three different ways:
 
 ```julia
-TclTk.exec(T=TclObj, interp=TclInterp(), args...)
-interp.exec(T=TclObj, args...)
-interp(T=TclObj, args...)
+TclTk.exec(T=Nothing, interp=TclInterp(), args...)
+interp.exec(T=Nothing, args...)
+interp(T=Nothing, args...)
 ```
 
 which execute the command specified by `args...` with the Tcl interpreter `interp` and yield
@@ -73,8 +73,8 @@ With [`TclTk.exec`](@ref), the shared interpreter of the thread is used by defau
 Evaluation of Tcl scripts may be done in two different ways:
 
 ```julia
-TclTk.eval(T=TclObj, interp=TclInterp(), args...)
-interp.eval(T=TclObj, args...)
+TclTk.eval(T=Nothing, interp=TclInterp(), args...)
+interp.eval(T=Nothing, args...)
 ```
 
 which concatenate `args...` (as done by the [`TclTk.concat`](@ref) function) in the form of
@@ -201,14 +201,15 @@ A Tcl interpreter, say `interp::TclInterp` has a number of properties:
   context, the interpreter is only used to report errors if any, the returned list is not
   linked to the interpreter.
 
-- `interp.exec(T=TclObj, args...)` is a shortcut for [`TclTk.exec(T, interp, args...)`](@ref
-  TclTk.exec) to execute a Tcl command with the interpreter and return a result of type `T`,
-  a Tcl object by default. The first of `args...` is the Tcl command while the remaining
-  `args...` are the arguments (or tokens) of the command.
+- `interp(T=Nothing, args...)` and `interp.exec(T=Nothing, args...)` are shortcuts for
+  [`TclTk.exec(T, interp, args...)`](@ref TclTk.exec) to execute a Tcl command with the
+  interpreter and return a result of type `T`, a Tcl object by default. The first of
+  `args...` is the Tcl command while the remaining `args...` are the arguments (or tokens)
+  of the command.
 
-- `interp.eval(T=TclObj, args...)` is a shortcut for [`TclTk.eval(T, interp, args...)`](@ref
-  TclTk.eval) to evaluate the concatenation of `args...` as a Tcl script with the
-  interpreter and return a result of type `T`, a Tcl object by default.
+- `interp.eval(T=Nothing, args...)` is a shortcut for [`TclTk.eval(T, interp,
+  args...)`](@ref TclTk.eval) to evaluate the concatenation of `args...` as a Tcl script
+  with the interpreter and return a result of type `T`, a Tcl object by default.
 
 - `interp.result(T=TclObj)` is a shortcut for [`TclTk.getresult(T, interp)`](@ref
   TclTk.getresult) and the same as `interp[T]` to get the result stored by the interpreter

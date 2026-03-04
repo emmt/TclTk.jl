@@ -5,7 +5,7 @@ interp = tk_start()
 
 # Top-level widget with title.
 top = TkToplevel(background="#282c34")
-interp(Nothing, :wm, :title, top, "Canvas demo")
+interp(:wm, :title, top, "Canvas demo")
 
 # Create a canvas widget. The "closeenough" settings (in pixels) is to facilitate the
 # selection of a marker to delete.
@@ -28,10 +28,10 @@ count = TkLabel(bar, background="white", borderwidth=1, relief=:sunken,
                 width=5, text=0, textvariable=counter.name)
 
 # Arrange widgets in their parent.
-canvas.pack(Nothing, side=:top, expand=true, fill=:both)
-bar.pack(Nothing, side=:bottom, expand=false, fill=:x)
-mesg.pack(Nothing, side=:left, expand=true, fill=:both)
-count.pack(Nothing, side=:right, expand=false, fill=:both, padx=5, pady=5)
+canvas.pack(side=:top, expand=true, fill=:both)
+bar.pack(side=:bottom, expand=false, fill=:x)
+mesg.pack(side=:left, expand=true, fill=:both)
+count.pack(side=:right, expand=false, fill=:both, padx=5, pady=5)
 
 # Function to add a marker in a canvas.
 add_marker(canvas::TkCanvas, xm, ym; kwds...) =
@@ -84,4 +84,4 @@ end
 on_click_callback = TclTk.Callback(on_click, interp, "on_click")
 
 # Bind event to callback.
-interp(Nothing, :bind, canvas, "<ButtonPress-1>", "on_click %W %x %y")
+interp(:bind, canvas, "<ButtonPress-1>", "on_click %W %x %y")

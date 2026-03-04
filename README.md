@@ -17,24 +17,26 @@ The traditional *"Hello world!"* example:
 
 ``` julia-repl
 julia> using TclTk
-julia> TclTk.eval(Nothing, "puts {Hello world!}")
+
+julia> TclTk.eval("puts {Hello world!}")
 Hello world!
+
 ```
 
-which shows how to evaluate a Tcl script. Here, `Nothing` indicates that we are not
-interested in the result of the script. Another type can be specified if the result is of
-interest and has a known type:
+which shows how to evaluate a Tcl script. The above output is not the value returned by the
+script as `TclTk.eval` returns `nothing` by default. If we are interested by the result of
+the evaluated script or expression, `TclTk.eval` takes an optional first argument to specify
+the type of the expected result. For example:
 
 ``` julia-repl
 julia> TclTk.eval(Float64, "expr {4*atan(1)}")
 3.141592653589793
 ```
 
-If the leading type argument is omitted, a Tcl object is returned which can be reused or
-converted later:
+The most general return value is a Tcl object which can be reused or converted later:
 
 ``` julia-repl
-julia> x = TclTk.eval("format \"%s/data-%06d.bin\" \"/tmp\" 123")
+julia> x = TclTk.eval(TclObj, "format \"%s/data-%06d.bin\" \"/tmp\" 123")
 TclObj("/tmp/data-000123.bin")
 
 julia> String(x) # `string(x)` and `convert(String, x)` work as well
@@ -50,7 +52,7 @@ optional leading type) is a single Tcl token:
 julia> msg = "- - } Hello world! { - -"
 "- - } Hello world! { - -"
 
-julia> x = TclTk.exec(Nothing, :puts, msg)
+julia> x = TclTk.exec(:puts, msg)
 - - } Hello world! { - -
 
 julia> x = TclTk.exec(String, "format", "%s/%s/data-%06d.bin", ENV["HOME"], "tmp", 123)
@@ -72,12 +74,12 @@ Tcl interpreter (address: 0x0000000017dc33e0, threadid: 1)
 julia> top = TkToplevel(background="#282c34")
 TkToplevel(".top1")
 
-julia> TclTk.exec(Nothing, :wm, :title, top, "A Nice Image")
+julia> TclTk.exec(:wm, :title, top, "A Nice Image")
 
 julia> lab = TkLabel(top, image=TkPhoto(permutedims(img)), cursor="target")
 TkLabel(".top1.lab1")
 
-julia> lab.pack(Nothing, side="top", padx=20, pady=30)
+julia> lab.pack(side="top", padx=20, pady=30)
 
 ```
 

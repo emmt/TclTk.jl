@@ -62,10 +62,10 @@ end
 function labelframedemo()
     interp = tk_start()
     wname = ".labelframe"
-    interp.eval(Nothing, "catch {destroy $wname}")
+    interp.eval("::catch {destroy $wname}")
     w = TkToplevel(wname)
-    interp(Nothing, :wm, :title, w, "Labelframe Demonstration")
-    interp(Nothing, :wm, :iconname, w, "labelframe")
+    interp(:wm, :title, w, "Labelframe Demonstration")
+    interp(:wm, :iconname, w, "labelframe")
 
     # Some information
     msg = TkLabel(w, "msg", #:font => "Helveltica",
@@ -117,7 +117,7 @@ function labelframedemo()
         pack(TkCheckbutton(f2,"b$t", :text => "Option$(t+1)"),
              :side => "top", :fill => "x", :pady => 2)
     end
-    interp(Nothing, "lfEnableButtons", f2)
+    interp("lfEnableButtons", f2)
 
     grid(:columnconfigure, wf, (0,1), :weight => 1)
 end
@@ -125,16 +125,16 @@ end
 function runtests2()
     if false
         interp = TclInterp()
-        interp.eval(Nothing, "package require Tk");
+        interp.eval("package require Tk");
         resume()
-        name = interp.eval("image create photo -file /home/eric/work/code/CImg/CImg-1.5.5/examples/img/lena.pgm")
-        interp.eval(Nothing, "pack [button .b -image $name]")
+        name = interp.eval(TclObj, "image create photo -file /home/eric/work/code/CImg/CImg-1.5.5/examples/img/lena.pgm")
+        interp.eval("pack [button .b -image $name]")
         d = TclTk.getpixels(interp, name, Val{:red});
     else
         TclTk.eval("package require Tk");
         resume()
-        name = TclTk.eval("image create photo -file /home/eric/work/code/CImg/CImg-1.5.5/examples/img/lena.pgm")
-        TclTk.eval(Nothing, "pack [button .b -image $name]")
+        name = TclTk.eval(TclObj, "image create photo -file /home/eric/work/code/CImg/CImg-1.5.5/examples/img/lena.pgm")
+        TclTk.eval("pack [button .b -image $name]")
         d = TclTk.getpixels(name, Val{:red});
     end
     return d;

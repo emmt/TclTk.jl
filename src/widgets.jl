@@ -320,7 +320,7 @@ function build(::Type{T}, class::Symbol, command::String, prefix::String,
                interp::TclInterp, pairs::Pair...; kwds...) where {T<:TkWidget}
     startswith(prefix, '.') || argument_error("missing parent widget")
     tk_start() # make sure Tk has been loaded
-    path = interp(command, widget_auto_path(interp, "", prefix), pairs...; kwds...)
+    path = interp(TclObj, command, widget_auto_path(interp, "", prefix), pairs...; kwds...)
     return T(interp, Verified(path))
 end
 
@@ -340,7 +340,7 @@ function build(::Type{T}, class::Symbol, command::String, prefix::String,
         return w
     else
         # Create a new widget.
-        path = interp(command, path, pairs...; kwds...)
+        path = interp(TclObj, command, path, pairs...; kwds...)
         return T(interp, Verified(path))
     end
 end
@@ -462,7 +462,7 @@ function tk_start(interp::TclInterp = TclInterp()) :: TclInterp
         # is sufficient to call `Tk_Init`.
         status = @ccall libtk.Tk_Init(interp::Ptr{Tcl_Interp})::TclStatus
         status == TCL_OK || @warn "Unable to initialize Tk interpreter: $(getresult(String, interp))"
-        status == TCL_OK && TclTk.eval(Nothing, interp, "wm withdraw .")
+        status == TCL_OK && TclTk.eval(interp, "wm withdraw .")
     end
     isrunning() || resume()
     return interp
@@ -561,9 +561,9 @@ For example:
 using TclTk
 tk_start()
 top = TkToplevel()
-TclTk.exec(Nothing, :wm, :title, top, "A simple example")
-btn = TtkButton(top, text = "Click me", command = "puts {ouch!}")
-TclTk.pack(Nothing, btn, side = :bottom, padx = 30, pady = 5)
+TclTk.exec(:wm, :title, top, "A simple example")
+btn = TtkButton(top, text="Click me", command="puts {ouch!}")
+btn.pack(side=:bottom, padx=30, pady=5)
 ```
 
 # See also
@@ -592,7 +592,7 @@ function place end
 
 for cmd in (:grid, :pack, :place)
     @eval begin
-        $cmd(args...; kwds...) = $cmd(TclObj, args...; kwds...)
+        $cmd(args...; kwds...) = $cmd(Nothing, args...; kwds...)
         function $cmd(::Type{T}, args...; kwds...) where {T}
             interp = common_interpreter(nothing, args...)
             interp == nothing && argument_error("missing a widget argument")
@@ -644,6 +644,10 @@ interpreter of the thread will be used):
 where `classname` is the name of the widget class (a string or a symbol).
 
 """
-Base.bind(arg0::TkWidget, args...) = bind(TclInterp(arg0), arg0, args...)
-Base.bind(arg0::Name, args...) = bind(TclInterp(), arg0, args...)
-Base.bind(interp::TclInterp, args...) = exec(interp, :bind, args...)
+Base.bind(::Type{T}, w::TkWidget, args...) where {T} =
+    exec(T, w.interp, w, args...)
+
+# Supply return type.
+Base.bind(w::TkWidget) = bind(TclObj, w)
+Base.bind(w::TkWidget, seq) = bind(TclObj, w, seq)
+Base.bind(w::TkWidget, seq, script) = bind(Nothing, w, seq, script)

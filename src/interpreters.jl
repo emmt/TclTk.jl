@@ -324,9 +324,9 @@ issafe(interp::TclInterp=TclInterp()) =
 #------------------------------------------------------------------- Evaluation of scripts -
 
 """
-    TclTk.exec(T=TclObj, interp=TclInterp(), args...) -> res::T
-    interp.exec(T=TclObj, args...) -> res::T
-    interp(T=TclObj, args...) -> res::T
+    TclTk.exec(T=Nothing, interp=TclInterp(), args...) -> res::T
+    interp.exec(T=Nothing, args...) -> res::T
+    interp(T=Nothing, args...) -> res::T
 
 Make a list out of the arguments `args...`, evaluate this list as a Tcl command with
 interpreter `interp`, and return a value of type `T`. Any `key => val` pair in `args...` is
@@ -387,7 +387,7 @@ end
 # Provide optional leading arguments.
 exec(args...; kwds...) = exec(TclInterp(), args...; kwds...)
 exec(::Type{T}, args...; kwds...) where {T} = exec(T, TclInterp(), args...; kwds...)
-exec(interp::TclInterp, args...; kwds...) = exec(TclObj, interp, args...; kwds...)
+exec(interp::TclInterp, args...; kwds...) = exec(Nothing, interp, args...; kwds...)
 
 # Re-order leading arguments.
 exec(interp::TclInterp, ::Type{T}, args...; kwds...) where {T} =
@@ -416,8 +416,8 @@ function without_hyphen(s::AbstractString)
 end
 
 """
-    TclTk.eval(T=TclObj, interp=TclInterp(), args...) -> res::T
-    interp.eval(T=TclObj, args...) -> res::T
+    TclTk.eval(T=Nothing, interp=TclInterp(), args...) -> res::T
+    interp.eval(T=Nothing, args...) -> res::T
 
 Concatenate arguments `args...` into a list, evaluate this list as a Tcl script with
 interpreter `interp`, and return a value of type `T`.
@@ -449,7 +449,7 @@ TclTk.eval
 # Provide optional leading arguments.
 TclTk.eval(args...) = TclTk.eval(TclInterp(), args...)
 TclTk.eval(::Type{T}, args...) where {T} = TclTk.eval(T, TclInterp(), args...)
-TclTk.eval(interp::TclInterp, args...) = TclTk.eval(TclObj, interp, args...)
+TclTk.eval(interp::TclInterp, args...) = TclTk.eval(Nothing, interp, args...)
 
 # Re-order leading arguments.
 TclTk.eval(interp::TclInterp, ::Type{T}, args...) where {T} = TclTk.eval(T, interp, args...)

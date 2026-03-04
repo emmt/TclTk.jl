@@ -449,7 +449,7 @@ end
 
     # Evaluation of scripts.
     name, val = "globvar", 4321
-    @test TclObj(val) == @inferred private.eval("set $name $val")
+    @test TclObj(val) == @inferred private.eval(TclObj, "set $name $val")
     @test haskey(private, name)
     @test TclObj(val) == @inferred private[name]
     delete!(private, name)
@@ -458,13 +458,13 @@ end
 
     # Execution of commands.
     name, val = "arr(1)", 789
-    @test TclObj(val) == @inferred private.exec(:set, name, val)
+    @test TclObj(val) == @inferred private.exec(TclObj, :set, name, val)
     @test haskey(private, name)
     @test TclObj(val) == @inferred private[name]
     delete!(private, name)
     @test_throws TclError private.exec(:set, name)
     @test TCL_ERROR === @inferred private.exec(TclStatus, "set", name)
-    @test TclObj(val) == @inferred private(:set, name, val)
+    @test TclObj(val) == @inferred private(TclObj, :set, name, val)
     @test haskey(private, name)
     @test TclObj(val) == @inferred private[name]
     delete!(private, name)
@@ -490,13 +490,13 @@ end
     @test (@inferred TclTk.isrunning()) === false
     # Create some delayed task.
     TclTk.eval("set jl_counter 0")
-    id = TclTk.exec(:after, 1, "incr jl_counter")
+    id = TclTk.exec(TclObj, :after, 1, "incr jl_counter")
     sleep(0.1)
-    @test TclTk.eval("set jl_counter") == "0"
+    @test TclTk.eval(Int, "set jl_counter") === 0
     TclTk.resume()
     @test (@inferred TclTk.isrunning()) === true
     sleep(0.1) # sleep for a while so that events can be processed
-    @test TclTk.eval("set jl_counter") == "1"
+    @test TclTk.eval(Int, "set jl_counter") === 1
     TclTk.suspend()
     @test (@inferred TclTk.isrunning()) === false
 end
@@ -522,12 +522,12 @@ end
     # Manage to make any operation on a variable fail. NOTE Errors in `unset` traces are
     # ignored.
     name = "some_name"
-    for (op, trace) in TclTk.exec(:trace, :info, :variable, name)
+    for (op, trace) in TclTk.exec(TclObj, :trace, :info, :variable, name)
         # Remove all existing traces.
-        TclTk.exec(Nothing, :trace, :remove, :variable, name, op, trace)
+        TclTk.exec(:trace, :remove, :variable, name, op, trace)
     end
     trace = "forbidden_operation_on_variable"
-    TclTk.eval(Nothing, """
+    TclTk.eval("""
 proc $trace {name1 name2 op} {
     if {\$name2 eq ""} {
         set name "\$name1"
@@ -538,9 +538,9 @@ proc $trace {name1 name2 op} {
 }
 """)
     TclTk.setvar!(name, "some_value")
-    TclTk.exec(Nothing, :trace, :add, :variable, name, :read, trace)
+    TclTk.exec(:trace, :add, :variable, name, :read, trace)
     @test_throws TclError TclTk.getvar(name)
-    TclTk.exec(Nothing, :trace, :add, :variable, name, :write, trace)
+    TclTk.exec(:trace, :add, :variable, name, :write, trace)
     @test_throws TclError TclTk.setvar!(name, "some_other_value")
     TclTk.unsetvar!(name) # this also deletes all traces
 
@@ -763,11 +763,11 @@ end
 
     # Rename the callback in the same namespace and then in another namespace.
     newname = "jl_some_other_func_name"
-    f.interp(Nothing, :rename, f.name, newname)
+    f.interp(:rename, f.name, newname)
     @test f.name == "::"*newname
     ns = "another::namespace"
-    f.interp.eval(Nothing, "namespace eval ::$ns {}")
-    f.interp(Nothing, :rename, f.name, ns*"::"*newname)
+    f.interp.eval("namespace eval ::$ns {}")
+    f.interp(:rename, f.name, ns*"::"*newname)
     @test f.name == "::"*ns*"::"*newname
 
     # Delete command.
@@ -809,7 +809,7 @@ end
     @test eltype(A) === Int
     @test A.name == name
     @test A.interp === TclInterp()
-    A.interp.eval(Nothing, "unset -nocomplain $(A.name)")
+    A.interp.eval("unset -nocomplain $(A.name)")
     @test TclTk.exists(A) == false
     @test isassigned(A) == false
     s = sprint(show, MIME"text/plain"(), A)
@@ -825,7 +825,7 @@ end
     A[] += 3
     @test @inferred(A[]) === 3
     @test TclTk.getvar(eltype(A), A.interp, A.name) == 3
-    A.interp.eval(Nothing, "incr $(A.name) -2")
+    A.interp.eval("incr $(A.name) -2")
     @test @inferred(A[]) === 1
     B = @inferred TclTk.Variable(A.name, A.interp) # same variable but no given type
     @test @inferred(B[]) isa TclObj

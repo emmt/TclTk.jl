@@ -73,8 +73,8 @@ end
 # Create a new image of a given type and automatically named.
 function TkImage{type}(interp::TclInterp, pairs::Pair...; kwds...) where {type}
     type isa Symbol || argument_error("image type must be a symbol")
-    name = interp.exec(:image, :create, type, pairs...; kwds...)
-    return TkImage(Val(type), interp, name)
+    name = interp(TclObj, :image, :create, type, pairs...; kwds...)
+    return TkImage{type}(interp, Verified(name))
 end
 
 # Create a new image of a given type and name. If an image of the same name already exists,
@@ -84,17 +84,16 @@ TkImage{type}(interp::TclInterp, name::Name, pairs::Pair...; kwds...) where {typ
 
 function TkImage{type}(interp::TclInterp, name::TclObj, pairs::Pair...; kwds...) where {type}
     type isa Symbol || argument_error("image type must be a symbol")
-    if interp.exec(TclStatus, :image, :type, name) == TCL_OK
+    if interp(TclStatus, :image, :type, name) == TCL_OK
         # Image already exists. Possibly configure it and re-wrap it.
         interp.result(TclObj) == type || tcl_error(
             "image already exists with a different type")
-        length(pairs) > 0 && interp.exec(Nothing, name, :configure, pairs...; kwds...)
-        return TkImage(Val(type), interp, name)
+        (isempty(pairs) && isempty(kwds)) || interp(name, :configure, pairs...; kwds...)
     else
         # Image does not exists. Create a new one and wrap it.
-        interp.exec(:image, :create, type, name, pairs...; kwds...)
-        return TkImage(Val(type), interp, name)
+        interp(:image, :create, type, name, pairs...; kwds...)
     end
+    return TkImage{type}(interp, Verified(name))
 end
 
 """
@@ -111,9 +110,9 @@ TkImage(w::TkWidget, name::Name, pairs::Pair...; kwds...) =
 TkImage(interp::TclInterp, name::Name, pairs::Pair...; kwds...) =
     TkImage(interp, TclObj(name), pairs...; kwds...)
 function TkImage(interp::TclInterp, name::TclObj, pairs::Pair...; kwds...)
-    type = interp.exec(String, :image, :type, name)
-    length(pairs) > 0 && interp.exec(Nothing, name, :configure, pairs...; kwds...)
-    return TkImage(Val(Symbol(type)), interp, name)
+    type = interp(String, :image, :type, name)
+    (isempty(pairs) && isempty(kwds)) || interp(name, :configure, pairs...; kwds...)
+    return TkImage{Symbol(type)}(interp, Verified(name))
 end
 
 """
@@ -128,7 +127,7 @@ TkPhoto(arr::AbstractMatrix{<:Colorant}) = TkPhoto(TclInterp(), arr)
 TkPhoto(w::TkWidget, arr::AbstractMatrix{<:Colorant}) = TkPhoto(w.interp, arr)
 function TkPhoto(interp::TclInterp, arr::AbstractMatrix{<:Colorant})
     (width, height) = size(arr)
-    img = TkPhoto(interp, :width => width, :height => height)
+    img = TkPhoto(interp, width = width, height = height)
     img[:,:] = arr
     return img
 end
@@ -137,7 +136,7 @@ TkPhoto(name::Name, arr::AbstractMatrix{<:Colorant}) = TkPhoto(TclInterp(), name
 TkPhoto(w::TkWidget, name::Name, arr::AbstractMatrix{<:Colorant}) = TkPhoto(w.interp, name, arr)
 function TkPhoto(interp::TclInterp, name::Name, arr::AbstractMatrix{<:Colorant})
     (width, height) = size(arr)
-    img = TkPhoto(interp, name, :width => width, :height => height)
+    img = TkPhoto(interp, name, width = width, height = height)
     img[:,:] = arr
     return img
 end
@@ -224,7 +223,7 @@ function get_options(img::TkImage{type}) where {type}
     for (key,opts) in image_options
         key === type && return opts
     end
-    opts = String[stripfirst(spec[1 => String]) for spec in img(:configure)]
+    opts = String[stripfirst(spec[1 => String]) for spec in img.configure()]
     push!(image_options, type => opts)
     return opts
 end
@@ -376,8 +375,10 @@ end
 Base.resize!(img::TkPhoto, (width, height)::Tuple{Integer,Integer}) =
     resize!(img, width, height)
 
-Base.resize!(img::TkPhoto, width::Integer, height::Integer) =
+function Base.resize!(img::TkPhoto, width::Integer, height::Integer)
     photo_resize!(img, width, height)
+    return img
+end
 
 function get_photo_size(img::TkPhoto)
     GC.@preserve img begin
