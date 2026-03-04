@@ -1,4 +1,4 @@
-include("basetests.jl")
-include("imagetests.jl")
+include("base-tests.jl")
+include("image-tests.jl")
 include("widget-tests.jl")
-include("aquatests.jl")
+include("aqua-tests.jl")
