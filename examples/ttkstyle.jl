@@ -16,7 +16,6 @@ interp(Nothing, :wm, :iconname, top, "ttkstyle")
 msg = TtkLabel(top, #=font=$font,=# wraplength="4i", justify=:left, padding=(5, 3),
                text="Ttk is the new Tk themed widget set. This is a Ttk themed label, and below are three groups of Ttk widgets in Ttk labelframes. The first group are all buttons that set the current application theme when pressed. The second group contains three sets of checkbuttons, with a separator widget between the sets. Note that the \u201cEnabled\u201d button controls whether all the other themed widgets in this toplevel are in the disabled state. The third group has a collection of linked radiobuttons.")
 msg.pack(Nothing, side=:top, fill=:x)
-# FIXME TclTk.pack(Nothing, msg, side=:top, fill=:x)
 
 ## See Code / Dismiss
 #pack [addSeeDismiss $w.seeDismiss $w {enabled cheese tomato basil oregano happiness}]\

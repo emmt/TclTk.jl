@@ -37,44 +37,45 @@ count.pack(Nothing, side=:right, expand=false, fill=:both, padx=5, pady=5)
 add_marker(canvas::TkCanvas, xm, ym; kwds...) =
     add_marker(canvas.interp, canvas, xm, ym; kwds...)
 
-function add_marker(interp::TclInterp, canvas, xm, ym;
+function add_marker(canvas::TkCanvas, xm, ym;
                     tag="marker", radius=4, adjust::Bool=false,
                     fill=Colors.JULIA_LOGO_COLORS.green,
                     activefill=Colors.JULIA_LOGO_COLORS.red)
     r = convert(Float64, radius)
     if adjust
         # Convert coordinates to canvas coordinates.
-        x = interp(Float64, canvas, :canvasx, xm)
-        y = interp(Float64, canvas, :canvasy, ym)
+        x = canvas.canvasx(Float64, xm)
+        y = canvas.canvasy(Float64, ym)
     else
         # Convert coordinates to `Float64` for generality and type-stability.
         x = convert(Float64, xm)
         y = convert(Float64, ym)
     end
-    return interp(Int, canvas, :create, :rectangle, x - r, y - r, x + r, y + r,
-                  tags=tag, fill=fill, width=0, activefill=activefill, activewidth=0)
+    return canvas.create(Int, :rectangle, x - r, y - r, x + r, y + r,
+                         tags=tag, fill=fill, width=0, activefill=activefill, activewidth=0)
 end
 
 # Callback function to be called with: %W %x %y.
 function on_click(interp::TclInterp, args::TclObj)
     # Extract arguments (1st is name of procedure, unused here).
-    canvas, xm, ym = args[2 => String], args[3 => Float64], args[4 => Float64]
+    canvas = TkCanvas(interp, args[2]) # most efficient way to retrieve a widget
+    xm, ym = args[3 => Float64], args[4 => Float64]
 
     # Convert coordinates to canvas coordinates.
-    x = interp(Float64, canvas, :canvasx, xm)
-    y = interp(Float64, canvas, :canvasy, ym)
+    x = canvas.canvasx(Float64, xm)
+    y = canvas.canvasy(Float64, ym)
 
     # Current number of markers.
     number_of_markers = Int(interp["NUMBER_OF_MARKERS"])
 
     # If there is any "marker" item among the "current" ones, delete the first of these; otherwise
     # add a new marker.
-    list = interp(canvas, :find, :withtag, "current && marker")
+    list = canvas.find(:withtag, "current && marker")
     if isempty(list)
-        add_marker(interp, canvas, x, y; adjust=false)
+        add_marker(canvas, x, y; adjust=false)
         counter[] += 1
     else
-        interp(canvas, :delete, list[1])
+        canvas.delete(list[1])
         counter[] -= 1
     end
 end

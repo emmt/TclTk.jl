@@ -122,17 +122,17 @@ julia> TclTk.pack(Nothing, canvas, :side => :top, :fill => "both", :expand => tr
 julia> TclTk.pack(Nothing, mesg, :side => :bottom, :fill => "x", :expand => false)
 
 julia> function on_click(interp::TclInterp, args::TclObj)
-           # Extract arguments (4 expected).
-           cmd = args[1 => String]  # the name of the calling command
-           win = args[2 => String]  # the widget name, %W in the bind script
+           # Extract arguments (4 are expected, the 1st one is the name of the calling command
+           # which do not need here).
+           win = TkCanvas(interp, args[2])  # the widget, %W in the bind script
            xm = args[3 => Float64] # the x coordinate of the event, %x in the bind script
-           ym = args[4 => Float64] # the y coordinate of the event, %x in the bind script
+           ym = args[4 => Float64] # the y coordinate of the event, %y in the bind script
            # Convert (xm,ym) to canvas coordinates.
-           x = interp(Float64, win, :canvasx, xm)
-           y = interp(Float64, win, :canvasy, xm)
+           x = win.canvasx(Float64, xm)
+           y = win.canvasy(Float64, ym)
            # Set message.
            s = "Mouse clicked at ($xm, $ym) with canvas coordinates ($x, $y)."
-           interp(Nothing, mesg, :configure, :text => s)
+           mesg.configure(Nothing, text=s)
        end
 on_click (generic function with 1 method)
 
@@ -142,3 +142,18 @@ TclTk.Callback: `on_click` (in Julia) => "::jl_func_1" (in Tcl)
 julia> TclTk.exec(Nothing, :bind, canvas, "<ButtonPress-1>", (cb.name, "%W", "%x", "%y"))
 
 ```
+
+When retrieving the arguments of the callback, the `TkWidget` abstract constructor can be
+used in place of the widget type if it is unknown. In the above example:
+
+```julia
+win = TkCanvas(interp, args[2])
+```
+
+could be replaced by:
+
+```julia
+win = TkWidget(interp, args[2])
+```
+
+This can help making the callback more general but it introduces some *type-instability*.
