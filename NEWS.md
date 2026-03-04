@@ -64,6 +64,11 @@ Versioning](https://semver.org).
 
 - Widgets and images implement sub-commands by the syntax `obj.cmd(args...; kwds...)`.
 
+- An existing widget can be wrapped into a `TkWidget` structure of type `T` with
+  `T(interp=TclInterp(), path)` where `path` is the full widget path. `T` may be `TkWidget`
+  or a concrete type corresponding to the class of the existing widget.
+
+
 ### Fixed
 
 - Indexation of lists of Tcl objects by a vector of Booleans.

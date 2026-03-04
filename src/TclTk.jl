@@ -185,7 +185,6 @@ for sym in (
     :TkMessage,
     :TkPanedwindow,
     :TkRadiobutton,
-    :TkRootWidget,
     :TkScale,
     :TkScrollbar,
     :TkSpinbox,

@@ -14,6 +14,11 @@ struct TclError <: Exception
     msg::String
 end
 
+# Simple decorator to indicate a verified argument.
+struct Verified{T}
+    value::T
+end
+
 # Structure to store a pointer to a Tcl interpreter. (Even though the address should not be
 # modified, it is mutable because immutable objects cannot be finalized.)
 mutable struct TclInterp
@@ -124,9 +129,8 @@ const Value = Union{AbstractArray, AbstractChar, AbstractString,
 # option name to access and mutate their configurable options, they also implement
 # sub-commands by the syntax `obj.cmd(args...; kwds...)`.
 
-abstract type TkObject     <: WrappedObject end
-abstract type TkWidget     <: TkObject      end
-abstract type TkRootWidget <: TkWidget      end
+abstract type TkObject <: WrappedObject end
+abstract type TkWidget <: TkObject      end
 
 # An image is parameterized by the symbolic image type.
 struct TkImage{T} <: TkObject
