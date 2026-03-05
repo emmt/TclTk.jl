@@ -434,10 +434,13 @@ for f in (:isequal, :(==))
         return $f(a.interp, b.interp) && $f(a.path, b.path)
     end
 end
+
 """
     tk_start(interp = TclInterp()) -> interp
 
-Load Tk and Ttk packages in `interp` and start the event loop (for all interpreters).
+Ensure that Tk and Ttk packages are loaded in Tcl interpreter `interp` and that the event
+loop is started (for all Tcl interpreters). Return the Tcl interpreter. Once, Tk and Ttk
+packages have been loaded and the event loop started, calling `tk_start` is very fast.
 
 !!! note
     `tk_start` also takes care of withdrawing the root window "." to avoid its destruction
@@ -450,7 +453,7 @@ Load Tk and Ttk packages in `interp` and start the event loop (for all interpret
 
 """
 function tk_start(interp::TclInterp = TclInterp()) :: TclInterp
-    if TclTk.eval(Int, interp, "lsearch -exact [package names] Tk") < 0
+    if !getfield(interp, :tkstarted)
         # Initialize Tcl interpreter to find Tk library scripts. NOTE this is the same as
         # initializing global variable `tcl_library` before calling `Tcl_Init`.
         if isdefined(@__MODULE__, :Tk_jll)
@@ -464,6 +467,7 @@ function tk_start(interp::TclInterp = TclInterp()) :: TclInterp
         status = @ccall libtk.Tk_Init(interp::Ptr{Tcl_Interp})::TclStatus
         status == TCL_OK || @warn "Unable to initialize Tk interpreter: $(getresult(String, interp))"
         status == TCL_OK && TclTk.eval(interp, "wm withdraw .")
+        setfield!(interp, :tkstarted, true)
     end
     isrunning() || resume()
     return interp

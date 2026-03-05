@@ -158,6 +158,7 @@ function finalize(interp::TclInterp)
         if !isnull(ptr)
             setfield!(interp, :ptr, null(ptr)) # we do not want to free more than once
             setfield!(interp, :threadid, 0) # make this interpreter is no longer usable
+            setfield!(interp, :tkstarted, false)
             Tcl_DeleteInterp(ptr)
             Tcl_Release(ptr)
         end

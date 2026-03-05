@@ -4,6 +4,13 @@ This page describes the most important changes in `Tcl`. The format is based on 
 Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic
 Versioning](https://semver.org).
 
+## Unreleased
+
+### Optimized
+
+- After Tk and Ttk packages have been loaded, `tk_start` runs much faster.
+
+
 ## Version 0.3.0 (2026-03-04)
 
 ### Breaking changes

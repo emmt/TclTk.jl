@@ -24,10 +24,11 @@ end
 mutable struct TclInterp
     ptr::InterpPtr
     threadid::Int
+    tkstarted::Bool
     global _TclInterp # private inner constructor
     function _TclInterp(ptr::InterpPtr)
         isnull(ptr) || Tcl_Preserve(ptr)
-        interp = new(ptr, Threads.threadid())
+        interp = new(ptr, Threads.threadid(), false)
         return finalizer(finalize, interp)
     end
 end
