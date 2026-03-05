@@ -4,6 +4,7 @@ using TclTk
 using Test
 using Colors
 using Colors.FixedPointNumbers: N0f8, N0f16
+using InteractiveUtils
 
 @testset "Tk Widgets" begin
     w = @inferred TkToplevel(".")
@@ -168,6 +169,74 @@ using Colors.FixedPointNumbers: N0f8, N0f16
     @test :y ∈ propertynames(w)
     @test w.y isa Int
 
+end
+
+firstlastindex(A::Union{AbstractString,AbstractArray}) = firstindex(A), lastindex(A)
+function skipfirst(s::AbstractString)
+    start, stop = firstlastindex(s)
+    return SubString(s, (start ≤ stop ? nextind(s, start) : start), stop)
+end
+
+destroy(w::TkWidget) = w.interp(:destroy, w)
+
+# Retrieve widget specifications.
+interp = @inferred TclInterp()
+root = @inferred TkToplevel(interp, ".")
+for child in root.children
+    interp.eval("catch {destroy $child}")
+end
+
+@testset "$T widget" for T in subtypes(TkWidget)
+    w = @inferred T(root)
+    T == TkToplevel && wm.withdraw(w)
+    config = Dict{Symbol,String}()
+    alias = Dict{Symbol,String}()
+    for spec in @inferred w.configure()
+        n = @inferred length(spec)
+        @test n ∈ (2, 5)
+        if n == 2
+            # Alias option.
+            short, option = @inferred convert(NTuple{2,String}, spec)
+            @test startswith(short, '-')
+            key = Symbol(skipfirst(short))
+            @test !haskey(alias, key)
+            alias[key] = option
+        else
+            option, dbname, dbclass, defvalue, value = @inferred convert(NTuple{5,String}, spec)
+            @test startswith(option, '-')
+            key = Symbol(skipfirst(option))
+            @test !haskey(config, key)
+            config[key] = value
+        end
+    end
+    commands = String[]
+    @test w.interp(TclStatus, w, "_") === TCL_ERROR
+    mesg = w.interp.result(String)
+    @test startswith(mesg, r"bad (option|command) \"_\": must be ")
+    m = match(r"^.*? (\w+)(,? or |, |$)()", mesg)
+    @test !isnothing(m)
+    push!(commands, m.captures[1])
+    sep = m.captures[2]
+    index = last(m.offsets)
+    if !isempty(sep)
+        while true
+            if sep == ", "
+                m = match(r"\G(\w+)(,? or |, |$)()", mesg, index)
+                isnothing(m) && error("unexpected middle of error message: \"",
+                                      escape_string(mesg), "\"")
+                push!(commands, m.captures[1])
+                sep = m.captures[2]
+                index = last(m.offsets)
+            else
+                m = match(r"\G(\w+)$"m, mesg, index)
+                isnothing(m) && error("unexpected end of error message: \"",
+                                      escape_string(mesg), "\"")
+                push!(commands, m.captures[1])
+                break
+            end
+        end
+    end
+    destroy(w)
 end
 
 end # module
