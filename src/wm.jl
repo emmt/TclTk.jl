@@ -106,10 +106,10 @@ wm_iconwindow(w::TkWidget, path) = wm_iconwindow(Nothing, w, path)
 
 wm_manage(w::TkWidget) = wm_manage(Nothing, w)
 
-wm_maxsize(w::TkWidget) = wm_maxsize(Tuple{2,Int}, w)
+wm_maxsize(w::TkWidget) = wm_maxsize(NTuple{2,Int}, w)
 wm_maxsize(w::TkWidget, x, y) = wm_maxsize(Nothing, w, x, y)
 
-wm_minsize(w::TkWidget) = wm_minsize(Tuple{2,Int}, w)
+wm_minsize(w::TkWidget) = wm_minsize(NTuple{2,Int}, w)
 wm_minsize(w::TkWidget, x, y) = wm_minsize(Nothing, w, x, y)
 
 wm_overrideredirect(w::TkWidget) = wm_overrideredirect(Bool, w)
@@ -121,7 +121,7 @@ wm_positionfrom(w::TkWidget, who) = wm_positionfrom(Nothing, w, who)
 wm_protocol(w::TkWidget) = wm_positionfrom(TclObj, w)
 wm_protocol(w::TkWidget, args...) = wm_positionfrom(Nothing, w, args...)
 
-wm_resizable(w::TkWidget) = wm_resizable(Tuple{2,Bool}, w)
+wm_resizable(w::TkWidget) = wm_resizable(NTuple{2,Bool}, w)
 wm_resizable(w::TkWidget, width, height) = wm_resizable(Nothing, w, width, height)
 
 wm_sizefrom(w::TkWidget) = wm_sizefrom(String, w)
