@@ -475,13 +475,11 @@ function force_tk_start(interp::TclInterp)
     status == TCL_OK && (status = interp(TclStatus, :wm, :withdraw, "."))
     # Attempt to set the icon for top-level windows.
     file = joinpath(@__DIR__, "logo.png")
-    if isreadable(file)
-        ns = "::assets"
-        logo = "$(ns)::logo"
-        status == TCL_OK && (status = interp(TclStatus, :namespace, :eval, ns, ""))
-        status == TCL_OK && (status = interp(TclStatus, :image, :create, :photo, logo, file=file))
-        status == TCL_OK && (status = interp(TclStatus, :wm, :iconphoto, ".", "-default", logo))
-    end
+    ns = "::assets"
+    logo = "$(ns)::logo"
+    status == TCL_OK && (status = interp(TclStatus, :namespace, :eval, ns, ""))
+    status == TCL_OK && (status = interp(TclStatus, :image, :create, :photo, logo, file=file))
+    status == TCL_OK && (status = interp(TclStatus, :wm, :iconphoto, ".", "-default", logo))
     setfield!(interp, :tkstarted, true)
     return nothing
 end
