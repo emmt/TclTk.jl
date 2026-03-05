@@ -734,6 +734,18 @@ function count_callback(interp::TclInterp, args::TclObj)
     callback_counter[] += 1
 end
 
+function other_count_callback(interp::TclInterp, args::TclObj)
+    global callback_counter
+    callback_counter[] += 1
+    return nothing
+end
+
+function yet_another_count_callback(interp::TclInterp, args::TclObj)
+    global callback_counter
+    callback_counter[] += 1
+    return TCL_OK
+end
+
 callback_arguments = nothing
 function simple_callback(interp::TclInterp, args::TclObj)
     global callback_arguments
@@ -742,15 +754,30 @@ function simple_callback(interp::TclInterp, args::TclObj)
 end
 
 @testset "Callbacks" begin
+    # Create a simple callback in a private interpreter.
     private = @inferred TclInterp(:private)
-
     f = @inferred TclTk.Callback(count_callback, private)
+
+    # Callback properties.
+    @test length(@inferred propertynames(f)) == 4
+    @test :func ∈ @inferred propertynames(f)
+    @test :token ∈ @inferred propertynames(f)
+    @test :interp ∈ @inferred propertynames(f)
+    @test :name ∈ @inferred propertynames(f)
     @test f.interp === private
+    @test f.func == count_callback
+    @test f.token isa Ptr
+    @test_throws KeyError f.non_existing_property = 1
+    @test_throws Exception f.name = "some_other_name"
     proc = f.name
     @test proc isa String
     @test startswith(proc, "::jl_func_")
     s = sprint(show, f)
     @test match(r"\bCallback:.*::jl_func_.*", s) !== nothing
+    s = sprint((io, x) -> show(io, MIME"text/plain"(), x), f)
+    @test match(r"\bCallback:.*::jl_func_.*", s) !== nothing
+
+    # Exercise the callback.
     callback_counter[] = 0
     @test 1 == private(Int, proc)
     @test 1 == callback_counter[]
@@ -774,20 +801,33 @@ end
     @test TclTk.deletecommand(f) == true
     @test TclTk.deletecommand(private, proc) == false
 
+    # Deal with other returned values.
+    f1 = @inferred TclTk.Callback(other_count_callback, private)
+    f2 = @inferred TclTk.Callback(yet_another_count_callback, private)
+    callback_counter[] = 0
+    @test @inferred(private(String, f1.name)) == ""
+    @test callback_counter[] == 1
+    @test @inferred(private(String, f2.name)) == ""
+    @test callback_counter[] == 2
+    @test TclTk.deletecommand(f1.interp, f1.name) == true
+    @test TclTk.deletecommand(f1.interp, f1.name) == false
+
+    # A more complex callback in the shared interpreter.
+    interp = @inferred TclInterp()
     name = "jl_simple_callback"
-    f = @inferred TclTk.Callback(simple_callback, private, name)
-    @test f.interp === private
+    f = @inferred TclTk.Callback(simple_callback, name)
+    @test f.interp === interp
     proc = f.name
     @test proc isa String
     @test proc == "::"*name
     # Call simple callback with no arguments.
-    @test 1 == private(Int, proc)
+    @test 1 == interp(Int, proc)
     @test callback_arguments isa TclObj
     @test callback_arguments.type == :list
     @test length(callback_arguments) == 1
     @test callback_arguments[1] == proc
     # Call simple callback with 3 arguments.
-    @test 4 == private(Int, proc, "hello", 4.125, true)
+    @test 4 == interp(Int, proc, "hello", 4.125, true)
     @test callback_arguments isa TclObj
     @test callback_arguments.type == :list
     @test length(callback_arguments) == 4
@@ -795,12 +835,12 @@ end
     @test callback_arguments[2] == "hello"
     @test callback_arguments[3] == TclObj(4.125)
     @test callback_arguments[4] == TclObj(true)
-    @test TclTk.deletecommand(private, proc) == true
-    @test TclTk.deletecommand(private, proc) == false
+    @test TclTk.deletecommand(proc) == true
+    @test TclTk.deletecommand(proc) == false
 
     private = 0
-    GC.gc()
     sleep(0.01)
+    GC.gc()
 end
 
 @testset "Linked variables" begin
