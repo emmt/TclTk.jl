@@ -403,7 +403,6 @@ and keywords `kwds...` are to specify configuration options.
 # Accessors.
 TclInterp(w::TkWidget) = w.interp
 Base.parent(w::TkWidget) = winfo_parent(w)
-# FIXME Base.parent(::TkRootWidget) = nothing
 TclObj(w::TkWidget) = w.path
 Base.convert(::Type{TclObj}, w::TkWidget) = TclObj(w)::TclObj
 # FIXME Base.convert(::Type{String}, w::TkWidget) = ...
@@ -416,10 +415,10 @@ exec(w::TkWidget, ::Type{T}, args...; kwds...) where {T} =
 exec(::Type{T}, w::TkWidget, args...; kwds...) where {T} =
     exec(T, w.interp, w.path, args...; kwds...)
 
-# We want to have the object type and path both printed in the REPL but want
-# only the object path with the `string` method or for string interpolation.
-# Note that: "$w" calls `string(w)` while "anything $w" calls `show(io, w)`.
-Base.print(io::IO, w::TkWidget) = write(io, w.path)
+# We want to have the object type and path both printed in the REPL but want only the object
+# path with the `string` method or for string interpolation. Note that "$w" and `string(w)`
+# call `print(io, w)`.
+Base.print(io::IO, w::TkWidget) = (write(io, w.path); nothing)
 
 Base.show(io::IO, ::MIME"text/plain", w::TkWidget) = show(io, w)
 
