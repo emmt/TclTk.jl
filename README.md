@@ -74,7 +74,7 @@ Tcl interpreter (address: 0x0000000017dc33e0, threadid: 1)
 julia> top = TkToplevel(background="#282c34")
 TkToplevel(".top1")
 
-julia> TclTk.exec(:wm, :title, top, "A Nice Image")
+julia> wm.title(top, "A Nice Image")
 
 julia> lab = TkLabel(top, image=TkPhoto(permutedims(img)), cursor="target")
 TkLabel(".top1.lab1")
@@ -91,10 +91,7 @@ The different stages are:
 
 - Create a top-level window `top` with a given background color.
 
-- Call window manager `wm` command to set the title of the top-level window. When specifying
-  tokens or options in commands symbols and strings are equivalent, they can even be mixed.
-  Here or above, `:wm` or `:title` could have been specified as `"wm"` or `"title"`, while
-  `"target"` could have been specified as `:target`. The choice is purely a matter of style.
+- Call window manager `wm.title` command to set the title of the top-level window.
 
 - Create a widget, here a label `lab`, whose parent is `top` to display the image.
 

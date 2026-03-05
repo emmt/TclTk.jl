@@ -5,7 +5,7 @@ interp = tk_start()
 
 # Top-level widget with title.
 top = TkToplevel(background="#282c34")
-interp(:wm, :title, top, "Canvas demo")
+wm.title(top, "Canvas demo")
 
 # Create a canvas widget. The "closeenough" settings (in pixels) is to facilitate the
 # selection of a marker to delete.

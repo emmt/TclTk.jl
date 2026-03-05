@@ -1,8 +1,14 @@
 baremodule TclTk
 
+using Base
+
 # TclTk is a bare module because it implements its own `eval` function.
 function eval end
-using Base
+
+# Being a bare module, we must define our `include` function.
+include(file) = Base.include(@__MODULE__, file)
+
+include("api.jl")
 
 """
 
@@ -43,6 +49,7 @@ include("colors.jl")
 include("widgets.jl")
 include("dialogs.jl")
 include("images.jl")
+include("wm.jl")
 
 @deprecate getinterp(args...; kwds...) TclInterp(args...; kwds...) false
 

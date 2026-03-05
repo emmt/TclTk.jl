@@ -66,12 +66,13 @@ TclTk.configure
 TclTk.winfo
 ```
 
-## Geometry managers
+## Window and geometry managers
 
 ```@docs
 TclTk.grid
 TclTk.pack
 TclTk.place
+wm
 ```
 
 ## Images

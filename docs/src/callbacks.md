@@ -109,7 +109,7 @@ julia> tk_start(); # make sure Tk package is loaded and event loop is running
 julia> top = TkToplevel(:background => "#282c34")
 TkToplevel(".top1")
 
-julia> TclTk.exec(Nothing, :wm, :title, top, "Callback demo")
+julia> wm.title(top, "Callback demo")
 
 julia> canvas = TkCanvas(top, :background => "#282c34", :cursor => :target)
 TkCanvas(".top1.cnv1")

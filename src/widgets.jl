@@ -567,7 +567,7 @@ For example:
 using TclTk
 tk_start()
 top = TkToplevel()
-TclTk.exec(:wm, :title, top, "A simple example")
+wm.title(top, "A simple example")
 btn = TtkButton(top, text="Click me", command="puts {ouch!}")
 btn.pack(side=:bottom, padx=30, pady=5)
 ```

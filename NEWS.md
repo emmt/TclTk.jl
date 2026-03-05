@@ -11,6 +11,12 @@ Versioning](https://semver.org).
 - `w.rgb(color)` with `w` a widget now return an `RGB{N0f16}` value instead of a triplet of
    `UInt16`.
 
+### Added
+
+- New `wm` function for interacting with the window manager. This function accepts
+  sub-commands. For example, `wm.title(w, "Window Title")` to specify the title of the top
+  level window `w`.
+
 ### Optimized
 
 - After Tk and Ttk packages have been loaded, `tk_start` runs much faster.

@@ -12,7 +12,7 @@ calc_callback = TclTk.Callback(calc_function)
 interp = tk_start()
 
 top = TkToplevel(interp)
-interp(:wm, :title, top, "Feet to Meters")
+wm.title(top, "Feet to Meters")
 
 frame = TtkFrame(top, padding=(3, 3, 12, 12))
 frame.grid(column=0, row=0, sticky="nwes")

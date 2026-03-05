@@ -132,7 +132,7 @@ top = TkToplevel(interp, background="darkseagreen")
 lab = TkLabel(top, text="Some label", background="lightblue")
 btn = TkButton(top, text="Click me", background="goldenrod", command="puts {Hello world!}")
 TclTk.pack(btn, lab, side=:bottom, padx=90, pady=5)
-interp(:wm, :title, top, "Tk `pack` example")
+wm.title(top, "Tk `pack` example")
 ```
 
 which gives:

@@ -9,8 +9,8 @@ interp = tk_start()
 w = ".ttkstyle"
 interp.eval("catch {destroy $w}")
 top = TkToplevel(interp, w)
-interp(:wm, :title, top, "Simple Ttk Widgets")
-interp(:wm, :iconname, top, "ttkstyle")
+wm.title(top, "Simple Ttk Widgets")
+wm.iconname(top, "ttkstyle")
 
 # TtkLabel can replace TkMessage.
 msg = TtkLabel(top, #=font=$font,=# wraplength="4i", justify=:left, padding=(5, 3),
