@@ -1,31 +1,9 @@
-module TclImageTests
+module TclTkImageTests
 
 using TclTk
 using Test
 using Colors
-using Colors: FixedPointNumbers
-
-function compute_significant_bits(::Type{T}) where {T<:AbstractFloat}
-    isbitstype(T) || throw(ArgumentError("type `$T` is not a bits type"))
-    nmax = 8*sizeof(T) - 1 # at least one bit for sign
-    for nbits in 0:nmax
-        try
-            i = one(Int128) << nbits
-            x = convert(T, i)
-            x == i && x - one(x) == i - one(i) || return nbits - 1
-        catch ex
-            return nbits - 1
-        end
-    end
-    error("cannot determine the number of bits in the mantissa of `$T`")
-end
-
-@testset "Tk Utilities" begin
-    @test compute_significant_bits(Float16) == TclTk.Impl.significant_bits(Float16)
-    @test compute_significant_bits(Float32) == TclTk.Impl.significant_bits(Float32)
-    @test compute_significant_bits(Float64) == TclTk.Impl.significant_bits(Float64)
-    @test typemax(Int128) == TclTk.Impl.max_exact_int(BigFloat)
-end
+using Colors.FixedPointNumbers: N0f8, N0f16
 
 @testset "Tk Images" begin
     interp = @inferred tk_start()
@@ -111,8 +89,8 @@ end
     # Abstract array API for photo images.
     @test @inferred(ndims(png)) === 2
     @test @inferred(ndims(typeof(png))) === 2
-    @test @inferred(eltype(png)) === RGBA{FixedPointNumbers.N0f8}
-    @test @inferred(eltype(typeof(png))) === RGBA{FixedPointNumbers.N0f8}
+    @test @inferred(eltype(png)) === RGBA{N0f8}
+    @test @inferred(eltype(typeof(png))) === RGBA{N0f8}
     @test @inferred(size(png)) === png.size
     @test @inferred(length(png)) === prod(png.size)
 

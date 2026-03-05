@@ -6,6 +6,11 @@ Versioning](https://semver.org).
 
 ## Unreleased
 
+### Changed
+
+- `w.rgb(color)` with `w` a widget now return an `RGB{N0f16}` value instead of a triplet of
+   `UInt16`.
+
 ### Optimized
 
 - After Tk and Ttk packages have been loaded, `tk_start` runs much faster.

@@ -1,9 +1,9 @@
-module TkWidgetTests
+module TclTkWidgetTests
 
 using TclTk
 using Test
 using Colors
-using Colors: FixedPointNumbers
+using Colors.FixedPointNumbers: N0f8, N0f16
 
 @testset "Tk Widgets" begin
     w = @inferred TkToplevel(".")
@@ -94,7 +94,7 @@ using Colors: FixedPointNumbers
     @test w.reqwidth isa Int
     #
     @test :rgb ∉ propertynames(w)
-    @test @inferred(w.rgb("cyan")) isa NTuple{3,UInt16}
+    @test @inferred(w.rgb("cyan")) isa RGB{N0f16}
     #
     @test :rootx ∈ propertynames(w)
     @test w.rootx isa Int

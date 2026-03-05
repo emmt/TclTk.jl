@@ -4,9 +4,39 @@
 # Methods for colors.
 #
 
+const GrayRamp = range(colorant"black", colorant"white", length=255)
+
 new_object(c::Colorant) = new_object("#"*hex(RGB(c)))
 
-const GrayRamp = range(colorant"black", colorant"white", length=255)
+"""
+    TclTk.Impl.reinterpret_as_fixed_point(x) -> f
+
+Return `x` (a small unsigned integer) reinterpreted as a fixed-point number `f`.
+
+"""
+reinterpret_as_fixed_point(x::UInt8) = reinterpret(N0f8, x)
+reinterpret_as_fixed_point(x::UInt16) = reinterpret(N0f16, x)
+reinterpret_as_fixed_point(x::UInt32) = reinterpret(N0f32, x)
+reinterpret_as_fixed_point(x::UInt64) = reinterpret(N0f64, x)
+
+"""
+    TclTk.Impl.reinterpret_as_colorant(r, g, b) -> c::RGB
+    TclTk.Impl.reinterpret_as_colorant((r, g, b)) -> c::RGB
+    TclTk.Impl.reinterpret_as_colorant(r, g, b, a) -> c::RGBA
+    TclTk.Impl.reinterpret_as_colorant((r, g, b, a)) -> c::RGBA
+
+Return the triplet `(r, g, b)` of small unsigned integers or the quadruplet `(r, g, b, a)`
+reinterpreted as a `RGB` ro `RGA` colorant. Here `r`, `g`, `b`, and `a` respectively stand
+for *red*, *green*, *blue*, and *alpha*.
+
+"""
+reinterpret_as_colorant(rgb::Vararg{Union{UInt8,UInt16},3}) = reinterpret_as_colorant(rgb)
+reinterpret_as_colorant(rgb::NTuple{3,Union{UInt8,UInt16}}) =
+    RGB(map(reinterpret_as_fixed_point, rgb)...)
+
+reinterpret_as_colorant(rgba::Vararg{Union{UInt8,UInt16},4}) = reinterpret_as_colorant(rgba)
+reinterpret_as_colorant(rgba::NTuple{4,Union{UInt8,UInt16}}) =
+    RGBA(map(reinterpret_as_fixed_point, rgba)...)
 
 """
     colorize(arr, cmap=GrayRamp; kwds...)

@@ -1,4 +1,5 @@
 include("base-tests.jl")
+include("color-tests.jl")
 include("image-tests.jl")
 include("widget-tests.jl")
 include("aqua-tests.jl")

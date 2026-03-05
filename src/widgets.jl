@@ -194,7 +194,8 @@ winfo_pixels(w::TkWidget) = PrefixedFunction(winfo_pixels, w)
 winfo_pixels(w::TkWidget, number) = winfo(Int, w.interp, :pixels, w, number)
 
 winfo_rgb(w::TkWidget) = PrefixedFunction(winfo_rgb, w)
-winfo_rgb(w::TkWidget, color) = winfo(NTuple{3,UInt16}, w.interp, :rgb, w, color) # FIXME -> colorant
+winfo_rgb(w::TkWidget, color) = reinterpret_as_colorant(
+    winfo(NTuple{3,UInt16}, w.interp, :rgb, w, color))
 
 const WINFO = (
     :atom             => (false, typeof(winfo_atom)),
