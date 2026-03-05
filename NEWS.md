@@ -17,6 +17,8 @@ Versioning](https://semver.org).
   sub-commands. For example, `wm.title(w, "Window Title")` to specify the title of the top
   level window `w`.
 
+- Top-level windows have a default icon set with the logo displayed in the documentation.
+
 ### Optimized
 
 - After Tk and Ttk packages have been loaded, `tk_start` runs much faster.
