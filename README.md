@@ -1,4 +1,4 @@
-# Julia interface to Tcl/Tk
+# ![Logo](./src/logo.png) Julia interface to Tcl/Tk
 
 [![Docs](https://img.shields.io/badge/docs-stable-blue.svg)](https://JuliaInterop.github.io/TclTk.jl/)
 [![License](http://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat)](LICENSE.md)
