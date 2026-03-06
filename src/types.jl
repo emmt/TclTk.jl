@@ -59,6 +59,24 @@ mutable struct TclObj <: WrappedObject
     end
 end
 
+# A temporary (i.e. inside a `GC.@preserve` block) read-only list of Tcl objects.
+struct UnsafeList <: AbstractVector{ObjPtr}
+    objv::Ptr{ObjPtr}
+    objc::Int
+end
+
+# Safe version of `UnsafeList` used as an iterator. The parent holds a reference on the
+# object so that the "unsafe" list remains valid.
+struct ListIterator
+    parent::TclObj
+    list::UnsafeList
+    function ListIterator(list::TclObj)
+        GC.@preserve list begin
+            return new(list, UnsafeList(pointer(list)))
+        end
+    end
+end
+
 # `Callback` must be mutable to have a stable address given by `pointer_from_objref`.
 mutable struct Callback{F<:Function}
     interp::TclInterp

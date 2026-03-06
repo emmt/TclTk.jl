@@ -106,14 +106,14 @@ function unsafe_getindex(list::Union{TclObj,ObjPtr}, index::Integer)
     return objref[]
 end
 
-function Base.getindex(list::TclObj, indices::AbstractVector{<:Integer})
-    GC.@preserve list begin
-        objc, objv = unsafe_get_list_elements(checked_pointer(list))
+function Base.getindex(obj::TclObj, inds::AbstractVector{<:Integer})
+    GC.@preserve obj begin
+        A = UnsafeList(obj)
         result = new_list()
         try
-            for index in indices
-                𝟙 ≤ index ≤ objc || continue # skip out of range indices
-                unsafe_append_element(result, unsafe_load(objv, index))
+            for i in inds
+                checkbounds(Bool, A, i) || continue # skip out of range indices FIXME
+                unsafe_append_element(result, @inbounds A[i])
             end
         catch
             Tcl_DecrRefCount(result)
@@ -123,18 +123,17 @@ function Base.getindex(list::TclObj, indices::AbstractVector{<:Integer})
     end
 end
 
-function Base.getindex(list::TclObj, flags::AbstractVector{Bool})
-    GC.@preserve list begin
-        objc, objv = unsafe_get_list_elements(checked_pointer(list))
-        len = length(flags)
-        len == objc || throw(DimensionMismatch(
-            "attempt to index $(objc)-element Tcl list by $(len)-element vector of `Bool`"))
+function Base.getindex(obj::TclObj, flags::AbstractVector{Bool})
+    GC.@preserve obj begin
+        A = UnsafeList(obj)
+        length(flags) == length(A) || dimension_mismatch(
+            "attempt to index $(length(A))-element Tcl list by $(length(flags))-element vector of `Bool`")
         result = new_list()
-        offset = firstindex(flags) - 1
+        offset = firstindex(flags) - firstindex(A)
         try
-            for index in 𝟙:objc
-                if flags[index + offset]
-                    unsafe_append_element(result, unsafe_load(objv, index))
+            @inbounds for i in eachindex(A)
+                if flags[offset + i]
+                    unsafe_append_element(result, A[i])
                 end
             end
         catch
@@ -167,37 +166,52 @@ function Base.append!(list::TclObj, args...)
     return list
 end
 
-struct ListIterator
-    parent::TclObj # to hold a reference on the parent list
-    objc::Int
-    objv::Ptr{ObjPtr}
-    function ListIterator(list::TclObj)
-        GC.@preserve list begin
-            objc, objv = unsafe_get_list_elements(checked_pointer(list))
-            return new(list, objc, objv)
-        end
+function Base.iterate(obj::TclObj, (itr,i)::Tuple{ListIterator,Int}=(ListIterator(obj),1))
+    GC.@preserve itr begin
+        A = itr.list # retrieve unsafe list
+        checkbounds(Bool, A, i) || return nothing
+        item = _TclObj(@inbounds A[i])
+        return item, (itr, i + 1)
     end
 end
 
-function Base.iterate(list::TclObj,
-                      (iter, index)::Tuple{ListIterator,Int} = (ListIterator(list), 1))
-    1 ≤ index ≤ iter.objc || return nothing
-    parent = iter.parent
-    GC.@preserve parent begin
-        item = _TclObj(unsafe_load(iter.objv, index))
-        return item, (iter, index + 1)
-    end
-end
+"""
+    TclTk.Impl.UnsafeList(objptr::ObjPtr) -> A
 
-unsafe_get_list_elements(list::ObjPtr) = unsafe_get_list_elements(null(InterpPtr), list)
-function unsafe_get_list_elements(interp::InterpPtr, list::ObjPtr)
+Return a vector of pointers to Tcl objects to access the content of `objptr` considered as a
+pointer to a Tcl list of objects.
+
+If `objptr` is null, the returned vector `A` is empty. Otherwise, the caller is responsible
+of insuring that `objptr` remains valid while `A` is in use.
+
+The returned vector may be indexed for reading: `A[i]` yields a pointer to the `i`-th object
+of the list but `A[i] = x` is forbidden.
+
+"""
+UnsafeList(objptr::ObjPtr) = UnsafeList(InterpPtr(0), objptr)
+
+# `interp` is only needed for error messages.
+function UnsafeList(interp::InterpPtr, objptr::ObjPtr)
     objc = Ref(zero(Tcl_Size))
     objv = Ref(null(Ptr{ObjPtr}))
-    if !isnull(list)
-        status = Tcl_ListObjGetElements(interp, list, objc, objv)
+    if !isnull(objptr)
+        status = Tcl_ListObjGetElements(interp, objptr, objc, objv)
         status == TCL_OK || unsafe_error(interp, "failed to retrieve Tcl list elements")
     end
-    return Int(objc[])::Int, objv[]
+    return UnsafeList(objv[], objc[])
+end
+
+# Abstract vector API.
+Base.pointer(A::UnsafeList) = A.objv
+Base.length(A::UnsafeList) = A.objc
+Base.size(A::UnsafeList) = (length(A),)
+Base.IndexStyle(::Type{UnsafeList}) = IndexLinear()
+Base.firstindex(A::UnsafeList) = 1
+Base.lastindex(A::UnsafeList) = length(A)
+
+@inline function Base.getindex(A::UnsafeList, i::Int)
+    @boundscheck checkbounds(A, i)
+    return unsafe_load(pointer(A), i)
 end
 
 # NOTE With `index ≤ 0`, value is inserted at the beginning of the list. With `index >

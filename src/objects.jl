@@ -549,22 +549,21 @@ function unsafe_convert(::Type{T}, objptr::ObjPtr) where {T<:BasicVector{UInt8}}
 end
 function unsafe_convert(::Type{T}, objptr::ObjPtr) where {E,T<:BasicVector{E}}
     # Assume object is a list.
-    objc, objv = unsafe_get_list_elements(objptr)
-    vec = T(undef, objc)
-    for i in 𝟙:objc
-        vec[i] = unsafe_convert(E, unsafe_load(objv, i))
+    A = UnsafeList(objptr)
+    B = T(undef, length(A))
+    @inbounds for i in eachindex(A, B)
+        B[i] = unsafe_convert(E, A[i])
     end
-    return vec
+    return B
 end
 
 # Convert to fully specified Tuple.
 @generated function unsafe_convert(::Type{T}, objptr::ObjPtr) where {N,T<:NTuple{N,Any}}
     types = fieldtypes(T)
-    expr = Expr(:tuple, [:(unsafe_convert($(types[i]),
-                                          unsafe_load(objv, $i))) for i in 1:N]...,)
+    expr = Expr(:tuple, [:(unsafe_convert($(types[i]), A[$i])) for i in 1:N]...,)
     quote
-        objc, objv = unsafe_get_list_elements(objptr)
-        (isnull(objptr) || objc != N) && unsafe_convert_error(T, objptr)
+        A = UnsafeList(objptr)
+        length(A) == N || unsafe_convert_error(T, objptr)
         return $expr
     end
 end

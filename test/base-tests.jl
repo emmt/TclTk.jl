@@ -667,9 +667,15 @@ end
 
 @testset "Tcl Lists" begin
     # NULL object pointer yields empty list.
-    objc, objv = @inferred TclTk.Impl.unsafe_get_list_elements(Ptr{TclTk.Impl.Tcl_Obj}(0))
-    @test objc === 0
-    @test objv === Ptr{Ptr{TclTk.Impl.Tcl_Obj}}(0)
+    let ObjPtr = Ptr{TclTk.Impl.Tcl_Obj}
+        A = @inferred TclTk.Impl.UnsafeList(ObjPtr(0))
+        @test length(A) === 0
+        @test pointer(A) === Ptr{ObjPtr}(0)
+        @test ndims(A) === ndims(typeof(A)) === 1
+        @test eltype(A) === eltype(typeof(A)) === ObjPtr
+        @test IndexStyle(A) === IndexStyle(typeof(A)) === IndexLinear()
+        @test_throws BoundsError A[1]
+    end
 
     # Tcl "list".
     wa = ("", 1, "hello world!", (true, false), -3.75, π)
