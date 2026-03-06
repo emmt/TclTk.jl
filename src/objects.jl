@@ -161,13 +161,22 @@ end
 
 # Extend base methods for objects.
 function Base.summary(io::IO, obj::TclObj)
-    print(io, "TclObj: ")
-    show_value(io, obj)
-end
-function Base.summary(obj::TclObj)
-    io = IOBuffer()
-    summary(io, obj)
-    return String(take!(io))
+    type = obj.type
+    if type ∈ (:int, :wideInt)
+        print(io, "Tcl integer object")
+    elseif type == :double
+        print(io, "Tcl floating-point object")
+    elseif type == :bytearray
+        print(io, "Tcl byte-array object")
+    elseif type == :list
+        print(io, "Tcl list of ", length(obj), " object(s)")
+    elseif type == :boolean
+        write(io, obj)
+    elseif type == :null
+        print(io, "Tcl null object")
+    else
+        print(io, "Tcl object")
+    end
 end
 
 function Base.repr(obj::TclObj)
