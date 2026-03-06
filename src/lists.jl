@@ -45,65 +45,49 @@ for (func, append) in (:list   => :unsafe_append_element,
     end
 end
 
-@noinline invalid_list() = tcl_error("Tcl object is not a valid list")
-
 Base.IteratorSize(::Type{TclObj}) = Base.HasShape{1}()
-function Base.length(list::TclObj)
-    GC.@preserve list begin
-        objptr = pointer(list)
-        isnull(objptr) && return 0
-        len = Ref{Tcl_Size}()
-        Tcl_ListObjLength(null(InterpPtr), objptr, len) == TCL_OK || invalid_list()
-        return Int(len[])::Int
-    end
-end
 
-Base.isempty(list::TclObj) = length(list) < 𝟙
+Base.length(obj::TclObj) = GC.@preserve obj unsafe_length(pointer(obj))
 
-Base.size(list::TclObj) = (length(list),)
+Base.isempty(obj::TclObj) = length(obj) < 𝟙
+
+Base.size(obj::TclObj) = (length(obj),)
 
 # When iterated or indexed, a Tcl object yield Tcl objects.
 Base.IteratorEltype(::Type{TclObj}) = Base.HasEltype()
 Base.eltype(::Type{TclObj}) = TclObj
 
-Base.firstindex(list::TclObj) = 1
-Base.lastindex(list::TclObj) = length(list)
+Base.firstindex(obj::TclObj) = 1
+Base.lastindex(obj::TclObj) = length(obj)
 
-Base.IndexStyle(list::TclObj) = IndexStyle(typeof(x))
+Base.IndexStyle(obj::TclObj) = IndexStyle(typeof(x))
 Base.IndexStyle(::Type{TclObj}) = IndexLinear()
 
-Base.keys(list::TclObj) = 𝟙:length(list)
+Base.keys(obj::TclObj) = 𝟙:length(obj)
 
-Base.first(list::TclObj) = list[firstindex(list)]
-Base.last(list::TclObj) = list[lastindex(list)]
+Base.first(obj::TclObj) = obj[firstindex(obj)]
+Base.last(obj::TclObj) = obj[lastindex(obj)]
 
-function Base.getindex(list::TclObj, index::Integer)
-    GC.@preserve list begin
-        objptr = unsafe_getindex(list, index)
-        return isnull(objptr) ? missing : _TclObj(objptr)
+function Base.getindex(obj::TclObj, index::Integer)
+    GC.@preserve obj begin
+        objptr = unsafe_getindex(obj, index)
+        isnull(objptr) && throw(BoundsError(obj, index))
+        return _TclObj(objptr)
     end
 end
 
-@inline Base.getindex(list::TclObj, pair::Pair{<:Integer,<:DataType}) =
-    getindex(list, pair...)
+@inline Base.getindex(obj::TclObj, pair::Pair{<:Integer,<:DataType}) =
+    getindex(obj, pair...)
 
-Base.getindex(list::TclObj, ::Type{T}, index::Integer) where {T} =
-    getindex(list, index, T)
+Base.getindex(obj::TclObj, ::Type{T}, index::Integer) where {T} =
+    getindex(obj, index, T)
 
-function Base.getindex(list::TclObj, index::Integer, ::Type{T}) where {T}
-    GC.@preserve list begin
-        objptr = unsafe_getindex(list, index)
-        return isnull(objptr) ? convert(T, missing) : unsafe_convert(T, objptr)
+function Base.getindex(obj::TclObj, index::Integer, ::Type{T}) where {T}
+    GC.@preserve obj begin
+        objptr = unsafe_getindex(obj, index)
+        isnull(objptr) && throw(BoundsError(obj, index))
+        return unsafe_convert(T, objptr)
     end
-end
-
-function unsafe_getindex(list::Union{TclObj,ObjPtr}, index::Integer)
-    objref = Ref{ObjPtr}(0)
-    if index ≥ 𝟙
-        status = Tcl_ListObjIndex(null(InterpPtr), list, index - 𝟙, objref)
-        status == TCL_OK || invalid_list()
-    end
-    return objref[]
 end
 
 function Base.getindex(obj::TclObj, inds::AbstractVector{<:Integer})
@@ -112,7 +96,7 @@ function Base.getindex(obj::TclObj, inds::AbstractVector{<:Integer})
         result = new_list()
         try
             for i in inds
-                checkbounds(Bool, A, i) || continue # skip out of range indices FIXME
+                checkbounds(A, i)
                 unsafe_append_element(result, @inbounds A[i])
             end
         catch
@@ -145,25 +129,25 @@ function Base.getindex(obj::TclObj, flags::AbstractVector{Bool})
 end
 
 # NOTE Julia `push!` is similar to Tcl `lappend` command.
-function Base.push!(list::TclObj, args...)
-    GC.@preserve list begin
-        listptr = pointer(list)
+function Base.push!(obj::TclObj, args...)
+    GC.@preserve obj begin
+        objptr = pointer(obj)
         for arg in args
-            unsafe_append_element(listptr, arg)
+            unsafe_append_element(objptr, arg)
         end
     end
-    return list
+    return obj
 end
 
 # NOTE Julia `append!` is similar to Tcl `concat` command.
-function Base.append!(list::TclObj, args...)
-    GC.@preserve list begin
-        listptr = pointer(list)
+function Base.append!(obj::TclObj, args...)
+    GC.@preserve obj begin
+        objptr = pointer(obj)
         for arg in args
-            unsafe_append_list(listptr, arg)
+            unsafe_append_list(objptr, arg)
         end
     end
-    return list
+    return obj
 end
 
 function Base.iterate(obj::TclObj, (itr,i)::Tuple{ListIterator,Int}=(ListIterator(obj),1))
@@ -173,6 +157,24 @@ function Base.iterate(obj::TclObj, (itr,i)::Tuple{ListIterator,Int}=(ListIterato
         item = _TclObj(@inbounds A[i])
         return item, (itr, i + 1)
     end
+end
+
+function unsafe_length(objptr::ObjPtr)
+    isnull(objptr) && return 0
+    len = Ref{Tcl_Size}()
+    Tcl_ListObjLength(null(InterpPtr), objptr, len) == TCL_OK || invalid_list()
+    return Int(len[])::Int
+end
+
+@noinline invalid_list() = tcl_error("Tcl object is not a valid list")
+
+function unsafe_getindex(obj::Union{TclObj,ObjPtr}, index::Integer)
+    objref = Ref{ObjPtr}(0)
+    if index ≥ 𝟙
+        status = Tcl_ListObjIndex(null(InterpPtr), obj, index - 𝟙, objref)
+        status == TCL_OK || invalid_list()
+    end
+    return objref[]
 end
 
 """
@@ -214,35 +216,39 @@ Base.lastindex(A::UnsafeList) = length(A)
     return unsafe_load(pointer(A), i)
 end
 
-# NOTE With `index ≤ 0`, value is inserted at the beginning of the list. With `index >
-# length(list)`, `value` is appended to the end of the list.
-function Base.setindex!(list::TclObj, value, index::Integer)
-    GC.@preserve list value begin
-        # The ref, count is incremented and finally decremented, to protect against
+function Base.setindex!(obj::TclObj, value, index::Integer)
+    i = Int(index)::Int
+    GC.@preserve obj value begin
+        # With `index < 1`, Tcl would insert the value at the beginning of the list. With
+        # `index > length(obj)`, Tcl would append the value to the end of the list. This
+        # behavior is unusual for Julia and we impose that `index` be in bounds.
+        objptr = pointer(obj)
+        firstindex(obj) ≤ i ≤ unsafe_length(objptr) || throw(BoundsError(obj, i))
+        # The ref. count is incremented and finally decremented, to protect against
         # exceptions that may be thrown by `unsafe_replace_list`.
-        obj = Tcl_IncrRefCount(unsafe_objptr(value))
+        valptr = Tcl_IncrRefCount(unsafe_objptr(value))
         try
-            unsafe_replace_list(pointer(list), index - 1, 1, 1, Ref(obj))
+            unsafe_replace_list(objptr, i - 1, 1, 1, Ref(valptr))
         finally
-            Tcl_DecrRefCount(obj)
+            Tcl_DecrRefCount(valptr)
         end
     end
-    return list
+    return obj
 end
 
-function Base.delete!(list::TclObj, index::Integer)
+function Base.delete!(obj::TclObj, index::Integer)
     if index ≥ 𝟙
-        GC.@preserve list begin
-            unsafe_replace_list(pointer(list), index - 𝟙, 1, 0, C_NULL)
+        GC.@preserve obj begin
+            unsafe_replace_list(pointer(obj), index - 𝟙, 1, 0, C_NULL)
         end
     end
-    return list
+    return obj
 end
 
-# NOTE In `Tcl_ListObjReplace`:
+# NOTE In `Tcl_ListObjReplace` applied to destination `list` considered as a list:
 #
-# * If `first ≥ length(list)`, no elements are deleted and the objects in `objv` are
-#   appended to the list.
+# * If `first ≥ length(obj)`, no elements are deleted and the objects in `objv` are appended
+#   to the list.
 #
 # * If `first ≤ 0` it is assumed to be `0`, that is the index of the first list element.
 #

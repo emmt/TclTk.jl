@@ -697,9 +697,9 @@ end
     @test wb[4][1] == TclObj(wa[4][1])
     @test wc[4][2] == TclObj(wa[4][2])
 
-    # Out of range index yield "missing".
-    @test missing === wb[0]
-    @test missing === wb[length(wb)+1]
+    # Out of range indices throw.
+    @test_throws BoundsError wb[0]
+    @test_throws BoundsError wb[length(wb)+1]
 
     # Set index in list.
     wb[1] = 3

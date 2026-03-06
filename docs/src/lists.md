@@ -57,22 +57,6 @@ list[i => T] # idem
 This has two advantages: type-stability (the type of the result is inferable) and, compared
 to `convert(T, list[i])`, speed (this avoids allocating a mutable `TclObj` instance).
 
-To follow Tcl behavior, out of range indices yield `missing` when indexing a list with a
-scalar index and are simply ignored when indexing a list with an index range or a vector of
-indices:
-
-```julia-repl
-julia> x[0]
-missing
-
-julia> y[end+1]
-missing
-
-julia> y[-1:3] # out of bound indices -1 and 0 are ignored
-TclObj(("a", "b c", "1",))
-
-```
-
 A list may be indexed by a vector of Booleans (of same length as the list) to extract a
 sub-list:
 
@@ -110,7 +94,7 @@ TclObj(("a {b c}", 1, (-1, 2, 4,),))
 
 When its content can be converted into a proper list, any Tcl object can be used as a list,
 that is to say indexed, iterated, etc. In fact, any successful operation on a Tcl object
-that considers the object as a list convert the internal type of the object into a list
+that considers the object as a list converts the internal type of the object into a list
 type. This is illustrated by the following examples:
 
 ```julia-repl
@@ -128,9 +112,6 @@ julia> z.type
 
 julia> z[end-1]
 TclObj("3")
-
-julia> z[end+1]
-missing
 
 ```
 
