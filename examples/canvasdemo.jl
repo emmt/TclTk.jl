@@ -4,18 +4,18 @@ using Colors, TclTk
 interp = tk_start()
 
 # Top-level widget with title.
-top = TkToplevel(background="#282c34")
+top = Toplevel(background="#282c34")
 wm.title(top, "Canvas demo")
 
 # Create a canvas widget. The "closeenough" settings (in pixels) is to facilitate the
 # selection of a marker to delete.
-canvas = TkCanvas(top, cursor=:target, background="#282c34", closeenough=7)
+canvas = Canvas(top, cursor=:target, background="#282c34", closeenough=7)
 
 # Frame widget for the message and counter.
-bar = TkFrame(top, borderwidth=1, relief=:raised)
+bar = Frame(top, borderwidth=1, relief=:raised)
 
 # Create a message widget.
-mesg = TkMessage(bar, text="""
+mesg = Message(bar, text="""
 Click on an empty location to add a marker.
 Click on a marker to delete it.""", aspect=600)
 
@@ -24,7 +24,7 @@ counter = TclTk.Variable{Int}(interp, "::NUMBER_OF_MARKERS")
 counter[] = 0
 
 # Create a label to display the number of markers.
-count = TkLabel(bar, background="white", borderwidth=1, relief=:sunken,
+count = Label(bar, background="white", borderwidth=1, relief=:sunken,
                 width=5, text=0, textvariable=counter.name)
 
 # Arrange widgets in their parent.
@@ -34,10 +34,10 @@ mesg.pack(side=:left, expand=true, fill=:both)
 count.pack(side=:right, expand=false, fill=:both, padx=5, pady=5)
 
 # Function to add a marker in a canvas.
-add_marker(canvas::TkCanvas, xm, ym; kwds...) =
+add_marker(canvas::Canvas, xm, ym; kwds...) =
     add_marker(canvas.interp, canvas, xm, ym; kwds...)
 
-function add_marker(canvas::TkCanvas, xm, ym;
+function add_marker(canvas::Canvas, xm, ym;
                     tag="marker", radius=4, adjust::Bool=false,
                     fill=Colors.JULIA_LOGO_COLORS.green,
                     activefill=Colors.JULIA_LOGO_COLORS.red)
@@ -58,7 +58,7 @@ end
 # Callback function to be called with: %W %x %y.
 function on_click(interp::TclInterp, args::TclObj)
     # Extract arguments (1st is name of procedure, unused here).
-    canvas = TkCanvas(interp, args[2]) # most efficient way to retrieve a widget
+    canvas = Canvas(interp, args[2]) # most efficient way to retrieve a widget
     xm, ym = args[3 => Float64], args[4 => Float64]
 
     # Convert coordinates to canvas coordinates.

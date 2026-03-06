@@ -1,7 +1,7 @@
 #
 # widgets.jl -
 #
-# Implement Tk (and TTk) widgets
+# Implement Tk (and Ttk) widgets
 #
 
 """
@@ -67,47 +67,168 @@ function widget_constructor_from_class(class::Name)
     return constructor
 end
 
-# Top-level widgets.
-@TkWidget TkToplevel      Toplevel      "::toplevel"          ".top"
-@TkWidget TkMenu          Menu          "::menu"              ".mnu"
+include("Tk.jl")
+import .Tk:
+    Canvas,
+    Listbox,
+    Menu,
+    Message, # use Ttk.Label
+    Text,
+    Toplevel
 
-# Classic Tk widgets.
-@TkWidget TkButton        Button        "::button"            "btn"
-@TkWidget TkCanvas        Canvas        "::canvas"            "cnv"
-@TkWidget TkCheckbutton   Checkbutton   "::checkbutton"       "cbt"
-@TkWidget TkEntry         Entry         "::entry"             "ent"
-@TkWidget TkFrame         Frame         "::frame"             "frm"
-@TkWidget TkLabel         Label         "::label"             "lab"
-@TkWidget TkLabelframe    Labelframe    "::labelframe"        "lfr"
-@TkWidget TkListbox       Listbox       "::listbox"           "lbx"
-@TkWidget TkMenubutton    Menubutton    "::menubutton"        "mbt"
-@TkWidget TkMessage       Message       "::message"           "msg"
-@TkWidget TkPanedwindow   Panedwindow   "::panedwindow"       "pwn"
-@TkWidget TkRadiobutton   Radiobutton   "::radiobutton"       "rbt"
-@TkWidget TkScale         Scale         "::scale"             "scl"
-@TkWidget TkScrollbar     Scrollbar     "::scrollbar"         "sbr"
-@TkWidget TkSpinbox       Spinbox       "::spinbox"           "sbx"
-@TkWidget TkText          Text          "::text"              "txt"
+include("Ttk.jl")
+import .Ttk:
+    Button,
+    Checkbutton,
+    Combobox,
+    Entry,
+    Frame,
+    Label,
+    Labelframe,
+    Menubutton,
+    Notebook,
+    Panedwindow,
+    Progressbar,
+    Radiobutton,
+    Scale,
+    Scrollbar,
+    Separator,
+    Sizegrip,
+    Spinbox,
+    Treeview
 
-# Themed Tk widgets.
-@TkWidget TtkButton       TButton       "::ttk::button"       "btn"
-@TkWidget TtkCheckbutton  TCheckbutton  "::ttk::checkbutton"  "cbt"
-@TkWidget TtkCombobox     TCombobox     "::ttk::combobox"     "cbx"
-@TkWidget TtkEntry        TEntry        "::ttk::entry"        "ent"
-@TkWidget TtkFrame        TFrame        "::ttk::frame"        "frm"
-@TkWidget TtkLabel        TLabel        "::ttk::label"        "lab"
-@TkWidget TtkLabelframe   TLabelframe   "::ttk::labelframe"   "lfr"
-@TkWidget TtkMenubutton   TMenubutton   "::ttk::menubutton"   "mbt"
-@TkWidget TtkNotebook     TNotebook     "::ttk::notebook"     "nbk"
-@TkWidget TtkPanedwindow  TPanedwindow  "::ttk::panedwindow"  "pwn"
-@TkWidget TtkProgressbar  TProgressbar  "::ttk::progressbar"  "pgb"
-@TkWidget TtkRadiobutton  TRadiobutton  "::ttk::radiobutton"  "rbt"
-@TkWidget TtkScale        TScale        "::ttk::scale"        "scl"
-@TkWidget TtkScrollbar    TScrollbar    "::ttk::scrollbar"    "sbr"
-@TkWidget TtkSeparator    TSeparator    "::ttk::separator"    "sep"
-@TkWidget TtkSizegrip     TSizegrip     "::ttk::sizegrip"     "szg"
-@TkWidget TtkSpinbox      TSpinbox      "::ttk::spinbox"      "sbx"
-@TkWidget TtkTreeview     Treeview      "::ttk::treeview"     "trv"
+function widget_doc(constructor::Union{Symbol,AbstractString},
+                    name::Union{Symbol,AbstractString})
+    name isa AbstractString || (name = String(name)::String)
+    a = startswith(name, r"[aeiou]") ? "an" : "a"
+    return """
+    w = $(constructor)(parent::Widget, [name,] pairs::Pair...; kwds...)
+
+Create or wrap $(a) *$(name)* widget in `parent` widget.
+
+Optional argument `name` is the name the widget relative to its parent path; if not
+specified, a unique name is automatically generated. If `name` is specified and corresponds
+to an existing $(name) widget, no new widget is created and the existing widget is wrapped
+as explained below.
+
+Any number of configurable options may be specified by `opt => val` pairs of by `opt=val`
+keywords with `opt` the option name and `val` the option value. The option name has no
+leading hyphen and, if the option is specified by a pair, is a string or a symbol.
+[`TclTk.configure`](@ref) may be called to retrieve a list of possible options.
+
+The constructor may also wrap an existing $(name) widget in a `$(constructor)` structure:
+
+    w = $(constructor)(interp=TclInterp(), path, pairs::Pair...; kwds...)
+
+where `interp` is the Tcl interpreter where lives the widget and `path` is the full path of
+the widget. If any configurable options are specified, they are applied to the existing
+widget.
+
+"""
+end
+
+"$(widget_doc("Button", "button"))"
+Button
+
+"$(widget_doc("Canvas", "canvas"))"
+Canvas
+
+"$(widget_doc("Checkbutton", "check button"))"
+Checkbutton
+
+"$(widget_doc("Combobox", "combo box"))"
+Combobox
+
+"$(widget_doc("Entry", "entry"))"
+Entry
+
+"$(widget_doc("Frame", "frame"))"
+Frame
+
+"$(widget_doc("Label", "label"))"
+Label
+
+"$(widget_doc("Labelframe", "label frame"))"
+Labelframe
+
+"$(widget_doc("Listbox", "list box"))"
+Listbox
+
+"$(widget_doc("Menu", "menu"))"
+Menu
+
+"$(widget_doc("Menubutton", "menu button"))"
+Menubutton
+
+"$(widget_doc("Message", "message"))"
+Message
+
+"$(widget_doc("Notebook", "notebook"))"
+Notebook
+
+"$(widget_doc("Panedwindow", "paned window"))"
+Panedwindow
+
+"$(widget_doc("Progressbar", "progress bar"))"
+Progressbar
+
+"$(widget_doc("Radiobutton", "radio button"))"
+Radiobutton
+
+"$(widget_doc("Scale", "scale"))"
+Scale
+
+"$(widget_doc("Scrollbar", "scroll bar"))"
+Scrollbar
+
+"$(widget_doc("Separator", "separator"))"
+Separator
+
+"$(widget_doc("Sizegrip", "size grip"))"
+Sizegrip
+
+"$(widget_doc("Spinbox", "spin box"))"
+Spinbox
+
+"$(widget_doc("Text", "text"))"
+Text
+
+"$(widget_doc("Treeview", "tree view"))"
+Treeview
+
+"""
+    w = Toplevel(interp=TclInterp(), [path,] pairs::Pair...; kwds...)
+
+Create or wrap a *top-level* widget living in `interp` interpreter. This also takes care of
+loading the Tk extension in the interpreter and of starting the event loop.
+
+Optional argument `path` is the full path of the widget relative to its parent path; if not
+specified, a unique path is automatically generated. If `path` is specified and corresponds
+to an existing top-level widget, no new widget is created and the existing widget is wrapped
+in `Toplevel` structure.
+
+Any number of configurable options may be specified by `opt => val` pairs of by `opt=val`
+keywords with `opt` the option name and `val` the option value. The option name has no
+leading hyphen and, if the option is specified by a pair, is a string or a symbol. Function
+[`TclTk.configure`](@ref) may be called to retrieve a list of possible options.
+
+For example:
+
+```julia
+top = Toplevel()
+```
+
+creates a new top-level widget in while
+
+```julia
+main = Toplevel(".")
+```
+
+returns the main Tk window for Tcl interpreter `interp`. No interpreter being specified,
+both `top` and `main` live in the shared Tcl interpreter of the thread.
+
+"""
+Toplevel
 
 """
     TkWidget(interp=TclInterp(), path)
@@ -305,7 +426,7 @@ yields the name of the application.
 """
 isrootwidget(path::Symbol) = (path == :(.))
 isrootwidget(path::Name) = path == "."
-isrootwidget(w::TkToplevel) = isrootwidget(w.path)
+isrootwidget(w::Toplevel) = isrootwidget(w.path)
 isrootwidget(w::TkWidget) = false
 
 # Supply interpreter.
@@ -384,22 +505,6 @@ function widget_auto_path(interp::TclInterp, parent::String, prefix::String)
         n += one(n)
     end
 end
-
-"""
-    TkToplevel(interp=TclInterp(), ".")
-
-Return the top-level Tk window for Tcl interpreter `interp`. This also takes care of loading
-Tk extension in the interpreter and starting the event loop.
-
-To create a new top-level widget:
-
-    TkToplevel(interp=TclInterp(), pairs...; kwds...)
-    TkToplevel(interp=TclInterp(), path, pairs...; kwds...)
-
-with `path` the optional name of the widget (must start with a dot). Arguments `pairs...`
-and keywords `kwds...` are to specify configuration options.
-
-""" TkToplevel
 
 # Accessors.
 TclInterp(w::TkWidget) = w.interp
@@ -576,9 +681,9 @@ For example:
 ```julia
 using TclTk
 tk_start()
-top = TkToplevel()
+top = Toplevel()
 wm.title(top, "A simple example")
-btn = TtkButton(top, text="Click me", command="puts {ouch!}")
+btn = Button(top, text="Click me", command="puts {ouch!}")
 btn.pack(side=:bottom, padx=30, pady=5)
 ```
 

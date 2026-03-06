@@ -1,13 +1,14 @@
 module TclTkWidgetTests
 
 using TclTk
+using TclTk: Tk, Ttk
 using Test
 using Colors
 using Colors.FixedPointNumbers: N0f8, N0f16
 using InteractiveUtils
 
 @testset "Tk Widgets" begin
-    w = @inferred TkToplevel(".")
+    w = @inferred Toplevel(".")
     @test TclTk.isrunning()
 
     # Properties and winfo fields.
@@ -181,14 +182,14 @@ destroy(w::TkWidget) = w.interp(:destroy, w)
 
 # Retrieve widget specifications.
 interp = @inferred TclInterp()
-root = @inferred TkToplevel(interp, ".")
+root = @inferred Toplevel(interp, ".")
 for child in root.children
     interp.eval("catch {destroy $child}")
 end
 
 @testset "$T widget" for T in subtypes(TkWidget)
     w = @inferred T(root)
-    T == TkToplevel && wm.withdraw(w)
+    T == Toplevel && wm.withdraw(w)
     config = Dict{Symbol,String}()
     alias = Dict{Symbol,String}()
     for spec in @inferred w.configure()

@@ -14,20 +14,20 @@ function addseedismiss(parent, child)
     #import TclTk: list
     ## See Code / Dismiss buttons
     interp = TclInterp(parent)
-    w = TtkFrame(parent, child)
-    if isdefined(:TtkSeparator)
-        sep = TtkSeparator(w, "sep")
+    w = Frame(parent, child)
+    if isdefined(:Separator)
+        sep = Separator(w, "sep")
     else
-        sep = TtkFrame(w, "sep", :height => 2, :relief => "sunken")
+        sep = Frame(w, "sep", :height => 2, :relief => "sunken")
     end
     grid(sep, :columnspan => 4, :row => 0, :sticky => "ew", :pady => "2")
-    dismiss = TtkButton(w, "dismiss", :text => "Dismiss",
+    dismiss = Button(w, "dismiss", :text => "Dismiss",
                         #:image => "::img::delete",
                         :compound => "left",
                         :command => list(:destroy, interp(:winfo, :toplevel, w)))
 
     # createcommand(interp, "jlcallback", (args...) -> println("Ouch!"))
-    code = TtkButton(w, "code", :text => "See Code",
+    code = Button(w, "code", :text => "See Code",
                      #:image => "::img::view",
                      compound = "left",
                      command = (args...) -> println("Ouch!"))
@@ -35,7 +35,7 @@ function addseedismiss(parent, child)
 
     #set buttons [list x $w.code $w.dismiss]
     #if {[llength $vars]} {
-    #    TtkButton $w.vars -text [mc "See Variables"] \
+    #    Button $w.vars -text [mc "See Variables"] \
     #        -image ::img::view -compound left \
     #        -command [concat [list showVars $w.dialog] $vars]
     #    set buttons [linsert $buttons 1 $w.vars]
@@ -63,12 +63,12 @@ function labelframedemo()
     interp = tk_start()
     wname = ".labelframe"
     interp.eval("::catch {destroy $wname}")
-    w = TkToplevel(wname)
+    w = Toplevel(wname)
     interp(:wm, :title, w, "Labelframe Demonstration")
     interp(:wm, :iconname, w, "labelframe")
 
     # Some information
-    msg = TkLabel(w, "msg", #:font => "Helveltica",
+    msg = Label(w, "msg", #:font => "Helveltica",
                   :wraplength => "4i", :justify => "left",
                   :text => "Labelframes are used to group related widgets together.  The label may be either plain text or another widget.")
     pack(msg, :side => "top")
@@ -78,16 +78,16 @@ function labelframedemo()
     pack(btns, :side => "bottom", :fill => "x")
 
     # Demo area
-    wf = TkFrame(w, "f")
+    wf = Frame(w, "f")
     pack(wf, :side => "bottom", :fill => "both", :expand => true)
 
     # A group of radiobuttons in a labelframe
 
-    f = TkLabelframe(wf, "f", :text => "Value", :padx => 2, :pady => 2)
+    f = Labelframe(wf, "f", :text => "Value", :padx => 2, :pady => 2)
     grid(f, :row => 0, :column => 0, :pady => "2m", :padx => "2m")
 
     for value in 1:4
-        pack(TkRadiobutton(f,"b$value", :text => "This is value $value",
+        pack(Radiobutton(f,"b$value", :text => "This is value $value",
                            :variable => "lfdummy", :value => value),
              :side => "top", :fill => "x", :pady => 2)
     end
@@ -106,15 +106,15 @@ function labelframedemo()
             }
         """)
 
-    f2 = TkLabelframe(wf, "f2", :pady => 2, :padx => 2)
-    f2_cb = TkCheckbutton(f2, "cb", :text => "Use this option.",
+    f2 = Labelframe(wf, "f2", :pady => 2, :padx => 2)
+    f2_cb = Checkbutton(f2, "cb", :text => "Use this option.",
                           :variable => "lfdummy2",
                           :command => "lfEnableButtons $f2", :padx => 0)
     f2("configure", :labelwidget => f2_cb)
     grid(f2, :row => 0, :column => 1, :pady => "2m", :padx => "2m")
 
     for t in 0:2
-        pack(TkCheckbutton(f2,"b$t", :text => "Option$(t+1)"),
+        pack(Checkbutton(f2,"b$t", :text => "Option$(t+1)"),
              :side => "top", :fill => "x", :pady => 2)
     end
     interp("lfEnableButtons", f2)

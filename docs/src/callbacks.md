@@ -106,16 +106,16 @@ location of mouse clicks are reported:
 ```julia-repl
 julia> tk_start(); # make sure Tk package is loaded and event loop is running
 
-julia> top = TkToplevel(:background => "#282c34")
-TkToplevel(".top1")
+julia> top = Toplevel(:background => "#282c34")
+Toplevel(".top1")
 
 julia> wm.title(top, "Callback demo")
 
-julia> canvas = TkCanvas(top, :background => "#282c34", :cursor => :target)
-TkCanvas(".top1.cnv1")
+julia> canvas = Canvas(top, :background => "#282c34", :cursor => :target)
+Canvas(".top1.cnv1")
 
-julia> mesg = TkMessage(top, :aspect => 600)
-TkMessage(".top1.msg1")
+julia> mesg = Message(top, :aspect => 600)
+Message(".top1.msg1")
 
 julia> TclTk.pack(Nothing, canvas, :side => :top, :fill => "both", :expand => true)
 
@@ -124,7 +124,7 @@ julia> TclTk.pack(Nothing, mesg, :side => :bottom, :fill => "x", :expand => fals
 julia> function on_click(interp::TclInterp, args::TclObj)
            # Extract arguments (4 are expected, the 1st one is the name of the calling command
            # which do not need here).
-           win = TkCanvas(interp, args[2])  # the widget, %W in the bind script
+           win = Canvas(interp, args[2])  # the widget, %W in the bind script
            xm = args[3 => Float64] # the x coordinate of the event, %x in the bind script
            ym = args[4 => Float64] # the y coordinate of the event, %y in the bind script
            # Convert (xm,ym) to canvas coordinates.
@@ -147,7 +147,7 @@ When retrieving the arguments of the callback, the `TkWidget` abstract construct
 used in place of the widget type if it is unknown. In the above example:
 
 ```julia
-win = TkCanvas(interp, args[2])
+win = Canvas(interp, args[2])
 ```
 
 could be replaced by:

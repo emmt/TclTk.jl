@@ -7,8 +7,8 @@
 A top-level or a menu widget are created by:
 
 ```julia
-top = TkToplevel(interp=TclInterp(), [path,] pairs...; kwds...)
-menu = TkMenu(interp=TclInterp(), [path,] pairs...; kwds...)
+top = Toplevel(interp=TclInterp(), [path,] pairs...; kwds...)
+menu = Menu(interp=TclInterp(), [path,] pairs...; kwds...)
 ```
 
 where `interp` is the interpreter where to create the widget (the shared interpreter of the
@@ -26,16 +26,16 @@ implementing the widget behavior and is used for any reference to the widget.
 For example, using keywords:
 
 ```julia-repl
-julia> top = TkToplevel(relief="sunken", borderwidth=5, background="cyan")
-TkToplevel(".top3")
+julia> top = Toplevel(relief="sunken", borderwidth=5, background="cyan")
+Toplevel(".top3")
 
 ```
 
 or using pairs:
 
 ```julia-repl
-julia> top = TkToplevel(:relief => "sunken", :borderwidth => 5, :background => "cyan")
-TkToplevel(".top3")
+julia> top = Toplevel(:relief => "sunken", :borderwidth => 5, :background => "cyan")
+Toplevel(".top3")
 
 ```
 
@@ -52,7 +52,7 @@ Non-top level widgets have a parent (a top-level widget, a frame, etc.) which mu
 provided to the constructor. For example, a label is created by something like:
 
 ```julia
-lab = TkLabel(parent, [child,] pairs...; kwds...)
+lab = Label(parent, [child,] pairs...; kwds...)
 ```
 
 where `child` is the path of the widget relative to its parent, it must have no dots. The
@@ -128,10 +128,10 @@ done by:
 
 ```julia
 interp = tk_start()
-top = TkToplevel(interp, background="darkseagreen")
-lab = TkLabel(top, text="Some label", background="lightblue")
-btn = TkButton(top, text="Click me", background="goldenrod", command="puts {Hello world!}")
-TclTk.pack(btn, lab, side=:bottom, padx=90, pady=5)
+top = Toplevel(interp, background="darkseagreen")
+lab = Label(top, text="Some label", background="lightblue")
+btn = Button(top, text="Click me", command="puts {Hello world!}")
+btn.pack(btn, lab, side=:bottom, padx=90, pady=5)
 wm.title(top, "Tk `pack` example")
 ```
 
@@ -149,10 +149,11 @@ button `btn` widgets as follows:
 ```julia
 using TclTk
 tk_start()
-top = TkToplevel()
-lab = TkLabel(top, text="Some label", background="lightblue")
-btn = TkButton(top, text="Please push me...", command="puts {Button pushed!}")
-TclTk.pack(btn, side=:top, padx=70, pady=5)
+top = Toplevel()
+wm.title(top, "Tk example")
+lab = Label(top, text="Some label", background="lightblue")
+btn = Button(top, text="Please push me...", command="puts {Button pushed!}")
+btn.pack(btn, side=:top, padx=70, pady=5)
 ```
 
 This shows how `option => value` pairs can be used at widget creation to set some
@@ -219,37 +220,37 @@ For an existing widget, re-configuration can be done by via the `configure` sub-
 (often abbreviated to `config`) of the widget:
 
 ```julia-repl
-julia> TclTk.exec(btn, :config, background = "darkseagreen")
+julia> TclTk.exec(btn, :config, text = "changed text")
 
 ```
 
 or equivalently:
 
 ```julia-repl
-julia> btn(:config, background = "darkseagreen")
+julia> btn(:config, text = "changed text")
 
 ```
 
 Any number of option settings can be specified for the `configure`:
 
 ```julia-repl
-julia> btn(:config, foreground="firebrick", background"darkseagreen")
+julia> btn(:config, text = "changed text", command="puts {Button clicked again!}")
 
 ```
 
 As a shortcut, changing a single option can also be done by the `setindex!` method:
 
 ```julia-repl
-julia> btn[:background] = "darkseagreen"
-"darkseagreen"
+julia> btn[:text] = "Oh no!"
+"Oh no!"
 
 ```
 
 Without any `option => value` pairs, the `configure` sub-command yields a list of all current settings:
 
 ```julia-repl
-julia> btn(TclObj, :config)
-TclObj((("-activebackground", "activeBackground", "Foreground", "#ececec", "#ececec",), ("-activeforeground", "activeForeground", "Background", "#000000", "#000000",), ("-anchor", "anchor", "Anchor", "center", "center",), ("-background", "background", "Background", "#d9d9d9", "darkseagreen",), ("-bd", "-borderwidth",), ("-bg", "-background",), ("-bitmap", "bitmap", "Bitmap", "", "",), ("-borderwidth", "borderWidth", "BorderWidth", 1, 1,), ("-command", "command", "Command", "", "puts {Button pushed!}",), ("-compound", "compound", "Compound", "none", "none",), ("-cursor", "cursor", "Cursor", "", "",), ("-default", "default", "Default", "disabled", "disabled",), ("-disabledforeground", "disabledForeground", "DisabledForeground", "#a3a3a3", "#a3a3a3",), ("-fg", "-foreground",), ("-font", "font", "Font", "TkDefaultFont", "TkDefaultFont",), ("-foreground", "foreground", "Foreground", "#000000", "firebrick",), ("-height", "height", "Height", 0, 0,), ("-highlightbackground", "highlightBackground", "HighlightBackground", "#d9d9d9", "#d9d9d9",), ("-highlightcolor", "highlightColor", "HighlightColor", "#000000", "#000000",), ("-highlightthickness", "highlightThickness", "HighlightThickness", 1, 1,), ("-image", "image", "Image", "", "",), ("-justify", "justify", "Justify", "center", "center",), ("-overrelief", "overRelief", "OverRelief", "", "",), ("-padx", "padX", "Pad", "3m", "3m",), ("-pady", "padY", "Pad", "1m", "1m",), ("-relief", "relief", "Relief", "raised", "raised",), ("-repeatdelay", "repeatDelay", "RepeatDelay", 0, 0,), ("-repeatinterval", "repeatInterval", "RepeatInterval", 0, 0,), ("-state", "state", "State", "normal", "normal",), ("-takefocus", "takeFocus", "TakeFocus", "", "",), ("-text", "text", "Text", "", "Please push me...",), ("-textvariable", "textVariable", "Variable", "", "",), ("-underline", "underline", "Underline", "", "",), ("-width", "width", "Width", 0, 0,), ("-wraplength", "wrapLength", "WrapLength", 0, 0,),))
+julia> btn.configure()
+TclObj((("-command", "command", "Command", "", "puts {Button pushed!}",), ("-default", "default", "Default", "normal", "normal",), ("-takefocus", "takeFocus", "TakeFocus", "ttk::takefocus", "ttk::takefocus",), ("-justify", "justify", "Justify", "left", "left",), ("-text", "text", "Text", "", "Do it again",), ("-textvariable", "textVariable", "Variable", "", "",), ("-underline", "underline", "Underline", "", "",), ("-width", "width", "Width", "", "",), ("-image", "image", "Image", "", "",), ("-compound", "compound", "Compound", "", "",), ("-padding", "padding", "Pad", "", "",), ("-state", "state", "State", "normal", "normal",), ("-cursor", "cursor", "Cursor", "", "",), ("-style", "style", "Style", "", "",), ("-class", "", "", "", "",),))
 
 ```
 

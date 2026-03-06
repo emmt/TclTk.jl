@@ -39,7 +39,7 @@ If the user cancel the operation of close the dialog window, `nothing` is return
 otherwise, the returned color can be used to configure a `Tk` widget. For example:
 
 ```julia
-top = TkToplevel(interp, :background => color)
+top = Toplevel(interp, :background => color)
 ```
 
 

@@ -7,7 +7,7 @@ export wm
 
 Interact with the window manager to query or control such things as the title for widget
 `w`, its geometry, etc. Argument `T` is the expected type for the result. With the syntax
-`wm.cmd(w, ...)` a suitable default type that depends on `cmd` is assumed.
+`wm.cmd(w, ...)` the result has a suitable default type that depends on `cmd`.
 
 The window manger command `cmd` is one of ...
 

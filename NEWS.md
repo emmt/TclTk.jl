@@ -8,6 +8,14 @@ Versioning](https://semver.org).
 
 ### Breaking changes
 
+- Widget types are no longer prefixed by `Tk` of `Ttk`. For example, use `Canvas` instead of
+  `TkCanvas`. When a type of widget exists in the two packages, the themed one is preferred
+  (formerly prefixed with `Ttk`). If another type is preferred, it can still be prefixed by
+  the corresponding module. For example, `TclTk.Tk.Button` if `Button` (which is a shortcut
+  to `TclTk.Ttk.Button`) does not suit your needs. The Perl script
+  [`new_widget_names.pl`](tools/new_widget_names.pl) can be used to convert the widget
+  names.
+
 - Out of range indices in lists of Tcl objects are no longer allowed.
 
 - `w.rgb(color)` with `w` a widget now return an `RGB{N0f16}` value instead of a triplet of

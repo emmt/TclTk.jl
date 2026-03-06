@@ -71,13 +71,13 @@ julia> img = testimage("mandrill"); # read some image data
 julia> tk_start() # make sure Tk package is loaded and event loop is running
 Tcl interpreter (address: 0x0000000017dc33e0, threadid: 1)
 
-julia> top = TkToplevel(background="#282c34")
-TkToplevel(".top1")
+julia> top = Toplevel(background="#282c34")
+Toplevel(".top1")
 
 julia> wm.title(top, "A Nice Image")
 
-julia> lab = TkLabel(top, image=TkPhoto(permutedims(img)), cursor="target")
-TkLabel(".top1.lab1")
+julia> lab = Label(top, image=TkPhoto(permutedims(img)), cursor="target")
+Label(".top1.lab1")
 
 julia> lab.pack(side="top", padx=20, pady=30)
 
@@ -108,7 +108,7 @@ A Tk widget instance can be called to perform widget actions such as (re-)config
 options. For example, let us show the frame of the image with a *sunken* relief:
 
 ``` julia-repl
-julia> lab.configure(borderwidth=5, relief=:sunken)
+julia> lab.configure(borderwidth=3, relief=:sunken, padding=7, background="beige")
 
 ```
 
