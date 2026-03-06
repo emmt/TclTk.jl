@@ -1,82 +1,12 @@
 baremodule TclTk
 
 export
-    # Types.
-    TclInterp,
-    TclObj,
-
-    # Methods.
-    tcl_library,
-    tk_start,
-
-    # Error and status.
-    TCL_BREAK,
-    TCL_CONTINUE,
-    TCL_ERROR,
-    TCL_OK,
-    TCL_RETURN,
-    TclError,
-    TclStatus,
-    tcl_error,
-
-    # Version.
-    tcl_version,
-    TCL_MAJOR_VERSION,
-    TCL_MINOR_VERSION,
-
-    # Constants for events.
-    TCL_DONT_WAIT,
-    TCL_WINDOW_EVENTS,
-    TCL_FILE_EVENTS,
-    TCL_TIMER_EVENTS,
-    TCL_IDLE_EVENTS,
-    TCL_ALL_EVENTS,
-
-    # Constants for variables.
-    TCL_GLOBAL_ONLY,
-    TCL_NAMESPACE_ONLY,
-    TCL_APPEND_VALUE,
-    TCL_LIST_ELEMENT,
-    TCL_LEAVE_ERR_MSG,
-
-    # Tk images.
-    TkBitmap,
-    TkImage,
-    TkPhoto,
-
-    # Widgets.
-    TkWidget,
-    Button,
-    Canvas,
-    Checkbutton,
-    Combobox,
-    Entry,
-    Frame,
-    Label,
-    Labelframe,
-    Listbox,
-    Menu,
-    Menubutton,
-    Message,
-    Notebook,
-    Panedwindow,
-    Progressbar,
-    Radiobutton,
-    Scale,
-    Scrollbar,
-    Separator,
-    Sizegrip,
-    Spinbox,
-    Text,
-    Toplevel,
-    Treeview,
-
     # Re-export from UnsetIndex.
     unset
 
 using Base
+using Reexport
 using UnsetIndex
-
 
 # TclTk is a bare module because it implements its own `eval` function.
 function eval end
@@ -87,11 +17,7 @@ include(file) = Base.include(@__MODULE__, file)
 include("api.jl")
 
 include("Impl.jl")
-import .Impl:
-    # Modules.
-    Tk,
-    Ttk,
-
+@reexport import .Impl:
     # Types.
     TclError,
     TclInterp,
@@ -160,6 +86,11 @@ import .Impl:
     tcl_error,
     tcl_library,
     tcl_version,
+    tk_chooseColor,
+    tk_chooseDirectory,
+    tk_getOpenFile,
+    tk_getSaveFile,
+    tk_messageBox,
     tk_start
 
 # Non-exported public symbols.
@@ -248,17 +179,10 @@ for sym in (
     :TtkSpinbox,
     :TtkTreeview,
 =#
-    # Tk dialogs.
-    :tk_chooseColor,
-    :tk_chooseDirectory,
-    :tk_getOpenFile,
-    :tk_getSaveFile,
-    :tk_messageBox,
     )
 
-    # Import public symbols from the `Impl` module, export those prefixed with `Tcl`,
-    # `TCL_`, `Tk`, `@Tk`, `Ttk` or `TK_`, and declare the others as "public".
-    if sym ∉ (:eval, :Tk, :Ttk)
+    # Import symbols from the `Impl` module and declare them as "public".
+    if sym ∉ (:eval,)
         @eval import .Impl: $sym
     end
     if VERSION ≥ v"1.11.0-DEV.469"
