@@ -92,7 +92,7 @@ end
 
 function Base.getindex(obj::TclObj, inds::AbstractVector{<:Integer})
     GC.@preserve obj begin
-        A = UnsafeList(obj)
+        A = UnsafeList(pointer(obj))
         result = new_list()
         try
             for i in inds
@@ -109,7 +109,7 @@ end
 
 function Base.getindex(obj::TclObj, flags::AbstractVector{Bool})
     GC.@preserve obj begin
-        A = UnsafeList(obj)
+        A = UnsafeList(pointer(obj))
         length(flags) == length(A) || dimension_mismatch(
             "attempt to index $(length(A))-element Tcl list by $(length(flags))-element vector of `Bool`")
         result = new_list()
