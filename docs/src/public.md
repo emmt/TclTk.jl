@@ -81,7 +81,7 @@ Scrollbar
 Separator
 Sizegrip
 Spinbox
-Text
+TclTk.Text
 Toplevel
 Treeview
 TclTk.cget
