@@ -135,50 +135,6 @@ for sym in (
     :unsetvar!,
     :unsetvar, # FIXME deprecated
     :winfo,
-
-    # Tk widgets.
-    #=
-    :TkButton,
-    :TkCanvas,
-    :TkCheckbutton,
-    :TkEntry,
-    :TkFrame,
-    :TkLabel,
-    :TkLabelframe,
-    :TkListbox,
-    :TkMenu,
-    :TkMenubutton,
-    :TkMessage,
-    :TkPanedwindow,
-    :TkRadiobutton,
-    :TkScale,
-    :TkScrollbar,
-    :TkSpinbox,
-    :TkText,
-    :TkToplevel,
-    :TkWidget,
-    Symbol("@TkWidget"),
-
-    # Ttk (Themed Tk) widgets.
-    :TtkButton,
-    :TtkCheckbutton,
-    :TtkCombobox,
-    :TtkEntry,
-    :TtkFrame,
-    :TtkLabel,
-    :TtkLabelframe,
-    :TtkMenubutton,
-    :TtkNotebook,
-    :TtkPanedwindow,
-    :TtkProgressbar,
-    :TtkRadiobutton,
-    :TtkScale,
-    :TtkScrollbar,
-    :TtkSeparator,
-    :TtkSizegrip,
-    :TtkSpinbox,
-    :TtkTreeview,
-=#
     )
 
     # Import symbols from the `Impl` module and declare them as "public".
