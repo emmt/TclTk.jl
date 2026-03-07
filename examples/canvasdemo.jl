@@ -58,8 +58,7 @@ end
 # Callback function to be called with: %W %x %y.
 function on_click(interp::TclInterp, args::TclObj)
     # Extract arguments (1st is name of procedure, unused here).
-    canvas = Canvas(interp, args[2]) # most efficient way to retrieve a widget
-    xm, ym = args[3 => Float64], args[4 => Float64]
+    canvas, xm, ym = interp.fetch(Tuple{Canvas,Float64,Float64}, args, 2:4)
 
     # Convert coordinates to canvas coordinates.
     x = canvas.canvasx(Float64, xm)

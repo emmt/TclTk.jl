@@ -131,13 +131,14 @@ end
 
 #------------------------------------------------------------------ Interpreter properties -
 
-Base.propertynames(interp::TclInterp) = (:concat, :eval, :exec, :list, :ptr,
+Base.propertynames(interp::TclInterp) = (:concat, :eval, :exec, :fetch, :list, :ptr,
                                          :result, :threadid)
 
 @inline Base.getproperty(interp::TclInterp, key::Symbol) = _getproperty(interp, Val(key))
 _getproperty(interp::TclInterp, ::Val{:concat}) = PrefixedFunction(concat, interp)
 _getproperty(interp::TclInterp, ::Val{:eval}) = PrefixedFunction(TclTk.eval, interp)
 _getproperty(interp::TclInterp, ::Val{:exec}) = PrefixedFunction(exec, interp)
+_getproperty(interp::TclInterp, ::Val{:fetch}) = SubCommand{:fetch}(interp)
 _getproperty(interp::TclInterp, ::Val{:list}) = PrefixedFunction(list, interp)
 _getproperty(interp::TclInterp, ::Val{:ptr}) = getfield(interp, :ptr)
 _getproperty(interp::TclInterp, ::Val{:result}) = PrefixedFunction(getresult, interp)
@@ -520,3 +521,205 @@ end
 
 @noinline throw_unexpected(status::TclStatus) =
     tcl_error("unexpected return status: $status")
+
+#----------------------------------------------------------------------- Fetching value(s) -
+
+"""
+    fetch(T, obj::TclObj) -> x::T
+    fetch(T, obj::TclObj, i::Integer) -> x::T
+    fetch(T, obj::TclObj, inds::AbstractVector{<:Integer}) -> x::T
+
+Return a Julia value of type `T` from Tcl object `obj`. With no other argument than `T` and
+`obj`, this is exactly the same as calling `convert(T, x)`. If an index `i` is specified,
+convert the `i`-th element of `obj` considered as a list. If a vector of indices (e.g. an
+index range) `inds` is specified, convert the sub-list `obj[inds]`.
+
+Compared to `convert(T, obj[i])`, or `convert(T, obj[inds])`, calling `fetch` avoids
+temporaries and is thus a bit faster.
+
+Examples:
+
+```julia-repl
+julia> x = TclObj((false, -7, 1.5, "text", ('a', 2)))
+TclObj((0, -7, 1.5, "text", ("a", 2,),))
+
+julia> fetch(Bool, x, 1)
+false
+
+julia> convert(Tuple{Char,Int}, x[5])
+('a', 2)
+
+julia> fetch(Tuple{Char,Int}, x, 5) # same as above but a bit faster and allocation free
+('a', 2)
+
+julia> fetch(Tuple{String,Float64,Tuple{Char,Int}}, x, (4,3,5))
+("text", 1.5, ('a', 2))
+
+julia> fetch(Tuple{Bool,Int16,Float32,Symbol}, x, 1:4)
+(false, -7, 1.5f0, :text)
+
+```
+
+# See also
+
+[`TclTk.Callback`](@ref).
+
+"""
+function Base.fetch(::Type{T}, obj::TclObj) where {T}
+    # For simple types, it is sufficient to call `convert`.
+    return convert(T, obj)::T
+end
+
+function Base.fetch(::Type{T}, obj::TclObj, ::Colon) where {T<:Tuple}
+    # To fetch a tuple, the object must be considered as a list.
+    GC.@preserve obj begin
+        return unsafe_convert(T, pointer(obj))::T
+    end
+end
+
+function Base.fetch(::Type{T}, obj::TclObj, i::Integer) where {T}
+    # First fetch i-th element of the list to check for bounds error, then fetch a value of
+    # type T out of the item.
+    GC.@preserve obj begin
+        itemptr = unsafe_getindex(obj, i)
+        isnull(itemptr) && throw(BoundsError(obj, i))
+        return unsafe_convert(T, itemptr)::T
+    end
+end
+
+@generated function Base.fetch(::Type{T}, obj::TclObj,
+                               inds::Union{AbstractVector{<:Integer},
+                                           Tuple{Vararg{Integer}}}) where {N,T<:NTuple{N,Any}}
+    # To fetch with indices, the object must be considered as a list.
+    types = fieldtypes(T)
+    expr = Expr(:tuple, [:(unsafe_convert($(types[i]), list[inds[off + $i]]))
+                         for i in 1:N]...,)
+    quote
+        length(inds) == N || argument_error(
+            "cannot fetch a $N-tuple from a $(length(inds))-element Tcl sub-list")
+        GC.@preserve obj begin
+            list = UnsafeList(pointer(obj))
+            off = firstindex(inds)::Int - 1
+            return ($expr)::T
+        end
+    end
+end
+
+"""
+    fetch(T, interp::TclInterp, obj::TclObj) -> x::T
+    fetch(T, interp::TclInterp, obj::TclObj, i::Integer) -> x::T
+    fetch(T, interp::TclInterp, obj::TclObj, inds::AbstractVector{<:Integer}) -> x::T
+
+    interp.fetch(T, obj::TclObj) -> x::T
+    interp.fetch(T, obj::TclObj, i::Integer) -> x::T
+    interp.fetch(T, obj::TclObj, inds::AbstractVector{<:Integer}) -> x::T
+
+Return a Julia value of type `T` from Tcl object `obj` living in Tcl interpreter `interp`.
+If an index `i` is specified, convert the `i`-th element of `obj` considered as a list. If a
+vector of indices (e.g. an index range) `inds` is specified, convert the sub-list
+`obj[inds]`.
+
+Compared to `convert(T, obj)`, `convert(T, obj[i])`, or `convert(T, obj[inds])`, calling
+`fetch` is more general as `T` can be the type of an object (such as a widget or an image)
+that lives in an interpreter and a bit faster as `fetch` avoids temporaries.
+
+For example, if `interp` and `args` are the arguments received by a callback bound to an
+event with `"%W %x %y"`, then:
+
+```julia
+w = interp.fetch(Canvas, args, 2)
+x = interp.fetch(Int,    args, 3)
+y = interp.fetch(Int,    args, 4)
+```
+
+retrieves the 2nd, 3rd, and 4th elements of `args` set with the calling widget (here a
+canvas) and the pointer position (for a callback, the 1st element of `args` is the name of
+the associated Tcl command). This can also be done in a single statement by:
+
+```julia
+w, x, y = interp.fetch(Tuple{Canvas,Int,Int}, args, 2:4)
+```
+
+# See also
+
+[`TclTk.Callback`](@ref).
+
+"""
+function Base.fetch(::Type{T}, interp::TclInterp, obj::TclObj) where {T}
+    # For simple types, it is sufficient to call `convert`.
+    return convert(T, obj)::T
+end
+
+function Base.fetch(::Type{T}, interp::TclInterp, obj::TclObj) where {T<:TkObject}
+    # Tk objects can be directly build from the arguments.
+    return T(interp, obj)::T
+end
+
+function Base.fetch(::Type{T}, interp::TclInterp, obj::TclObj, ::Colon=:) where {T<:Tuple}
+    # To fetch a tuple, the object must be considered as a list.
+    GC.@preserve interp obj begin
+        return unsafe_fetch(T, interp, pointer(obj))::T
+    end
+end
+
+function Base.fetch(::Type{T}, interp::TclInterp, obj::TclObj, i::Integer) where {T}
+    # First fetch i-th element of the list to check for bounds error, then fetch a value of
+    # type T out of the item.
+    GC.@preserve interp obj begin
+        itemptr = unsafe_getindex(obj, i)
+        isnull(itemptr) && throw(BoundsError(obj, i))
+        return unsafe_fetch(T, interp, itemptr)::T
+    end
+end
+
+@generated function Base.fetch(::Type{T}, interp::TclInterp, obj::TclObj,
+                               inds::Union{AbstractVector{<:Integer},
+                                           Tuple{Vararg{Integer}}}) where {N,T<:NTuple{N,Any}}
+    # To fetch with indices, the object must be considered as a list.
+    types = fieldtypes(T)
+    expr = Expr(:tuple, [:(unsafe_fetch($(types[i]), interp, list[inds[off + $i]]))
+                         for i in 1:N]...,)
+    quote
+        length(inds) == N || argument_error(
+            "cannot fetch a $N-tuple from a $(length(inds))-element Tcl sub-list")
+        GC.@preserve interp obj begin
+            list = UnsafeList(pointer(obj))
+            off = firstindex(inds)::Int - 1
+            return ($expr)::T
+        end
+    end
+end
+
+# Make `fetch` a sub-command of the interpreter.
+function (f::SubCommand{:fetch,TclInterp})(::Type{T}, obj::TclObj) where {T}
+    return fetch(T, f.caller, obj)
+end
+function (f::SubCommand{:fetch,TclInterp})(::Type{T}, obj::TclObj,
+                                           inds::Union{Colon, Integer,
+                                                       AbstractVector{<:Integer},
+                                                       Tuple{Vararg{Integer}}}) where {T}
+    return fetch(T, f.caller, obj, inds)
+end
+
+# Tk objects require the interpreter where they live.
+function unsafe_fetch(::Type{T}, interp::TclInterp, objptr::ObjPtr) where {T<:TkObject}
+    return T(interp, _TclObj(objptr))
+end
+
+# Default is to call `unsafe_convert`.
+function unsafe_fetch(::Type{T}, interp::TclInterp, objptr::ObjPtr) where {T}
+    return unsafe_convert(T, objptr)
+end
+
+# Convert to fully specified Tuple.
+@generated function unsafe_fetch(::Type{T}, interp::TclInterp,
+                                 objptr::ObjPtr) where {N,T<:NTuple{N,Any}}
+    types = fieldtypes(T)
+    expr = Expr(:tuple, [:(unsafe_fetch($(types[i]), interp, list[$i])) for i in 1:N]...,)
+    quote
+        list = UnsafeList(objptr)
+        length(list) == N || argument_error(
+            "cannot fetch a $N-tuple from a $(length(list))-element Tcl list")
+        return $expr
+    end
+end

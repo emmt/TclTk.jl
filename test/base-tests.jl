@@ -479,6 +479,58 @@ end
     @test apple === @inferred private(Fruit, :set, "fruit", apple)
     @test kiwi === @inferred private.eval(Fruit, "set fruit $(Integer(kiwi))")
 
+    # Fetching of values.
+    t = (false, -7, 1.5, "text", ('a', 2))
+    x = @inferred TclObj(t)
+    interp = TclInterp()
+    @test length(x) == length(t)
+    @test length(x[end]) == 2
+    #
+    @test @inferred(convert(typeof(t[1]), x[1])) === t[1]
+    @test @inferred(fetch(typeof(t[1]), x, 1)) === t[1]
+    @test interp.fetch(typeof(t[1]), x, 1) === t[1]
+    #
+    @test @inferred(convert(typeof(t[2]), x[2])) === t[2]
+    @test @inferred(fetch(typeof(t[2]), x, 2)) === t[2]
+    @test interp.fetch(typeof(t[2]), x, 2) === t[2]
+    #
+    @test @inferred(convert(typeof(t[3]), x[3])) === t[3]
+    @test @inferred(fetch(typeof(t[3]), x, 3)) === t[3]
+    @test interp.fetch(typeof(t[3]), x, 3) === t[3]
+    #
+    @test @inferred(convert(typeof(t[4]), x[4])) == t[4]
+    @test @inferred(fetch(typeof(t[4]), x, 4)) == t[4]
+    @test interp.fetch(typeof(t[4]), x, 4) == t[4]
+    #
+    @test @inferred(convert(typeof(t[5]), x[5])) === t[5]
+    @test @inferred(fetch(typeof(t[5]), x, 5)) === t[5]
+    @test interp.fetch(typeof(t[5]), x, 5) === t[5]
+    #
+    inds = [4,3,5]
+    s = t[inds]
+    @test @inferred(convert(typeof(s), x[inds])) === s
+    @test @inferred(fetch(typeof(s), x, [inds...,])) === s
+    @test @inferred(fetch(typeof(s), x, (inds...,))) === s
+    @test interp.fetch(typeof(s), x, [inds...,]) === s
+    @test interp.fetch(typeof(s), x, (inds...,)) === s
+    #
+    @test @inferred(convert(typeof(t), x)) == t
+    @test @inferred(fetch(typeof(t), x)) == t
+    @test @inferred(fetch(typeof(t), x, :)) == t
+    @test interp.fetch(typeof(t), x) == t
+    @test interp.fetch(typeof(t), x, :) == t
+    #
+    s = (UInt8(t[1]), Int16(t[2]), Float32(t[3]), Symbol(t[4]))
+    r = 1:4
+    @test @inferred(convert(typeof(s), x[r])) === s
+    @test @inferred(convert(typeof(s), x[[true,true,true,true,false]])) === s
+    @test @inferred(fetch(typeof(s), x, r)) === s
+    @test @inferred(fetch(typeof(s), x, (r...,))) === s
+    @test @inferred(fetch(typeof(s), x, [r...,])) === s
+    @test interp.fetch(typeof(s), x, r) === s
+    @test interp.fetch(typeof(s), x, (r...,)) === s
+    @test interp.fetch(typeof(s), x, [r...,]) === s
+
     # Explicitly delete private interpreter to call finalizer.
     private = 0
     GC.gc()

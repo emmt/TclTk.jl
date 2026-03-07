@@ -29,6 +29,12 @@ Versioning](https://semver.org).
 
 - Top-level windows have a default icon set with the logo displayed in the documentation.
 
+- Extend `fetch` to retrieve a Julia value or object (possibly living in a Tcl interpreter)
+  from a Tcl object possibly sub-indexed. Compared to `convert(T, obj)`, `convert(T,
+  obj[i])`, or `convert(T, obj[inds])`, calling `fetch` is more general as `T` can be the
+  type of an object (such as a widget or an image) that lives in an interpreter and a bit
+  faster as `fetch` avoids temporaries.
+
 ### Optimized
 
 - After Tk and Ttk packages have been loaded, `tk_start` runs much faster.
