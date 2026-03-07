@@ -412,7 +412,7 @@ for cmd in (:grid, :pack, :place)
     end
 end
 
-(f::SubCommand{:find, TkCanvas})(spec::Word, args...) = f(TclObj, spec, args...)
+(f::SubCommand{:find, Canvas})(spec::Word, args...) = f(TclObj, spec, args...)
 
 """
     TclTk.Impl.isrootwidget(w) -> bool
