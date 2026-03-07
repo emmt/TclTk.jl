@@ -23,15 +23,7 @@ julia&gt; y[2:end-2]
 TclObj((&quot;b c&quot;, &quot;1&quot;, &quot;3.141592653589793&quot;, -1,))
 </code></pre><p>Indexing a Tcl list object with a scalar index can also take a type <code>T</code> to convert the retrieved item to that type:</p><pre><code class="language-julia hljs">list[i, T]   # yields i-th item of list converted to type T
 list[T, i]   # idem
-list[i =&gt; T] # idem</code></pre><p>This has two advantages: type-stability (the type of the result is inferable) and, compared to <code>convert(T, list[i])</code>, speed (this avoids allocating a mutable <code>TclObj</code> instance).</p><p>To follow Tcl behavior, out of range indices yield <code>missing</code> when indexing a list with a scalar index and are simply ignored when indexing a list with an index range or a vector of indices:</p><pre><code class="language-julia-repl hljs">julia&gt; x[0]
-missing
-
-julia&gt; y[end+1]
-missing
-
-julia&gt; y[-1:3] # out of bound indices -1 and 0 are ignored
-TclObj((&quot;a&quot;, &quot;b c&quot;, &quot;1&quot;,))
-</code></pre><p>A list may be indexed by a vector of Booleans (of same length as the list) to extract a sub-list:</p><pre><code class="language-julia-repl hljs">julia&gt; x[length.(x) .== 1]
+list[i =&gt; T] # idem</code></pre><p>This has two advantages: type-stability (the type of the result is inferable) and, compared to <code>convert(T, list[i])</code>, speed (this avoids allocating a mutable <code>TclObj</code> instance).</p><p>A list may be indexed by a vector of Booleans (of same length as the list) to extract a sub-list:</p><pre><code class="language-julia-repl hljs">julia&gt; x[length.(x) .== 1]
 TclObj((1, 3.141592653589793,))
 </code></pre><p>Base methods <code>push!</code> and <code>append!</code> add elements to the end of a list, the former performs as <a href="../public/#TclTk.Impl.list"><code>TclTk.list</code></a> and the latter performs as <a href="../public/#TclTk.Impl.concat"><code>TclTk.concat</code></a>:</p><pre><code class="language-julia-repl hljs">julia&gt; push!(TclTk.list(&quot;a&quot;), &quot;b c&quot;)
 TclObj((&quot;a&quot;, &quot;b c&quot;,))
@@ -43,7 +35,7 @@ TclObj((&quot;a {b c}&quot;, 1, 3.141592653589793, (-1, 2, 4,),))
 
 julia&gt; delete!(z, 3)
 TclObj((&quot;a {b c}&quot;, 1, (-1, 2, 4,),))
-</code></pre><h2 id="Tcl-objects-as-lists"><a class="docs-heading-anchor" href="#Tcl-objects-as-lists">Tcl objects as lists</a><a id="Tcl-objects-as-lists-1"></a><a class="docs-heading-anchor-permalink" href="#Tcl-objects-as-lists" title="Permalink"></a></h2><p>When its content can be converted into a proper list, any Tcl object can be used as a list, that is to say indexed, iterated, etc. In fact, any successful operation on a Tcl object that considers the object as a list convert the internal type of the object into a list type. This is illustrated by the following examples:</p><pre><code class="language-julia-repl hljs">julia&gt; z = TclObj(&quot;a {b c} 3 $(sqrt(π))&quot;)
+</code></pre><h2 id="Tcl-objects-as-lists"><a class="docs-heading-anchor" href="#Tcl-objects-as-lists">Tcl objects as lists</a><a id="Tcl-objects-as-lists-1"></a><a class="docs-heading-anchor-permalink" href="#Tcl-objects-as-lists" title="Permalink"></a></h2><p>When its content can be converted into a proper list, any Tcl object can be used as a list, that is to say indexed, iterated, etc. In fact, any successful operation on a Tcl object that considers the object as a list converts the internal type of the object into a list type. This is illustrated by the following examples:</p><pre><code class="language-julia-repl hljs">julia&gt; z = TclObj(&quot;a {b c} 3 $(sqrt(π))&quot;)
 TclObj(&quot;a {b c} 3 1.7724538509055159&quot;)
 
 julia&gt; z.type
@@ -57,12 +49,9 @@ julia&gt; z.type
 
 julia&gt; z[end-1]
 TclObj(&quot;3&quot;)
-
-julia&gt; z[end+1]
-missing
 </code></pre><p>The empty string <code>&quot;&quot;</code> is equivalent to an empty list:</p><pre><code class="language-julia-repl hljs">julia&gt; q = TclObj(&quot;&quot;)
 TclObj(&quot;&quot;)
 
 julia&gt; length(q)
 0
-</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../objects/">« Tcl objects</a><a class="docs-footer-nextpage" href="../interpreters/">Tcl interpreters »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Thursday 5 March 2026 23:03">Thursday 5 March 2026</span>. Using Julia version 1.12.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../objects/">« Tcl objects</a><a class="docs-footer-nextpage" href="../interpreters/">Tcl interpreters »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Saturday 7 March 2026 22:43">Saturday 7 March 2026</span>. Using Julia version 1.12.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
